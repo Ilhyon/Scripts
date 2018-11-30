@@ -1,0 +1,141 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-:v
+
+import re
+from pprint import pprint
+
+DicoBBH = {"Sp1" : {}, "Sp2" : {}}
+with open("/home/local/USHERBROOKE/vana2406/Documents/Data/BBH/BBH.txt") as f: # file opening
+	content = f.read()
+	lines = content.split('\n')
+	for l in lines: #parcour de toute les lignes
+		if l :
+			words=l.split('\t')
+			idG4Sp1 = words[0]
+			idG4Sp2 = words[1]
+			if idG4Sp1 not in DicoBBH["Sp1"] :
+				DicoBBH["Sp1"][idG4Sp1] = idG4Sp2
+			if idG4Sp2 not in DicoBBH["Sp2"] :
+				DicoBBH["Sp2"][idG4Sp2] = idG4Sp1
+
+DicoG4Sp1 = {"G4" : {}, "gene" : {}}
+with open("/home/local/USHERBROOKE/vana2406/Documents/Data/Human/All/HS_All_G4InGenome.txt") as f: # file opening
+	content = f.read()
+	lines = content.split('\n')
+	for l in lines: #parcour de toute les lignes
+		if l :
+			words=l.split('\t')
+			ids = words[0].split(':')
+			gene = ids[0]
+			G4 = str(ids[1])+":"+str(ids[2].split('|')[0])
+			if G4 in DicoBBH["Sp1"] :
+				if G4 not in DicoG4Sp1["G4"] :
+					DicoG4Sp1["G4"][G4] = [gene]
+				elif G4 in DicoG4Sp1["G4"] and gene not in DicoG4Sp1["G4"][G4] :
+					DicoG4Sp1["G4"][G4].append(gene)
+				if gene not in DicoG4Sp1["gene"] :
+					DicoG4Sp1["gene"][gene] = [G4]
+				elif gene in DicoG4Sp1["gene"] and G4 not in DicoG4Sp1["gene"][gene]:
+					DicoG4Sp1["gene"][gene].append(G4)
+
+DicoG4Sp2 = {"G4" : {}, "gene" : {}}
+with open("/home/local/USHERBROOKE/vana2406/Documents/Data/Mouse/All/MM_All_G4InGenome.txt") as f: # file opening
+	content = f.read()
+	lines = content.split('\n')
+	for l in lines: #parcour de toute les lignes
+		if l :
+			words=l.split('\t')
+			ids = words[0].split(':')
+			gene = ids[0]
+			G4 = str(ids[1])+":"+str(ids[2].split('|')[0])
+			if G4 in DicoBBH["Sp2"] :
+				if G4 not in DicoG4Sp2["G4"] :
+					DicoG4Sp2["G4"][G4] = [gene]
+				elif G4 in DicoG4Sp2["G4"] and gene not in DicoG4Sp2["G4"][G4] :
+					DicoG4Sp2["G4"][G4].append(gene)
+				if gene not in DicoG4Sp2["gene"] :
+					DicoG4Sp2["gene"][gene] = [G4]
+				elif gene in DicoG4Sp2["gene"] and G4 not in DicoG4Sp2["gene"][gene]:
+					DicoG4Sp2["gene"][gene].append(G4)
+
+DicoDescription = {"Sp1" : {}, "Sp2" : {}}
+with open("/home/local/USHERBROOKE/vana2406/Documents/Data/Human/All/HS_All_Gene_Description.txt") as f: # file opening
+	content = f.read()
+	lines = content.split('\n')
+	for l in lines: #parcour de toute les lignes
+		if l :
+			words=l.split('\t')
+			gene = words[0]
+			if len(words) > 1 :
+				if gene in DicoG4Sp1["gene"] :
+					if gene not in DicoDescription["Sp1"] :
+						DicoDescription["Sp1"][gene] = words[1]
+						
+
+with open("/home/local/USHERBROOKE/vana2406/Documents/Data/Mouse/All/MM_All_Gene_Description.txt") as f: # file opening
+	content = f.read()
+	lines = content.split('\n')
+	for l in lines: #parcour de toute les lignes
+		if l :
+			words=l.split('\t')		
+			gene = words[0]
+			if len(words) > 1 :
+				if gene in DicoG4Sp2["gene"] :
+					if gene not in DicoDescription["Sp2"] :
+						DicoDescription["Sp2"][gene] = words[1]
+
+DicoBBHortho = {}
+with open("/home/local/USHERBROOKE/vana2406/Documents/Data/BBH/Orthology_Gene_BBHrG4.txt") as f: # file opening
+	content = f.read()
+	lines = content.split('\n')
+	for l in lines: #parcour de toute les lignes
+		if l:
+			if l != lines[0]:
+				words=l.split('\t')
+				ids = words[0].split("|")
+				idG4Sp1 = ids[0]
+				idG4Sp2 = ids[1]
+				if idG4Sp1 not in DicoBBHortho :
+					DicoDescription[idG4Sp1] = idG4Sp2
+
+for idG4Sp1 in DicoBBH["Sp1"]:
+	if idG4Sp1 in DicoBBHortho : # BBH orthologues
+		idGeneSp1 = DicoG4Sp1["G4"][idG4Sp1]
+		idGeneSp2 = DicoG4Sp2["G4"][idG4Sp2]
+		for i in idGeneSp1: 
+			for j in idGeneSp2:
+				listdescription = []
+				if i in DicoDescription["Sp1"] :
+					if j in DicoDescription["Sp2"] :
+						for v in DicoDescription["Sp1"][i]:
+							if v in DicoDescription["Sp2"][j]:
+								listdescription.append(v)
+				if listdescription:
+					print "Orthology\t" +str(i)+"|"+str(j)+"\t"+"|".join(listdescription)+"\n"
+	else :
+		idGeneSp1 = DicoG4Sp1["G4"][idG4Sp1]
+		idGeneSp2 = DicoG4Sp2["G4"][idG4Sp2]
+		for i in idGeneSp1: 
+			for j in idGeneSp2:
+				listdescription = []
+				if i in DicoDescription["Sp1"] :
+					if j in DicoDescription["Sp2"] :
+						for v in DicoDescription["Sp1"][i]:
+							if v in DicoDescription["Sp2"][j]:
+								listdescription.append(v)
+				if listdescription:
+					print "No_Orthology\t" +str(i)+"|"+str(j)+"\t"+"|".join(listdescription)+"\n"
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

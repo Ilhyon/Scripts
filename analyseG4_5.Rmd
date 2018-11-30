@@ -45,14 +45,14 @@ Pseudogene=c('transcribed_unitary_pseudogene','disrupted_domain', 'IG_C_pseudoge
 
 LongNC=c('macro_lncRNA','bidirectional_promoter_lncRNA','sense_intronic','3prime_overlapping_ncRNA','ambiguous_orf','antisense','lincRNA','ncrna_host','non_coding','processed_transcript','retained_intron','sense_overlapping')
 
-ShortNC=c('3prime_overlapping_ncRNA','scaRNA','miRNA', 'miRNA_pseudogene', 'misc_RNA', 'misc_RNA_pseudogene', 'Mt_rRNA' ,'Mt_tRNA', 'Mt_tRNA_pseudogene', 'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA', 'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene', 'scRNA_pseudogene', 'snlRNA', 'snoRNA', 'snoRNA_pseudogene', 'snRNA', 'snRNA_pseudogene', 'SRP_RNA', 'tmRNA', 'tRNA', 'tRNA_pseudogene')
+ShortNC=c('scaRNA','miRNA', 'miRNA_pseudogene', 'misc_RNA', 'misc_RNA_pseudogene', 'Mt_rRNA' ,'Mt_tRNA', 'Mt_tRNA_pseudogene', 'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA', 'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene', 'scRNA_pseudogene', 'snlRNA', 'snoRNA', 'snoRNA_pseudogene', 'snRNA', 'snRNA_pseudogene', 'SRP_RNA', 'tmRNA', 'tRNA', 'tRNA_pseudogene')
 
 Predictif=c('TEC')
 
 NonCoding=c('macro_lncRNA','bidirectional_promoter_lncRNA','sense_intronic','3prime_overlapping_ncRNA','ambiguous_orf','antisense','lincRNA','ncrna_host','non_coding','processed_transcript','retained_intron','sense_overlapping','3prime_overlapping_ncRNA','scaRNA','miRNA', 'miRNA_pseudogene', 'misc_RNA', 'misc_RNA_pseudogene', 'Mt_rRNA' ,'Mt_tRNA', 'Mt_tRNA_pseudogene', 'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA', 'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene', 'scRNA_pseudogene', 'snlRNA', 'snoRNA', 'snoRNA_pseudogene', 'snRNA', 'snRNA_pseudogene', 'SRP_RNA', 'tmRNA', 'tRNA', 'tRNA_pseudogene')
 SupraFamilyName=c('Coding', 'NonCoding', 'Pseudogene', 'Predictif')
 
-NameFileMouse = c("3prime_overlapping_ncRNA","polymorphic_pseudogene","transcribed_processed_pseudogene","bidirectional_promoter_lncRNA","processed_pseudogene","transcribed_unitary_pseudogene","IG_C_gene","processed_transcript","transcribed_unprocessed_pseudogene","IG_V_gene","protein_coding","translated_processed_pseudogene","IG_V_pseudogene","pseudogene","TR_C_gene","lincRNA","retained_intron","TR_V_gene","macro_lncRNA","rRNA","TR_V_pseudogene","miRNA","sense_intronic","unitary_pseudogene","misc_RNA","sense_overlapping","unprocessed_pseudogene","nonsense_mediated_decay","snoRNA","non_stop_decay","TEC")
+NameFileMouse = c("3prime_overlapping_ncRNA","antisense","bidirectional_promoter_lncRNA","IG_C_gene","IG_V_gene","IG_V_pseudogene","lincRNA","macro_lncRNA","miRNA","misc_RNA","nonsense_mediated_decay","non_stop_decay","polymorphic_pseudogene","processed_pseudogene","processed_transcript","protein_coding","pseudogene","retained_intron","rRNA","sense_intronic","sense_overlapping","snoRNA","TEC","transcribed_processed_pseudogene","transcribed_unitary_pseudogene","transcribed_unprocessed_pseudogene","translated_processed_pseudogene","TR_C_gene","TR_V_gene","TR_V_pseudogene","unitary_pseudogene","unprocessed_pseudogene")
 
 NameFileHuman = c("3prime_overlapping_ncRNA","antisense","bidirectional_promoter_lncRNA","IG_C_gene","IG_C_pseudogene","IG_V_gene","IG_V_geneUTR","IG_V_pseudogene","lincRNA","macro_lncRNA","miRNA","misc_RNA","non_coding","nonsense_mediated_decay","nonsense_mediated_decayUTR","non_stop_decay","non_stop_decayUTR","polymorphic_pseudogene","processed_pseudogene","processed_transcript","protein_coding","protein_codingUTR","pseudogene","retained_intron","rRNA","sense_intronic","sense_overlapping","TEC","transcribed_processed_pseudogene","transcribed_unitary_pseudogene","transcribed_unprocessed_pseudogene","TR_C_gene","TR_V_gene","TR_V_geneUTR","TR_V_pseudogene","unitary_pseudogene","unprocessed_pseudogene")
 
@@ -83,7 +83,7 @@ DataImport = function(path, SupraFamily, NameFile) {
         # choice of the family, it will be easier to do it know
         if(length(SupraFamily[[j]])==16){
           family = 'Coding'
-        }else if(length(SupraFamily[[j]])==25){
+        }else if(length(SupraFamily[[j]])==24){
           family = 'ShortNC'
         }else if(length(SupraFamily[[j]])==12){
           family = 'LongNC'
@@ -294,29 +294,30 @@ AllGraphe = function(Data, ListAllSubFamilly,specie,ListAllColor){
         listSubFamily = Pseudogene
       }
     g = Graphic(DataFamily, Family, ListAllColor,specie)
-    #ggsave(file=paste(specie,"_",Family,".png",sep = ""), g,width=20, height=10, dpi=300) # to save the graphe in file
+    ggsave(file=paste(specie,"_",Family,".png",sep = ""), g,width=20, height=10, dpi=300) # to save the graphe in file
   }
 }
+
 ```
 
 # Main
 
 ## Import of Data
 ```{r}
-pathMousePrac='/home/anais/Documents/Data/Mouse/All/Subset/'
-pathHumanPrac='/home/anais/Documents/Data/Human/All/Subset/'
-#pathMouseCoBius = '/home/local/USHERBROOKE/vana2406/Documents/Data/mouse/All/Subset/'
-#pathHumanCoBius = '/home/local/USHERBROOKE/vana2406/Documents/Data/human/Subset/'
+#pathMousePrac='/home/anais/Documents/Data/Mouse/All/Subset/'
+#pathHumanPrac='/home/anais/Documents/Data/Human/All/Subset/'
+pathMouseCoBius = '/home/local/USHERBROOKE/vana2406/Documents/Data/Mouse/All/Subset/'
+pathHumanCoBius = '/home/local/USHERBROOKE/vana2406/Documents/Data/Human/All/Subset/'
 #pathMacMouse = '/Users/patate/Documents/Data/mouse/All/Subset/'
 #pathMacHuman = '/Users/patate/Documents/Data/human/All/Subset/'
 
 AllColor = GetAllColor(AllSubFamilly)
 
 Data_Mouse_perFamily = list()
-Data_Mouse_perFamily = DataImport(pathMousePrac, SupraFamily, NameFileMouse) # import of the mouse data
+Data_Mouse_perFamily = DataImport(pathMouseCoBius, SupraFamily, NameFileMouse) # import of the mouse data
 
 Data_Human_perFamily = list()
-Data_Human_perFamily = DataImport(pathHumanPrac, SupraFamily, NameFileHuman) # import of the human
+Data_Human_perFamily = DataImport(pathHumanCoBius, SupraFamily, NameFileHuman) # import of the human
 ```
 
 ## Mouse graphics

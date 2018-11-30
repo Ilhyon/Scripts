@@ -17,16 +17,14 @@ library(stringr)
 # Chargement des données
 
 ```{r}
-Data_human = read.csv('/home/anais/Documents/Data/Human/All/HS_All_G4InTranscript.txt', header = F, sep = "\t")
+Data_human = read.csv('/home/local/USHERBROOKE/vana2406/Documents/Data/Human/All/HS_All_G4InTranscript.txt', header = F, sep = "\t")
 colnames(Data_human) = c("InfoG4ByTranscript","cGcC","G4Hunter","sequenceG4","G4NN","localisation","transcriptBiotype")
 ```
 
 ```{r}
-Data_mouse = read.csv('/home/anais/Documents/Data/Mouse/All/MM_All_G4InTranscript.txt', header = F, sep = "\t")
+Data_mouse = read.csv('/home/local/USHERBROOKE/vana2406/Documents/Data/Mouse/All/MM_All_G4InTranscript.txt', header = F, sep = "\t")
 colnames(Data_mouse) = c("InfoG4ByTranscript","cGcC","G4Hunter","sequenceG4","G4NN","localisation","transcriptBiotype")
 ```
-
-
 ## Analyse
 
 ```{r}
@@ -59,21 +57,9 @@ Pour cette famille il y a 11 rG4s. Il y en a 3 en 3', 6 en Intron et 2 Sur des j
 which(Data_human$transcriptBiotype == "IG_V_gene")
 Data_human_IG_V_gene = which(Data_human$transcriptBiotype == "IG_V_gene")
 Data_human_IG_V_gene = Data_human[Data_human_IG_V_gene,]
-#pie(table(Data_human_IG_V_gene[,6]))
-#table(str_length(Data_human_IG_V_gene[,4]))
-#Data_human_IG_V_gene[,4]
-View(Data_human_IG_V_gene[which(Data_human_IG_V_gene$localisation == "junction_CDS_CDS"),c(1)])
+View(Data_human_IG_V_gene[which(Data_human_IG_V_gene$localisation == "junction_CDS_CDS"),])
 ```
 
-```{r}
-which(Data_mouse$transcriptBiotype == "IG_V_gene")
-Data_mouse_IG_V_gene = which(Data_mouse$transcriptBiotype == "IG_V_gene")
-Data_mouse_IG_V_gene = Data_mouse[Data_mouse_IG_V_gene,]
-#pie(table(Data_human_IG_V_gene[,6]))
-#table(str_length(Data_human_IG_V_gene[,4]))
-#Data_human_IG_V_gene[,4]
-#View(Data_mouse_IG_V_gene[which(Data_mouse_IG_V_gene$localisation == "junction_CDS_CDS"),c(1,4)])
-```
 ## Petite famille : TR_C_gene
 
 ```{r}
@@ -84,16 +70,7 @@ Data_human_TR_C_gene = Data_human[Data_human_TR_C_gene,]
 #table(str_length(Data_human_TR_C_gene[,4]))
 #Data_human_TR_C_gene[,4]
 ```
-## Petite famille : TR_V_gene
 
-```{r}
-which(Data_mouse$transcriptBiotype == "TR_V_gene")
-Data_mouse_TR_V_gene = which(Data_mouse$transcriptBiotype == "TR_V_gene")
-Data_mouse_TR_V_gene = Data_mouse[Data_mouse_TR_V_gene,]
-#pie(table(Data_human_TR_C_gene[,6]))
-#table(str_length(Data_human_TR_C_gene[,4]))
-#Data_human_TR_C_gene[,4]
-```
 ## Petite famille : TR_V_gene
 
 ```{r}
@@ -123,12 +100,6 @@ print(Data_human_IG_V_gene[which(Data_human_IG_V_gene$localisation == "junction_
 which(Data_human$transcriptBiotype == "3prime_overlapping_ncRNA")
 Data_human_3prime_overlapping_ncRNA = which(Data_human$transcriptBiotype == "3prime_overlapping_ncRNA")
 Data_human_3prime_overlapping_ncRNA = Data_human[Data_human_3prime_overlapping_ncRNA,]
-```
-
-```{r}
-which(Data_mouse$transcriptBiotype == "3prime_overlapping_ncRNA")
-Data_mouse_3prime_overlapping_ncRNA = which(Data_mouse$transcriptBiotype == "3prime_overlapping_ncRNA")
-Data_mouse_3prime_overlapping_ncRNA = Data_mouse[Data_mouse_3prime_overlapping_ncRNA,]
 ```
 
 ## Petite famille : macro_lncRNA
@@ -249,58 +220,13 @@ Data_mouse_snoRNA = Data_mouse[Data_mouse_snoRNA,]
 which(Data_human$transcriptBiotype == "antisense")
 Data_human_antisense = which(Data_human$transcriptBiotype == "antisense")
 Data_human_antisense = Data_human[Data_human_antisense,]
+View(Data_human_antisense[which(Data_human_antisense$localisation == "junction_IntronNC_ExonNC"),])
 ```
 
-```{r}
-which(Data_human$transcriptBiotype == "sense_overlapping")
-Data_human_sense_overlapping = which(Data_human$transcriptBiotype == "sense_overlapping")
-Data_human_sense_overlapping = Data_human[Data_human_sense_overlapping,]
-length(which(Data_human_sense_overlapping$localisation == "ExonNC"))
-```
+## Petite famille : 3'overlapping
 
 ```{r}
-which(Data_mouse$transcriptBiotype == "sense_overlapping")
-Data_mouse_sense_overlapping = which(Data_mouse$transcriptBiotype == "sense_overlapping")
-Data_mouse_sense_overlapping = Data_mouse[Data_mouse_sense_overlapping,]
-View(which(Data_mouse_sense_overlapping$localisation == "ExonNC"))
-```
-
-```{r}
-Data_human_bidirectional_promoter_lncRNA = which(Data_human$transcriptBiotype == "bidirectional_promoter_lncRNA")
-Data_human_bidirectional_promoter_lncRNA = Data_human[Data_human_bidirectional_promoter_lncRNA,]
-```
-
-```{r}
-Data_mouse_bidirectional_promoter_lncRNA = which(Data_mouse$transcriptBiotype == "bidirectional_promoter_lncRNA")
-Data_mouse_bidirectional_promoter_lncRNA = Data_mouse[Data_mouse_bidirectional_promoter_lncRNA,]
-```
-
-```{r}
-Data_human_unprocessed_pseudogene = which(Data_human$transcriptBiotype == "unprocessed_pseudogene")
-Data_human_unprocessed_pseudogene = Data_human[Data_human_unprocessed_pseudogene,]
-```
-
-```{r}
-Data_mouse_unprocessed_pseudogene = which(Data_mouse$transcriptBiotype == "unprocessed_pseudogene")
-Data_mouse_unprocessed_pseudogene = Data_mouse[Data_mouse_unprocessed_pseudogene,]
-```
-
-```{r}
-Data_human_IG_V_pseudogene = which(Data_human$transcriptBiotype == "IG_V_pseudogene")
-Data_human_IG_V_pseudogene = Data_human[Data_human_IG_V_pseudogene,]
-```
-
-```{r}
-Data_mouse_IG_V_pseudogene = which(Data_mouse$transcriptBiotype == "IG_V_pseudogene")
-Data_mouse_IG_V_pseudogene = Data_mouse[Data_mouse_IG_V_pseudogene,]
-```
-
-```{r}
-Data_human_IG_C_pseudogene = which(Data_human$transcriptBiotype == "IG_C_pseudogene")
-Data_human_IG_C_pseudogene = Data_human[Data_human_IG_C_pseudogene,]
-```
-
-```{r}
-Data_mouse_IG_C_pseudogene = which(Data_mouse$transcriptBiotype == "IG_C_pseudogene")
-Data_mouse_IG_C_pseudogene = Data_mouse[Data_mouse_IG_C_pseudogene,]
+which(Data_mouse$transcriptBiotype == "3prime_overlapping_ncRNA")
+Data_mouse_3prime_overlapping_ncRNA = which(Data_mouse$transcriptBiotype == "3prime_overlapping_ncRNA")
+Data_mouse_3prime_overlapping_ncRNA = Data_mouse[Data_mouse_3prime_overlapping_ncRNA,]
 ```

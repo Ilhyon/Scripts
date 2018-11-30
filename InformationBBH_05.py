@@ -106,7 +106,7 @@ def GetIDTypeSpecie(dicoTypeIdSpecies, specie1, specie2):
 			Specie2TranscriptID = dicoTypeIdSpecies[i]
 	return(Specie1GeneID, Specie1TranscriptID, Specie2GeneID, Specie2TranscriptID)
 #----------------------------------------------------------------------#
-def ImportIDGeneTranscriptProteins(filename):
+def GetIDGeneTranscriptProteins(filename):
 	""" Create a dictionary with for each gene we will have the transcript ID and
 	the protein ID, if there is no protein ID in ENSEMBL there will be a label "No protein"
 	Parameters
@@ -157,35 +157,6 @@ def ImportIDGeneTranscriptProteins(filename):
 						DicoGeneTranscriptProtein["Protein"][idProtein].append(idTranscrit)
 	return(DicoGeneTranscriptProtein)
 #----------------------------------------------------------------------#
-def AddGeneHomology(elem1, elem2, DicoHomologyLevel, homologyType):
-	""" Add to the dictionary of homology (DicoHomology) the relation of orthology,
-		if those relations are not in the dictionary or even if they are 
-		already in the dictionary, new information about the Gene/transcript are added
-	Parameters
-	    ----------
-	     elem1 : string, correspond to a gene of the specie 1
-	     elem2 : string, correspond to a gene of the specie 1 (for paralogy)
-				 or to a gene of the specie 2 (for orthology)
-	     DicoHomologyLevel : the subdictionary of DicoHomology with only 
-							the level of gene or transcript
-	     homologyType : string, can be "Paralogues" or "Orthologues"
-	    Returns
-	    -------
-	     DicoHomologyLevel[homologyType][elem1] : {homologyType: {elem1 : [elem2]}}
-	"""
-	if elem1 not in DicoHomologyLevel: # if the gene from the specie 1 is not
-		# in the dictionary, we add it and we create the list of homologs genes
-		DicoHomologyLevel[homologyType][elem1] = []
-		DicoHomologyLevel[homologyType][elem1].append(elem2) # add of the "first" homologue gene
-	elif elem1 in DicoHomologyLevel[homologyType] and elem2 not in DicoHomologyLevel[homologyType][elem1] :
-	 # the the gene from specie one is already in the dictionary but he 
-	 # got a new homologue gene 
-	 # (it is possible that the same pairs of gene homologue appear in the file, that's why this step is needed)
-		DicoHomologyLevel[homologyType][elem1].append(elem2)
-	else :
-		print "Patate 6 : problem"
-	return(DicoHomologyLevel[homologyType][elem1])
-#----------------------------------------------------------------------#
 def ImportHomology(filename, DicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies, specie1, specie2):
 	""" Create two dictonary that contain Homologie between the two specie,
 	one with the homology between genes of the two specie and the other one
@@ -204,14 +175,11 @@ def ImportHomology(filename, DicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies
 	DicoHomology = {"Gene" : {"Paralogues" : {}, "Orthologues" : {}}, "Transcript" : {"Paralogues" : {}, "Orthologues" : {}}}
 
 	Specie1GeneID, Specie1TranscriptID, Specie2GeneID, Specie2TranscriptID = GetIDTypeSpecie(dicoTypeIdSpecies, specie1, specie2)
-	
-	cpt = 0
-	
+			
 	with open(filename) as f: # file opening
 		content = f.read()
 		lines = content.split('\n')
 		for l in lines: #parcour de toute les lignes
-			cpt += 1
 			if l :
 				words=l.split('\t')
 				GeneSpecie1 = words[0] # gene of the specie 1
@@ -221,26 +189,39 @@ def ImportHomology(filename, DicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies
 				GeneSpecie2 = words[4] # orthologue gene from the specie 2
 				TranscriptSpecie2 = words[5] # orthologue transcript from the specie 2
 				
-				DicoHomology["Gene"]["Orthologues"][GeneSpecie1] = AddGeneHomology(GeneSpecie1, GeneSpecie2, DicoHomology["Gene"], "Orthologues")
-				DicoHomology["Gene"]["Paralogues"][GeneSpecie1] = AddGeneHomology(GeneSpecie1, GeneSpecie1Paralogue, DicoHomology["Gene"], "Paralogues")
+				if GeneSpecie1 not in DicoHomology["Gene"]["Orthologues"]: # if the gene from the specie 1 is not
+					# in the dictionary, we add it and we create the list of homologs genes
+					DicoHomology["Gene"]["Orthologues"][GeneSpecie1] = []
+					DicoHomology["Gene"]["Orthologues"][GeneSpecie1].append(GeneSpecie2) # add of the "first" homologue gene
+				elif GeneSpecie1 in DicoHomology["Gene"]["Orthologues"] and GeneSpecie2 not in DicoHomology["Gene"]["Orthologues"][GeneSpecie1] :
+				 # the the gene from specie one is already in the dictionary but he 
+				 # got a new homologue gene 
+				 # (it is possible that the same pairs of homologue appear in the file, that's why this step is needed)
+					DicoHomology["Gene"]["Orthologues"][GeneSpecie1].append(GeneSpecie2)
 				
 				# same but for transcript
-				if GeneSpecie2 and TranscriptSpecie2 : # we verify if there is some orthologues
-					if re.search(Specie2TranscriptID, TranscriptSpecie2): # first we need to verify
-						DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscriptSpecie2, DicoHomology["Transcript"], "Orthologues")
-						DicoHomology["Transcript"]["Paralogues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscriptSpecie1Paralogue, DicoHomology["Transcript"], "Paralogues")
-					else: # the id is the id of a protein
-						if TranscriptSpecie2 in DicoGeneTranscriptProteinSpecie2["Protein"] :
-							# if the prot id is in the dico GTP so get the id of the transcript
-							TranscFromProtSpecie2 = DicoGeneTranscriptProteinSpecie2["Protein"][TranscriptSpecie2][0]
-							DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscFromProtSpecie2, DicoHomology["Transcript"], "Orthologues")
-				if GeneSpecie1Paralogue and TranscriptSpecie1Paralogue : # we verify if there is some paralogues
-					if not re.search(Specie1TranscriptID, TranscriptSpecie1Paralogue):
-						#if the transcript for the paralogy is a protein, we change it
-						if TranscriptSpecie1Paralogue in DicoGeneTranscriptProteinSpecie2["Protein"] :
-							TranscFromProtSpecie1 = DicoGeneTranscriptProteinSpecie2["Protein"][TranscriptSpecie1Paralogue][0]
-							DicoHomology["Transcript"]["Paralogues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscFromProtSpecie1, DicoHomology["Transcript"], "Paralogues")
-			PrintCounter(cpt, len(lines))
+				if re.search(Specie2TranscriptID, TranscriptSpecie2): # first we need to verify
+					# if the homology is with a transcrit or a protein
+					if TranscriptSpecie1 not in DicoHomology["Transcript"]["Orthologues"] :
+						DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = [TranscriptSpecie2]
+					elif GeneSpecie1 in DicoHomology["Transcript"]["Orthologues"] and TranscriptSpecie2 not in DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] : 
+						DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1].append(TranscriptSpecie2)
+				else: # the id is the id of a protein
+					if TranscriptSpecie2 in DicoGeneTranscriptProteinSpecie2["Protein"] :
+						# if the prot id is in the dico GTP so get the id of the transcript
+						TranscFromProtSpecie2 = DicoGeneTranscriptProteinSpecie2["Protein"][TranscriptSpecie2][0]
+						if TranscriptSpecie1 not in DicoHomology["Transcript"]["Orthologues"] : 
+							# if the transcript is not alreayd in the dictionary 
+							# we add it with the first homologue encounter
+							DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = [TranscFromProtSpecie2]
+						elif GeneSpecie1 in DicoHomology["Transcript"]["Orthologues"] and TranscFromProtSpecie2 not in DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] :
+							# the transcript from the specie 1 is in the dico 
+							# but we found an other homologue from the specie 2
+							# so we add the last one to the liisst of homologue
+							DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1].append(TranscFromProtSpecie2)
+					#~ else : # the prot id is not in the dico GTP, that's not normal
+					# bad anotation we don't keep them 
+
 	return(DicoHomology)
 #----------------------------------------------------------------------#
 def importInfoG4Transcript(filenameG4InTranscript):
@@ -349,20 +330,22 @@ def importInfoG4(filenameG4InTranscript, DicoGTP):
 	
 	return(DicoInfoG4)
 #----------------------------------------------------------------------#
-def AddInformationsOrthology(DicoInfoBBHLevel, idG4Sp1, idG4Sp2, coupleHomologue, commonLocalisations, commonBiotypes, typeInfo):
+def AddingInformations(DicoInfoBBHLevel, idG4Sp1, idG4Sp2, coupleHomologue, commonLocalisations, commonBiotypes):
 	""" Adds the informations to the final dictionary containing All infromation about the BBH
 		Parameters
 	    ----------
 	    DicoInfoBBHLevel :
 		idG4Sp1 : string, id of a G4 from the specie 1 which is a BBH with BBHsp2
 	    idG4Sp2 : string, id of a G4 from the specie 2 which is a BBH with BBHsp1
-		coupleHomologue : string, id of the couple like geneSp1|geneSp2 or transcriptSp1|transcriptSp2
+		coupleHomologue : 
 		
 	    Returns
 	    -------
-	    DicoInfoBBHLevel : {idBBH : {"Orthology" : {coupleHomologue : {"Common Localisations" : [commonLocalisations]
-																	   "Common Biotypes" : commonBiotypes}}}}
+	    DicoInfoBBHLevel : {idBBH : {coupleHomologue : {"Common Localisations" : [commonLocalisations]
+														"Common Biotypes" : commonBiotypes}}}
+							Yet, the coupleHomologue must be equal to "No homologues"
 	"""
+	idBBH = str(idG4Sp1+"|"+idG4Sp2) # creation of the id of the couple of BBH
 	if idBBH not in DicoInfoBBHLevel :
 		# First time the couple of BBH is encounter
 		# so we create all information relative to it 
@@ -378,33 +361,14 @@ def AddInformationsOrthology(DicoInfoBBHLevel, idG4Sp1, idG4Sp2, coupleHomologue
 		DicoInfoBBHLevel[idBBH][coupleHomologue]["Common Biotypes"] = commonBiotypes
 	elif idBBH in DicoInfoBBHLevel and coupleHomologue in DicoInfoBBHLevel[idBBH] :
 		# the couple of BBH is already in the dictionary and also the couple of homologue
-		# yet we still have a chance to get some new informations so we need to check it
+		# yet we still have a chance to get some new informations so we 
+		# need to check it
 		if list(set(DicoInfoBBHLevel[idBBH]["Common Localisations"]) ^ set(commonLocalisations)) :
 			# if there is new localisations we add them
 			DicoInfoBBHLevel[idBBH][coupleHomologue]["Common Localisations"].append(list(set(DicoInfoBBHLevel[idBBH]["Common Localisations"]) ^ set(commonLocalisations)))
 		if list(set(DicoInfoBBHLevel[idBBH]["Common Biotypes"]) ^ set(commonBiotypes)) :
 			# if there is new biotypes we add them
 			DicoInfoBBHLevel[idBBH][coupleHomologue]["Common Biotypes"].append(commonBiotypes)
-	return(DicoInfoBBHLevel)
-#----------------------------------------------------------------------#
-def AddingInformations(DicoInfoBBHLevel, idG4Sp1, idG4Sp2, coupleHomologue, commonLocalisations, commonBiotypes, typeInfo):
-	""" Adds the informations to the final dictionary containing All infromation about the BBH
-		Parameters
-	    ----------
-	    DicoInfoBBHLevel :
-		idG4Sp1 : string, id of a G4 from the specie 1 which is a BBH with BBHsp2
-	    idG4Sp2 : string, id of a G4 from the specie 2 which is a BBH with BBHsp1
-		coupleHomologue : 
-		
-	    Returns
-	    -------
-	    DicoInfoBBHLevel : {idBBH : {coupleHomologue : {"Common Localisations" : [commonLocalisations]
-														"Common Biotypes" : commonBiotypes}}}
-	"""
-	idBBH = str(idG4Sp1+"|"+idG4Sp2) # creation of the id of the couple of BBH
-	
-	if typeInfo == "Orthology" :
-		DicoInfoBBHLevel = AddInformationsOrthology(DicoInfoBBHLevel, idG4Sp1, idG4Sp2, coupleHomologue, commonLocalisations, commonBiotypes, typeInfo)
 	return(DicoInfoBBHLevel)
 #----------------------------------------------------------------------#
 def GetCommonInformation(localisationsSp1, localisationsSp2, biotypesSp1, biotypesSp2):
@@ -454,51 +418,6 @@ def GetLocalisationsAndBiotype(element1, element2, Dico):
 		print "Patate 5"
 	return(localisations, biotypes)
 #----------------------------------------------------------------------#
-def GetInfoNoOrthology(levelSp1, nonHomologueslevelSp2, idG4Sp2, idG4Sp2, DicoInfoG4Sp1Level, DicoInfoG4Sp2Level, DicoInfoBBHLevel):
-	""" Here we test many conditions (with or without homology), then we 
-		retrieve the informations relative to them
-		Parameters
-	    ----------
-	    nonHomologueslevelSp2 : list of string, list of the gene that are not orthologs to the gene of 
-								the specie 1 where there is the G4 BBH we are looking at for
-		levelSp1 : string, transcript/gene from the specie 1
-		levelsSp2 : list of string, list of transcript/gene from the specie 2
-	    idG4Sp1 : string, id of a G4 from the specie 1 which is a BBH with BBHsp2
-	    idG4Sp2 : string, id of a G4 from the specie 2 which is a BBH with BBHsp1
-		DicoHomologyLevel : {idGeneSpecie1 : [idGeneSpecie2]}
-		DicoInfoG4Sp1Level : {idTranscript : {idG4 : {"Localisation" : [localisation]
-													  "Biotype" : [Biotype]}}}
-		DicoInfoG4Sp2Level : {idTranscript : {idG4 : {"Localisation" : [localisation]
-													  "Biotype" : [Biotype]}}}
-		DicoInfoG4 : empty dictionnary for the part of gene level, se FindInfoHomology
-		level : string, to choose if we want the gene level or the transcript level
-		
-	    Returns
-	    -------
-	    DicoInfoBBHLevel : {idBBH : {coupleNoOrth : {"Common Localisations" : [commonLocalisations]
-													 "Common Biotypes" : commonBiotypes}}}
-	"""
-	commonLevelSp2 = []
-	commonLocalisationsNoOrth = []
-	commonBiotypesNoOrth[]
-	for levelSp2 in nonHomologueslevelSp2 : 
-		# retrivial of the localisations and biotype of the two specie
-		# from the gene/transcript that are homologues
-		localisationsSp1WithoutH, biotypesSp1WithoutH = GetLocalisationsAndBiotype(idG4Sp1, levelSp1, DicoInfoG4Sp1Level)
-		localisationsSp2WithoutH, biotypesSp2WithoutH = GetLocalisationsAndBiotype(idG4Sp2, levelSp2, DicoInfoG4Sp2Level)
-		commonLocalisationsWithoutH, commonBiotypesWithoutH = GetCommonInformation(localisationsSp1WithoutH, localisationsSp1WithoutH, biotypesSp1WithoutH, biotypesSp1WithoutH)
-		if commonLocalisationsWithoutH or commonBiotypesWithoutH :
-			commonLevelSp2.append(levelSp2)
-			commonLocalisationsNoOrth.append(commonLocalisationsWithoutH)
-			commonBiotypesNoOrth.append(commonBiotypesWithoutH)
-			#~ dico[newkey] = dico.pop(coupleNoOrth[levelSp1])
-	commonLocalisationsNoOrth = list(set(commonLocalisationsNoOrth))
-	commonBiotypesNoOrth =  list(set(commonBiotypesNoOrth))
-	#~ coupleNoOrth = {levelSp1 : commonLevelSp2}
-	coupleNoOrth = "No homology"
-	DicoInfoBBHLevel = AddingInformations(DicoInfoBBHLevel, idG4Sp1, idG4Sp2, coupleNoOrth, commonLocalisationsNoOrth, commonBiotypesNoOrth, "No orthology")
-	return(DicoInfoBBHLevel)
-#----------------------------------------------------------------------#
 def GetInfoHomology(HlevelSp1, levelSp1, levelsSp2, idG4Sp2, idG4Sp2, DicoInfoG4Sp1Level, DicoInfoG4Sp2Level, DicoInfoBBHLevel):
 	""" Here we test many conditions (with or without homology), then we 
 		retrieve the informations relative to them
@@ -522,9 +441,10 @@ def GetInfoHomology(HlevelSp1, levelSp1, levelsSp2, idG4Sp2, idG4Sp2, DicoInfoG4
 	    -------
 	    DicoInfoBBHLevel : {idBBH : {coupleHomologue : {"Common Localisations" : [commonLocalisations]
 														"Common Biotypes" : commonBiotypes}}}
+							Yet, the coupleHomologue must be equal to "No homologues"
 	"""
 	if list(set(HlevelSp1).intersection(levelsSp2)) :
-		# if there an intersection between the homologues of the gene/transcript of specie 1
+		# if there an intersection between the homologues of the gene of specie 1
 		# and with the levelS of the specie 2 where the G4 is
 		
 		for levelSp2 in list(set(HlevelSp1).intersection(levelsSp2)) :
@@ -533,22 +453,33 @@ def GetInfoHomology(HlevelSp1, levelSp1, levelsSp2, idG4Sp2, idG4Sp2, DicoInfoG4
 			localisationsSp1WithH, biotypesSp1WithH = GetLocalisationsAndBiotype(idG4Sp1, levelSp1, DicoInfoG4Sp1Level)
 			localisationsSp2WithH, biotypesSp2WithH = GetLocalisationsAndBiotype(idG4Sp2, levelSp2, DicoInfoG4Sp2Level)
 			commonLocalisationsWithH, commonBiotypesWithH = GetCommonInformation(localisationsSp1WithH, localisationsSp2WithH, biotypesSp1WithH, biotypesSp2WithH)
-			coupleOrthologue = str(levelSp1+"|"+levelSp2)
-			DicoInfoBBHLevel = AddingInformations(DicoInfoBBHLevel, idG4Sp1, idG4Sp2, coupleOrthologue, commonLocalisationsWithH, commonBiotypesWithH, "Orthology")
+			coupleHomologue = str(levelSp1+"|"+levelSp2)
+			DicoInfoBBHLevel = AddingInformations(DicoInfoBBHLevel, idG4Sp1, idG4Sp2, coupleHomologue, commonLocalisationsWithH, commonBiotypesWithH)
 			
-		nonHomologueslevelSp2 = list(set(HlevelSp1) ^ set(levelsSp2))
-		if nonHomologueslevelSp2 : 
+		nonHomologueslevelSp2 = list(set(HlevelSp1) ^ set(levelsSp2)) 
 		# retrivial of the list of G4 that are not homologues (unique in the two lists)
-			DicoInfoBBHLevel = GetInfoNoOrthology(levelSp1, nonHomologueslevelSp2, idG4Sp2, idG4Sp2, DicoInfoG4Sp1Level, DicoInfoG4Sp2Level, DicoInfoBBHLevel)
+		for levelSp2 in nonHomologueslevelSp2 : 
+			# retrivial of the localisations and biotype of the two specie
+			# from the gene/transcript that are homologues
+			localisationsSp1WithoutH, biotypesSp1WithoutH = GetLocalisationsAndBiotype(idG4Sp1, levelSp1, DicoInfoG4Sp1Level)
+			localisationsSp2WithoutH, biotypesSp2WithoutH = GetLocalisationsAndBiotype(idG4Sp2, levelSp2, DicoInfoG4Sp2Level)
+			commonLocalisationsWithoutH, commonBiotypesWithoutH = GetCommonInformation(localisationsSp1WithoutH, localisationsSp1WithoutH, biotypesSp1WithoutH, biotypesSp1WithoutH)
+			coupleHomologue = "No Homology"
+			DicoInfoBBHLevel = AddingInformations(DicoInfoBBHLevel, idG4Sp1, idG4Sp2, coupleHomologue, commonLocalisationsWithoutH, commonBiotypesWithoutH)
 			
 	else :
-		# there is no element in comon => no orthologues between the gene/transcript
+		# there is no element in comon => no homologues between the gene/transcript
 		# where the G4 BBH are
-		DicoInfoBBHLevel = GetInfoNoOrthology(levelSp1, levelsSp2, idG4Sp2, idG4Sp2, DicoInfoG4Sp1Level, DicoInfoG4Sp2Level, DicoInfoBBHLevel)
+		for levelSp2 in levelsSp2 :
+			localisationsSp1WithoutH, biotypesSp1WithoutH = GetLocalisationsAndBiotype(idG4Sp1, levelSp1, DicoInfoG4Sp1Level)
+			localisationsSp2WithoutH, biotypesSp2WithoutH = GetLocalisationsAndBiotype(idG4Sp2, levelSp2, DicoInfoG4Sp2Level)
+			commonLocalisationsWithoutH, commonBiotypesWithoutH = GetCommonInformation(localisationsSp1WithoutH, localisationsSp1WithoutH, biotypesSp1WithoutH, biotypesSp1WithoutH)
+			coupleHomologue = "No Homology"
+			DicoInfoBBHLevel = AddingInformations(DicoInfoBBHLevel, idG4Sp1, idG4Sp2, coupleHomologue, commonLocalisationsWithoutH, commonBiotypesWithoutH)
 return(DicoInfoBBHLevel)
 #----------------------------------------------------------------------#
 def GetDicoInfoBBH(idG4Sp1, idG4Sp2, DicoHomologyLevel, DicoInfoG4Sp1Level, DicoInfoG4Sp2Level, DicoInfoBBHLevel, level)
-	""" Create a dictonary for each G4 with his localisation and biotype,
+	""" Create a dictonary for each G4 with his localisation and biotype
 		the informations that are retrieve depend on the level transcript/gene
 		Parameters
 	    ----------
@@ -568,34 +499,25 @@ def GetDicoInfoBBH(idG4Sp1, idG4Sp2, DicoHomologyLevel, DicoInfoG4Sp1Level, Dico
 														"Common Biotypes" : commonBiotypes}}}
 							Yet, the coupleHomologue must be equal to "No homologues"
 	"""
-	# first we retrieve the dico of informations from a level (transcript/gene)
+	# first we get the dico of informations from a level (transcript/gene)
 	# where the G4 of each specie is
-	if idG4Sp1 in DicoInfoG4Sp1Level : # retrievial of informations for the specie 1
+	if idG4Sp1 in DicoInfoG4Sp1Level :
 		levelsSp1 =  DicoInfoG4Sp1Level[idG4Sp1]
 	else :
-		print "Patate 2 : G4 from specie 1 doesn't exist in the dictionary of G4"
-		
-	if idG4Sp2 in DicoInfoG4Sp2Level : # retrievial of informations for the specie 2
+		print "Patate 2"
+	if idG4Sp2 in DicoInfoG4Sp2Level :
 		levelsSp2 =  DicoInfoG4Sp2Level[idG4Sp2]
 	else :
-		print "Patate 3 : G4 from specie 2 doesn't exist in the dictionary of G4"
+		print "Patate 3"
 			
-	# Then we browse all genes where the G4 from the specie 1 is to get
-	# all the informations we want (Paralogy  Sp1/Sp2, Orthology or not)
+	# Then we get common information with homology or without homology
 	for levelSp1 in levelsSp1 : # browse all genes where the G4 from the specie 1 is
-		DicoOrthologyLevel = DicoHomologyLevel["Orthologues"][level]
-		DicoParalogyLevel = DicoHomologyLevel["Paralogues"][level]
+		if levelSp1 in DicoHomologyLevel : # if this gene have some homologues
+			HlevelSp1 = DicoHomologyLevel[levelSp1]
+		else : # there is no homologues for this gene
+			HlevelSp1 = []
 		
-		# Orthology
-		if levelSp1 in DicoOrthologyLevel : # if this gene have some orthologues
-			OrtLevelSp1 = DicoOrthologyLevel[levelSp1] # retrevial of the 
-			# gene/transcript from the specie 2 that are orthologues to levelSp1
-		else : # there is no orthologues for this gene
-			OrtLevelSp1 = []
-		DicoInfoBBHLevel = GetInfoHomology(OrtLevelSp1, levelSp1, levelsSp2, idG4Sp2, idG4Sp2, DicoInfoG4Sp1Level, DicoInfoG4Sp2Level, DicoInfoBBHLevel)
-		
-		#Paralogy 
-		
+		DicoInfoBBHLevel = GetInfoHomology(HlevelSp1, levelSp1, levelsSp2, idG4Sp2, idG4Sp2, DicoInfoG4Sp1Level, DicoInfoG4Sp2Level, DicoInfoBBHLevel)
 	return(DicoInfoBBHLevel)
 #----------------------------------------------------------------------#
 def GetDicoInfo(dicoBBH, DicoHomology, DicoInfoG4Sp1, DicoInfoG4Sp2, DicoInfoBBHLevel, level):
@@ -681,9 +603,9 @@ def importData(path, specie1, specie2, dicoTypeIdSpecies):
 	
 	#~ dicoBBH = ImportBBH(filenameBBH)
 	# ~ print "Import of BBH -> Done"
-	#~ dicoGeneTranscriptProteinSpecie1 = ImportIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
+	#~ dicoGeneTranscriptProteinSpecie1 = GetIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
 	# ~ print "Import of GTP from specie 1 -> Done"
-	#~ dicoGeneTranscriptProteinSpecie2 = ImportIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
+	#~ dicoGeneTranscriptProteinSpecie2 = GetIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
 	# ~ print "Import of GTP from specie 2 -> Done"
 	#~ dicoHomology = ImportHomology(filenameHomology, dicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies, specie1, specie2)
 	# ~ print "Import of Homology -> Done"

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-:v
 
 import re
+from pprint import pprint
 
 #----------------------------------------------------------------------#
 def ImportBBH(filename):
@@ -73,7 +74,6 @@ def ImportIDGeneTranscriptProteins(filename):
 		for l in lines: #parcour de toute les lignes
 			if l : 
 				words=l.split('\t')
-				#~ print l
 				idGene = words[0]
 				idTranscrit = words[1]
 				if words[2] : # there is a protein id 
@@ -106,6 +106,14 @@ def ImportIDGeneTranscriptProteins(filename):
 						DicoGeneTranscriptProtein["Protein"][idProtein].append(idTranscrit)
 	return(DicoGeneTranscriptProtein)
 #----------------------------------------------------------------------#
+def GetElement(words, numberElem):
+	#~ print len(words), numberElem
+	if len(words)-1 >= numberElem :
+		element = words[numberElem]
+	else :
+		element = ""
+	return(element)
+#----------------------------------------------------------------------#
 def InitialisationHomology(line, currentSp):
 	""" Get the different element that we have in the file, it depend on
 		which specie is the file
@@ -125,21 +133,21 @@ def InitialisationHomology(line, currentSp):
 	     TranscriptSpecie2 : string, orthologue transcript from the specie 2
 	"""
 	words=line.split('\t')
-	is currentSp == "Sp1" :
-		GeneSpecie1 = words[0] # gene of the specie 1
-		TranscriptSpecie1 = words[1] # transcript/protein of the specie 1
-		GeneSpecie1Paralogue = words[2] # gene id of a paralogue of GeneSpecie1
-		TranscriptSpecie1Paralogue = words[3] # transcript id of a paralogue of TranscriptSpecie1
-		GeneSpecie2 = words[4] # orthologue gene from the specie 2
-		TranscriptSpecie2 = words[5] # orthologue transcript from the specie 2
+	if currentSp == "Sp1" :
+		GeneSpecie1 = GetElement(words, 0) # gene of the specie 1
+		TranscriptSpecie1 = GetElement(words, 1) # transcript/protein of the specie 1
+		GeneSpecie1Paralogue = GetElement(words, 2) # gene id of a paralogue of GeneSpecie1
+		TranscriptSpecie1Paralogue = GetElement(words, 3) # transcript id of a paralogue of TranscriptSpecie1
+		GeneSpecie2 = GetElement(words, 4) # orthologue gene from the specie 2
+		TranscriptSpecie2 = GetElement(words, 5) # orthologue transcript from the specie 2
 		return(GeneSpecie1, TranscriptSpecie1, GeneSpecie1Paralogue, TranscriptSpecie1Paralogue, GeneSpecie2, TranscriptSpecie2)
 	else:
-		GeneSpecie1 = words[4] # gene of the specie 1
-		TranscriptSpecie1 = words[5] # transcript/protein of the specie 1
-		GeneSpecie2Paralogue = words[2] # gene id of a paralogue of GeneSpecie2
-		TranscriptSpecie2Paralogue = words[3] # transcript id of a paralogue of TranscriptSpecie2
-		GeneSpecie2 = words[0] # orthologue gene from the specie 2
-		TranscriptSpecie2 = words[1] # orthologue transcript from the specie 2
+		GeneSpecie1 = GetElement(words, 4) # gene of the specie 1
+		TranscriptSpecie1 = GetElement(words, 5) # transcript/protein of the specie 1
+		GeneSpecie2Paralogue = GetElement(words, 2) # gene id of a paralogue of GeneSpecie2
+		TranscriptSpecie2Paralogue = GetElement(words, 3) # transcript id of a paralogue of TranscriptSpecie2
+		GeneSpecie2 = GetElement(words, 0) # orthologue gene from the specie 2
+		TranscriptSpecie2 = GetElement(words, 1) # orthologue transcript from the specie 2
 		return(GeneSpecie1, TranscriptSpecie1, GeneSpecie2Paralogue, TranscriptSpecie2Paralogue, GeneSpecie2, TranscriptSpecie2)
 #----------------------------------------------------------------------#
 def MajOrthology(GeneSpecie1, TranscriptSpecie1, GeneSpecie2, TranscriptSpecie2, DicoHomology):
@@ -212,7 +220,7 @@ def AddGeneHomology(elem1, elem2, DicoHomologyLevel, homologyType):
 		print "Patate 6 : problem"
 	return(DicoHomologyLevel[homologyType][elem1])
 #----------------------------------------------------------------------#
-def ImportHomologySp1(l, currentSp, DicoHomology):
+def ImportHomologySp1(l, currentSp, DicoHomology, dicoTypeIdSpecies, specie1, specie2):
 	""" We fill the DicoHomology with the information from the file of the specie 1
 	Parameters
 	    ----------
@@ -228,30 +236,32 @@ def ImportHomologySp1(l, currentSp, DicoHomology):
 	    -------
 	     DicoHomology : like in the parameters but with new informations
 	"""
-		GeneSpecie1, TranscriptSpecie1, GeneSpecie1Paralogue, TranscriptSpecie1Paralogue, GeneSpecie2, TranscriptSpecie2 = InitialisationHomology(l, currentSp)
-		
-		DicoHomology["Gene"]["Orthologues"][GeneSpecie1] = AddGeneHomology(GeneSpecie1, GeneSpecie2, DicoHomology["Gene"], "Orthologues")
-		DicoHomology["Gene"]["Paralogues Sp1"][GeneSpecie1] = AddGeneHomology(GeneSpecie1, GeneSpecie1Paralogue, DicoHomology["Gene"], "Paralogues Sp1")
+	Specie1GeneID, Specie1TranscriptID, Specie2GeneID, Specie2TranscriptID = GetIDTypeSpecie(dicoTypeIdSpecies, specie1, specie2)
 	
-		# same but for transcript
-		if GeneSpecie2 and TranscriptSpecie2 : # we verify if there is some orthologues
-			if re.search(Specie2TranscriptID, TranscriptSpecie2): # first we need to verify
-				DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscriptSpecie2, DicoHomology["Transcript"], "Orthologues")
-				DicoHomology["Transcript"]["Paralogues Sp1"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscriptSpecie1Paralogue, DicoHomology["Transcript"], "Paralogues Sp1")
-			else: # the id is the id of a protein
-				if TranscriptSpecie2 in DicoGeneTranscriptProteinSpecie2["Protein"] :
-					# if the prot id is in the dico GTP so get the id of the transcript
-					TranscFromProtSpecie2 = DicoGeneTranscriptProteinSpecie2["Protein"][TranscriptSpecie2][0]
-					DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscFromProtSpecie2, DicoHomology["Transcript"], "Orthologues")
-		if GeneSpecie1Paralogue and TranscriptSpecie1Paralogue : # we verify if there is some paralogues
-			if not re.search(Specie1TranscriptID, TranscriptSpecie1Paralogue):
-				#if the transcript for the paralogy is a protein, we change it
-				if TranscriptSpecie1Paralogue in DicoGeneTranscriptProteinSpecie2["Protein"] :
-					TranscFromProtSpecie1 = DicoGeneTranscriptProteinSpecie2["Protein"][TranscriptSpecie1Paralogue][0]
-					DicoHomology["Transcript"]["Paralogues Sp1"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscFromProtSpecie1, DicoHomology["Transcript"], "Paralogues Sp1")
+	GeneSpecie1, TranscriptSpecie1, GeneSpecie1Paralogue, TranscriptSpecie1Paralogue, GeneSpecie2, TranscriptSpecie2 = InitialisationHomology(l, currentSp)
+	
+	DicoHomology["Gene"]["Orthologues"][GeneSpecie1] = AddGeneHomology(GeneSpecie1, GeneSpecie2, DicoHomology["Gene"], "Orthologues")
+	DicoHomology["Gene"]["Paralogues Sp1"][GeneSpecie1] = AddGeneHomology(GeneSpecie1, GeneSpecie1Paralogue, DicoHomology["Gene"], "Paralogues Sp1")
+
+	# same but for transcript
+	if GeneSpecie2 and TranscriptSpecie2 : # we verify if there is some orthologues
+		if re.search(Specie2TranscriptID, TranscriptSpecie2): # first we need to verify
+			DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscriptSpecie2, DicoHomology["Transcript"], "Orthologues")
+			DicoHomology["Transcript"]["Paralogues Sp1"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscriptSpecie1Paralogue, DicoHomology["Transcript"], "Paralogues Sp1")
+		else: # the id is the id of a protein
+			if TranscriptSpecie2 in DicoGeneTranscriptProteinSpecie2["Protein"] :
+				# if the prot id is in the dico GTP so get the id of the transcript
+				TranscFromProtSpecie2 = DicoGeneTranscriptProteinSpecie2["Protein"][TranscriptSpecie2][0]
+				DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscFromProtSpecie2, DicoHomology["Transcript"], "Orthologues")
+	if GeneSpecie1Paralogue and TranscriptSpecie1Paralogue : # we verify if there is some paralogues
+		if re.search(Specie1TranscriptID, TranscriptSpecie1Paralogue):
+			#if the transcript for the paralogy is a protein, we change it
+			if TranscriptSpecie1Paralogue in DicoGeneTranscriptProteinSpecie2["Protein"] :
+				TranscFromProtSpecie1 = DicoGeneTranscriptProteinSpecie2["Protein"][TranscriptSpecie1Paralogue][0]
+				DicoHomology["Transcript"]["Paralogues Sp1"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscFromProtSpecie1, DicoHomology["Transcript"], "Paralogues Sp1")
 	return(DicoHomology)
 #----------------------------------------------------------------------#
-def ImportHomologySp2(l, currentSp, DicoHomology):
+def ImportHomologySp2(l, currentSp, DicoHomology, dicoTypeIdSpecies, specie1, specie2, dicoGTP):
 	""" When the DicoHomology is already created and fill with the information 
 		of the specie 1, we check if there is some update with the file of the specie 2
 	Parameters
@@ -268,32 +278,33 @@ def ImportHomologySp2(l, currentSp, DicoHomology):
 	    -------
 	     DicoHomology : like in the parameters but with new informations
 	"""
+	Specie1GeneID, Specie1TranscriptID, Specie2GeneID, Specie2TranscriptID = GetIDTypeSpecie(dicoTypeIdSpecies, specie1, specie2)
 	
-		GeneSpecie1, TranscriptSpecie1, GeneSpecie2Paralogue, TranscriptSpecie2Paralogue, GeneSpecie2, TranscriptSpecie2 = InitialisationHomology(l, currentSp)
-		
-		DicoHomology["Gene"]["Paralogues Sp2"][GeneSpecie1] = AddGeneHomology(GeneSpecie1, GeneSpecie1Paralogue, DicoHomology["Gene"], "Paralogues Sp2")
-		
-		DicoHomology.update(MajOrthology(GeneSpecie1, TranscriptSpecie1, GeneSpecie2, TranscriptSpecie2, DicoHomology))
-		
-		# same but for transcript
-		if GeneSpecie2 and TranscriptSpecie2 : # we verify if there is some orthologues
-			if re.search(Specie2TranscriptID, TranscriptSpecie2): # first we need to verify
-				DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscriptSpecie2, DicoHomology["Transcript"], "Orthologues")
-				DicoHomology["Transcript"]["Paralogues Sp2"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscriptSpecie1Paralogue, DicoHomology["Transcript"], "Paralogues Sp2")
-			else: # the id is the id of a protein
-				if TranscriptSpecie2 in DicoGeneTranscriptProteinSpecie2["Protein"] :
-					# if the prot id is in the dico GTP so get the id of the transcript
-					TranscFromProtSpecie2 = DicoGeneTranscriptProteinSpecie2["Protein"][TranscriptSpecie2][0]
-					DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscFromProtSpecie2, DicoHomology["Transcript"], "Orthologues")
-		if GeneSpecie1Paralogue and TranscriptSpecie1Paralogue : # we verify if there is some paralogues
-			if not re.search(Specie1TranscriptID, TranscriptSpecie1Paralogue):
-				#if the transcript for the paralogy is a protein, we change it
-				if TranscriptSpecie1Paralogue in DicoGeneTranscriptProteinSpecie2["Protein"] :
-					TranscFromProtSpecie1 = DicoGeneTranscriptProteinSpecie2["Protein"][TranscriptSpecie1Paralogue][0]
-					DicoHomology["Transcript"]["Paralogues Sp2"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscFromProtSpecie1, DicoHomology["Transcript"], "Paralogues Sp2")
+	GeneSpecie1, TranscriptSpecie1, GeneSpecie2Paralogue, TranscriptSpecie2Paralogue, GeneSpecie2, TranscriptSpecie2 = InitialisationHomology(l, currentSp)
+	
+	DicoHomology["Gene"]["Paralogues Sp2"][GeneSpecie1] = AddGeneHomology(GeneSpecie1, GeneSpecie2Paralogue, DicoHomology["Gene"], "Paralogues Sp2")
+	
+	DicoHomology.update(MajOrthology(GeneSpecie1, TranscriptSpecie1, GeneSpecie2, TranscriptSpecie2, DicoHomology))
+	
+	# same but for transcript
+	if GeneSpecie2 and TranscriptSpecie2 : # we verify if there is some orthologues
+		if re.search(Specie2TranscriptID, TranscriptSpecie2): # first we need to verify
+			DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscriptSpecie2, DicoHomology["Transcript"], "Orthologues")
+			DicoHomology["Transcript"]["Paralogues Sp2"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscriptSpecie2Paralogue, DicoHomology["Transcript"], "Paralogues Sp2")
+		else: # the id is the id of a protein
+			if TranscriptSpecie2 in dicoGTP["Protein"] :
+				# if the prot id is in the dico GTP so get the id of the transcript
+				TranscFromProtSpecie2 = dicoGTP["Protein"][TranscriptSpecie2][0]
+				DicoHomology["Transcript"]["Orthologues"][TranscriptSpecie1] = AddGeneHomology(TranscriptSpecie1, TranscFromProtSpecie2, DicoHomology["Transcript"], "Orthologues")
+	if GeneSpecie2Paralogue and TranscriptSpecie2Paralogue : # we verify if there is some paralogues
+		if not re.search(Specie1TranscriptID, TranscriptSpecie2Paralogue):
+			#if the transcript for the paralogy is a protein, we change it
+			if TranscriptSpecie2Paralogue in dicoGTP["Protein"] :
+				TranscFromProtSpecie2 = dicoGTP["Protein"][TranscriptSpecie2Paralogue][0]
+				DicoHomology["Transcript"]["Paralogues Sp2"][TranscriptSpecie2] = AddGeneHomology(TranscriptSpecie2, TranscFromProtSpecie2, DicoHomology["Transcript"], "Paralogues Sp2")
 	return(DicoHomology)
 #----------------------------------------------------------------------#
-def ImportHomology(filename, DicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies, specie1, specie2, currentSp):
+def ImportHomology(filename, DicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies, specie1, specie2, currentSp, DicoHomology):
 	""" Create two dictonary that contain Homologie between the two specie,
 	one with the homology between genes of the two specie and the other one
 	between the transcripts of the two specie
@@ -308,9 +319,17 @@ def ImportHomology(filename, DicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies
 						"Transcript" : {"Paralogues" : {idTranscririptSpecie1 : [idTranscriptSpecie1]}
 										"Orthologues" : {idTranscririptSpecie1 : [idTranscriptSpecie2]}}
 	"""
-	DicoHomology = {"Gene" : {"Paralogues Sp1" : {}, "Paralogues Sp2" : {}, "Orthologues" : {}}, "Transcript" : {"Paralogues Sp1" : {}, "Paralogues Sp2" : {}, "Orthologues" : {}}}
-
-	Specie1GeneID, Specie1TranscriptID, Specie2GeneID, Specie2TranscriptID = GetIDTypeSpecie(dicoTypeIdSpecies, specie1, specie2)
+	bool10 = False
+	bool20 = False
+	bool30 = False
+	bool40 = False
+	bool50 = False
+	bool60 = False
+	bool70 = False
+	bool80 = False
+	bool90 = False
+	bool100 = False
+	print "Import of Homology " + str(currentSp) + " : "
 	
 	cpt = 0
 	
@@ -321,14 +340,44 @@ def ImportHomology(filename, DicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies
 			cpt += 1
 			if l :
 				if currentSp == "Sp1" :
-					DicoHomology.update(ImportHomologySp1(l, currentSp, DicoHomology))
+					DicoHomology.update(ImportHomologySp1(l, currentSp, DicoHomology, dicoTypeIdSpecies, specie1, specie2))
 				else:
-					DicoHomology.update(ImportHomologySp2(l, currentSp, DicoHomology))
+					DicoHomology.update(ImportHomologySp2(l, currentSp, DicoHomology, dicoTypeIdSpecies, specie1, specie2, DicoGeneTranscriptProteinSpecie2))
 				
-			PrintCounter(cpt, len(lines))
+			stat = round((float(cpt)/float(len(lines)))*100,1)
+			if stat == 10 and bool10 == False:
+				bool10 = True
+				print "-10%"
+			elif stat == 20 and bool20 == False:
+				bool20 = True
+				print "--20%"
+			elif stat == 30 and bool30 == False:
+				bool30 = True
+				print "---30%"
+			elif stat == 40 and bool40 == False:
+				bool40 = True
+				print "----40%"
+			elif stat == 50 and bool50 == False:
+				bool50 = True
+				print "-----50%"
+			elif stat == 60 and bool60 == False:
+				bool60 = True
+				print "------60%"
+			elif stat == 70 and bool70 == False:
+				bool70 = True
+				print "-------70%"
+			elif stat == 80 and bool80 == False:
+				bool80 = True
+				print "--------80%"
+			elif stat == 90 and bool90 == False:
+				bool90 = True
+				print "---------90%"
+			elif stat == 100 and bool100 == False:
+				bool100 = True
+				print "----------100%"
 	return(DicoHomology)
 #----------------------------------------------------------------------#
-def importInfoG4Transcript(filenameG4InTranscript):
+def importInfoG4Transcript(filenameG4InTranscript, DicoInfoG4):
 	""" Create a dictonary for each G4 with his localisations and biotype at the 
 		transcript level
 	Parameters
@@ -356,18 +405,16 @@ def importInfoG4Transcript(filenameG4InTranscript):
 				if G4 not in DicoInfoG4["Transcript"]: # the g4 is not yet encounter
 					DicoInfoG4["Transcript"][G4] = {}
 					DicoInfoG4["Transcript"][G4][idTranscript] = {"Localisations" : []}
-					DicoInfoG4["Transcript"][G4][idTranscript]["Localisations"].append(localisation)
+					DicoInfoG4["Transcript"][G4][idTranscript]["Localisations"] = [localisation]
 					DicoInfoG4["Transcript"][G4][idTranscript]["Biotype"] = [biotype]
 				elif G4 in DicoInfoG4["Transcript"] and idTranscript not in DicoInfoG4["Transcript"][G4] :
 					# the G4 is encounter but not in this transcript
 					DicoInfoG4["Transcript"][G4][idTranscript] = {"Localisations" : []}
 					DicoInfoG4["Transcript"][G4][idTranscript]["Localisations"] = [localisation]
 					DicoInfoG4["Transcript"][G4][idTranscript]["Biotype"] = [biotype]
-				else : # that's not suppose to happen 
-					print "Patate 1"
-	return(DicoInfoG4["Transcript"])
+	return(DicoInfoG4)
 #----------------------------------------------------------------------#
-def importInfoG4Gene(DicoGTP):
+def importInfoG4Gene(DicoGTP, DicoInfoG4):
 	""" Create a dictonary for each G4 with his localisations and biotype at the 
 		gene level
 	Parameters
@@ -381,13 +428,13 @@ def importInfoG4Gene(DicoGTP):
 	"""
 	# with the new informations and the dicoGTP we can get the missing ones :
 	# for genes level the localisation and biotypes
-	
 	for G4 in DicoInfoG4["Transcript"]: # browse all G4
 		G4PerTranscript = DicoInfoG4["Transcript"][G4] # get the sub dictionary of transcript where this G4 is
 		for Transcrit in G4PerTranscript : # browse all the transcript of this G4
-			gene = DicoGTP["Transcript"][Transcrit].keys() # get only the name of the transcript's gene
-			if len(gene) > 1 :
-				print "PATATE"
+			if Transcrit in DicoGTP["Transcript"] : 
+				gene = DicoGTP["Transcript"][Transcrit].keys() # get only the name of the transcript's gene
+			else:
+				gene = [""]
 			gene = gene[0]
 			if G4 not in DicoInfoG4["Gene"] : # if the G4 is not already in the dictionary
 				# we add it with the first gene encounter and his relative informations
@@ -404,14 +451,16 @@ def importInfoG4Gene(DicoGTP):
 				# we add it after verifying if we have new informations
 				localisationGene = DicoInfoG4["Gene"][G4][gene]["Localisations"]
 				biotypeGene = DicoInfoG4["Gene"][G4][gene]["Biotype"]
-				localisationTranscript = G4PerTranscript[Transcrit]["Localisations"]
-				biotypeTranscript = G4PerTranscript[Transcrit]["Biotype"]
+				if len(G4PerTranscript[Transcrit]["Localisations"]) > 1 or len(G4PerTranscript[Transcrit]["Biotype"]) > 1 :
+					print "PATATE"
+				localisationTranscript = G4PerTranscript[Transcrit]["Localisations"][0]
+				biotypeTranscript = G4PerTranscript[Transcrit]["Biotype"][0]
 				# 2 if because there can those two condition can be verified
 				if localisationTranscript not in localisationGene :
 					DicoInfoG4["Gene"][G4][gene]["Localisations"].append(localisationTranscript)
 				if biotypeTranscript not in biotypeGene : 
 					DicoInfoG4["Gene"][G4][gene]["Biotype"].append(biotypeTranscript)
-	return(DicoInfoG4["Gene"])
+	return(DicoInfoG4)
 #----------------------------------------------------------------------#
 def importInfoG4(filenameG4InTranscript, DicoGTP):
 	""" Create a dictonary for each G4 with his localisation
@@ -429,7 +478,7 @@ def importInfoG4(filenameG4InTranscript, DicoGTP):
 	"""
 	DicoInfoG4 = {"Gene": {}, "Transcript" : {}}
 	
-	DicoInfoG4["Transcript"] = importInfoG4Transcript(filenameG4InTranscript)
-	DicoInfoG4["Gene"] = importInfoG4Gene(DicoGTP)
+	DicoInfoG4.update(importInfoG4Transcript(filenameG4InTranscript, DicoInfoG4))
+	DicoInfoG4.update(importInfoG4Gene(DicoGTP, DicoInfoG4))
 	
 	return(DicoInfoG4)

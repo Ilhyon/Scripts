@@ -104,8 +104,11 @@ def positionChromosomiqueGeneNegatif(position, EXTENSION, startIntron, endIntron
 		integer
 		position chromosomique of the start or end G4
 	"""
-	if (int(position) <= EXTENSION):	## because strart G4 classifier from 0
-		position=int(startIntron)+1+EXTENSION-int(position)
+
+	#if (int(position) <= EXTENSION+1):	## because strart G4 classifier from 0
+		#position=int(startIntron)+1+EXTENSION+1-int(position)
+	if (int(position) <= EXTENSION+1):	## because strart G4 classifier from 0
+		position=int(startIntron)+1+EXTENSION+1-int(position)
 	else:	# if from sequence aval
 		position=int(endIntron)+EXTENSION-int(position)
 	return position
@@ -366,15 +369,23 @@ def ReturnG4InJunction(G4DetectedInJunction, inputfile, parametersTool,EXTENSION
 						startG4=positionChromosomiqueGenePositif(startG4, EXTENSION, startFirstWindow, endFirstWindow)	
 						endG4=positionChromosomiqueGenePositif(endG4, EXTENSION, startFirstWindow, endFirstWindow)
 					else: # if gene negatif
+						if gene == "ENSMUSG00000094951" :
+								print 'hello1', startG4, EXTENSION
 						startG4=positionChromosomiqueGeneNegatif(startG4, EXTENSION, startFirstWindow, endFirstWindow)	
 						endG4=positionChromosomiqueGeneNegatif(endG4, EXTENSION, startFirstWindow, endFirstWindow)
+						if gene == "ENSMUSG00000094951" :
+								print 'hello2', startG4, EXTENSION
 					if (strand == str(1)):
 						headerG4=gene+"|"+str(startG4)+"|"+str(endG4)+"|"+strand
 					elif (strand == str(-1)):
 						headerG4=gene+"|"+str(endG4)+"|"+str(startG4)+"|"+strand
 					else:
 						continue #strand == None, some gene doesnt have annotation
-					onJonction=G4IsOnJunction(startG4, endG4, startBorder, endBorder)	
+					onJonction=G4IsOnJunction(startG4, endG4, startBorder, endBorder)
+					if gene == "ENSMUSG00000094951" :
+						print str(startG4)+"\t"+str(endG4)+"\t"+str(startBorder)+"\t"+str(endBorder), onJonction
+						print "startG4\tendG4\tstartBorder\tenBorder"
+						print "----------------------------------"
 					if (G4DetectedInJunction.has_key(headerG4) == False and onJonction==True):
 						G4DetectedInJunction[headerG4]=str(meanCGcC), str(meanG4Hunter),sequenceG4 , str(meanG4NN)
 					
@@ -775,6 +786,7 @@ def AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informations
 	headerG4=transcriptId+'|'+descriptionG4 # header uniq by G4 in transcript
 	if (G4InTranscript.has_key(headerG4) == False): # if the transcript doesn't be traited before
 		G4InTranscript[headerG4]=value # add this G4 in the dictionary
+	#~ print G4InTranscript
 	return G4InTranscript	# return the dictionary
 ######################################################################################################################################################
 def AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript):
@@ -865,6 +877,7 @@ def ExtractionG4InTranscript(directory, specie, chromosome, G4InTranscript):
 	output= open(directory+"/"+specie+"_chr"+chromosome+"_G4InTranscript.txt","w") ## file opening
 	output.write("InfoG4ByTranscript\tcGcC\tG4Hunter\tsequenceG4\tG4NN\tlocalisation\ttranscriptBiotype\n")
 	for key,value in G4InTranscript.items():
+		#~ print key
 		if None not in value: # because some transcriptID from ensembl donMt contain info of biotype (as ENST00000604369)
 			output.write(key+"\t"+'\t'.join(value)+"\n")
 
@@ -883,8 +896,8 @@ def ExtractionTranscriptPerG4(directory, specie, chromosome, TranscriptPerG4):
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
 	parser.add_argument ('-pG4', '--pathG4', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/mouseEsssai/')
-	parser.add_argument ('-pBtp', '--pathBiotype', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/mouse/transcriptType')
-	parser.add_argument ('-o', '--outPut', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/mouse/G4Screener')
+	parser.add_argument ('-pBtp', '--pathBiotype', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/Mouse/transcriptType')
+	parser.add_argument ('-o', '--outPut', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/Mouse/G4Screener')
 	parser.add_argument ('-CHR', '--CHROMOSOME', default = 'X')
 	parser.add_argument ('-specie', '--specie', default = 'MM')
 	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
@@ -903,9 +916,9 @@ def main () :
 	outPut=arg.outPut # directory used for output
 	CHROMOSOME=arg.CHROMOSOME	# chromosome to analyze
 	specie=arg.specie	# specie to analyse
-	THRESHOLD_G4H=arg.THRESHOLD_G4H	# threshold use to discriminate the score G4H (litterature = 0.9)
-	THRESHOLD_CGCC=arg.THRESHOLD_CGCC	# threshold use to discriminate the score G4H (litterature = 4.5)
-	THRESHOLD_G4NN=arg.THRESHOLD_G4NN	# threshold use to discriminate the score G4NN (litterature = 0.5)
+	THRESHOLD_G4H=float(arg.THRESHOLD_G4H)	# threshold use to discriminate the score G4H (litterature = 0.9)
+	THRESHOLD_CGCC=float(arg.THRESHOLD_CGCC)	# threshold use to discriminate the score G4H (litterature = 4.5)
+	THRESHOLD_G4NN=float(arg.THRESHOLD_G4NN)	# threshold use to discriminate the score G4NN (litterature = 0.5)
 	EXTENSION=arg.EXTENSION	# EXTENSION use for create the junction exon_exon previously
 	WINDOW=arg.WINDOW	# size of window use in G4 screener
 	STEP=arg.STEP	# size of step use in G4 screener
@@ -1003,10 +1016,10 @@ def main () :
 						G4InTranscript=AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informationsOfG4,localisationInTranscript, biotypeTranscript)
 						G4InGenome=AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript)
 						TranscriptPerG4=AddTranscriptPerG4(TranscriptPerG4, descriptionG4,transcriptId)
-					#	if (localisationInTranscript=='NAP' or localisationInTranscript=='NAN' ):
-						#~ print localisationInTranscript
-							#~ print  localisationInTranscript, descriptionG4, exonList, start5, end5, start3, end3, strand
-							#~ print '-------------------------------'
+						#~ if (localisationInTranscript=='NAP' or localisationInTranscript=='NAN' ):
+						 #~ print localisationInTranscript
+							 #~ print  localisationInTranscript, descriptionG4, exonList, start5, end5, start3, end3, strand
+							 #~ print '-------------------------------'
 
 	############################################################################## g4 junction
 	inputfile= open(index,"r") # file opening for reading

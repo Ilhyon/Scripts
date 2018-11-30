@@ -234,9 +234,9 @@ def CreateIndex(directory, inputfilename,InformationPerGeneAndTranscript,ExonPer
 		
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'ReplaceInformationBiomart')
-	parser.add_argument ('-p', '--path', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/mouse')
+	parser.add_argument ('-p', '--path', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/Human')
 	parser.add_argument ('-chr', '--chromosome', default = 'X')
-	parser.add_argument ('-specie', '--specie', default = 'MM')
+	parser.add_argument ('-specie', '--specie', default = 'HS')
 	parser.add_argument ('-ext', '--extension', default = 100)
 	return parser
 

@@ -154,7 +154,6 @@ def GetPositionForLocalisation(localisation, typeFamily):
 		elif(localisation == 'junction_ExonNC_ExonNC'):
 			position=5
 		#### position 4 for total in transcript entire (all except junction_CDS_CDS))
-	#~ print(position)
 	return position
 		
 	
@@ -212,7 +211,6 @@ def CreateDictionaryBiotypeByTranscript (filename):
 	inputfile= open(filename,"r")	# file opening for reading
 	for line in inputfile:	# for each line in the file (for each transcript)
 		words=line.split('|')	# parsing by the separator, here '|'
-		#~ print(line)
 		transcript=words[1].rstrip()	#I D of transcript
 		transcriptBiotype=words[3].rstrip() # biotype of the transcript
 		#if (dico.has_key(transcript) == False):	# if transcript not contain his biotype in the dico
@@ -365,8 +363,10 @@ def GetFrequenceG4ByTranscript (NumbersG4Transcript,LenghtByTranscript, Coding):
 	"""
 	FrequenceG4ByTranscript={}
 	for key, numberG4 in NumbersG4Transcript.items(): # for each transcript
-		
 		lenghtG4=LenghtByTranscript.get(key) # ensembl of information by transcript , format [length 5,length cds,length 3,lenght exon,lenght intron,number junction 5_codant,number junction codant_Intron,number junction Intron_codant,number junction codant_3,length total, number junction CDS_CDS ]
+		#~ print lenghtG4
+		#~ print key
+		#~ print "-------------------------------------"
 		transcriptBiotype=key.split('-')[1]
 		if (transcriptBiotype in Coding):
 			frequencyG4=[0,0,0,0,0,0,0,0,0,0,0] # frequency by transcript
@@ -379,8 +379,6 @@ def GetFrequenceG4ByTranscript (NumbersG4Transcript,LenghtByTranscript, Coding):
 				multiplier=1000 # by kb
 			else: # if number junction
 				multiplier=1 #--> frequence par junction
-			#~ print key, lenghtG4
-			#~ print position, 'hello', lenghtG4[position]
 			if (lenghtG4[position] != 0): # if the denominator is different to zero
 				frequencyPosition=round((numberG4[position]/float(lenghtG4[position])*multiplier),6) # calcul the frequence
 			else: # if the denominator is zero
@@ -568,7 +566,7 @@ def CalculStandardError(squareRoot, uneListe):
 ######################################################################################################################################################
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
-	parser.add_argument ('-p', '--path', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/mouse')
+	parser.add_argument ('-p', '--path', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/Mouse')
 	parser.add_argument ('-CHR', '--CHROMOSOME', default = 'X')
 	parser.add_argument ('-specie', '--specie', default = 'MM')
 	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
@@ -585,9 +583,9 @@ def main () :
 	path=arg.path	# directory which contain all the directory CHROMOSOME
 	CHROMOSOME=arg.CHROMOSOME	# CHROMOSOME to analyze
 	specie=arg.specie	# specie to analyse
-	THRESHOLD_G4H=arg.THRESHOLD_G4H	# threshold use to discriminate the score G4H (litterature = 0.9)
-	THRESHOLD_CGCC=arg.THRESHOLD_CGCC	# threshold use to discriminate the score G4H (litterature = 4.5)
-	THRESHOLD_G4NN=arg.THRESHOLD_G4NN	# threshold use to discriminate the score G4NN (litterature = 0.5)
+	THRESHOLD_G4H=float(arg.THRESHOLD_G4H)	# threshold use to discriminate the score G4H (litterature = 0.9)
+	THRESHOLD_CGCC=float(arg.THRESHOLD_CGCC)	# threshold use to discriminate the score G4H (litterature = 4.5)
+	THRESHOLD_G4NN=float(arg.THRESHOLD_G4NN)	# threshold use to discriminate the score G4NN (litterature = 0.5)
 	EXTENSION=arg.EXTENSION	# EXTENSION use for create the junction exon_exon previously
 	WINDOW=arg.WINDOW	# size of window use in G4 screener
 	STEP=arg.STEP	# size of step use in G4 screener
@@ -606,8 +604,8 @@ def main () :
 	
 	
 	#### path for files depending of chromosome or for all
-	if (CHROMOSOME == 'All'):	## if for all
-		directory=path+'/All'
+	if (CHROMOSOME == 'All' or CHROMOSOME == 'All0-80' or CHROMOSOME == 'All0-85' or CHROMOSOME == 'All0-75' or CHROMOSOME == 'All0-70'):	## if for all
+		directory=path+'/'+CHROMOSOME
 		index=directory+'/'+specie+'_transcript_unspliced_All_Index.txt'	
 		indextranscriptBiotype=directory+'/'+specie+'_All_TranscriptType.txt'
 		fileG4InTranscriptome=directory+'/'+specie+'_All_G4InTranscript.txt'
@@ -640,7 +638,7 @@ def main () :
 	TranscriptWithG4ByLocalisation=GetTranscriptWithG4ByLocalisation(fileG4InTranscriptome)# Filing the dictionary of list of transcript which contain G4 for each biotype and localisation
 	
 
-
+ 
 
 
 	path_out=directory+'/Subset' # directory pathway
@@ -662,7 +660,7 @@ def main () :
 					key=subFamily+'|'+localisation
 					if (TranscriptWithG4ByLocalisation.has_key(key) == True and test==False):
 						output= open(path_out+'/'+subFamily+'.csv',"w") # file opening for reading
-						output.write('Localisation\tNbTRanscript\tNbTRanscriptWithG4\tPercent\tMean\tSD\tSE\tFrequency\n')
+						output.write('Localisation\tNbTRanscript\tNbTRanscriptWithG4\tPercent\tMean\tSD\tSE\n')
 						test=True
 				if (test==True):
 					for localisation in localisations: # for each localisation
@@ -682,7 +680,7 @@ def main () :
 							var=CalculVariance(valuesWithG4, moy) # variance of mean
 							sD=round(CalculSquareroot(var),3) # SD
 							sE=round(CalculStandardError(sD, valuesWithG4),3) # SE
-							output.write(localisation+'\t'+str(nbTRanscript)+'\t'+str(nbTRanscriptWithG4)+'\t'+str(percent)+'\t'+str(moy)+'\t'+str(sD)+'\t'+str(sE)+'\t'+str(valuesWithG4str)+'\n')
+							output.write(localisation+'\t'+str(nbTRanscript)+'\t'+str(nbTRanscriptWithG4)+'\t'+str(percent)+'\t'+str(moy)+'\t'+str(sD)+'\t'+str(sE)+'\n')
 						else:
 							output.write(localisation+'\t'+str(nbTRanscript)+'\t0\t0\t0\t0\t0\n')
 				else:
@@ -690,7 +688,6 @@ def main () :
 
 
 
-	
 
 	
 	

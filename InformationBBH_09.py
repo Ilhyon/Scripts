@@ -546,23 +546,23 @@ def importData(path, specie1, specie2, dicoTypeIdSpecies):
 	filenameInfoSpecie1 = path+specie1+"_All_G4InTranscript.txt"
 	filenameInfoSpecie2 = path+specie2+"_All_G4InTranscript.txt"
 	
-	#~ dicoBBH = ImportBBH(filenameBBH)
-	# ~ print "Import of BBH -> Done"
-	#~ dicoGeneTranscriptProteinSpecie1 = ImportIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
-	# ~ print "Import of GTP from specie 1 -> Done"
-	#~ dicoGeneTranscriptProteinSpecie2 = ImportIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
-	# ~ print "Import of GTP from specie 2 -> Done"
-	#~ dicoHomology = ImportHomology(filenameHomology, dicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies, specie1, specie2)
-	# ~ print "Import of Homology -> Done"
-	#~ dicoInfoG4Specie1 = importInfoG4(filenameInfoSpecie1, dicoGeneTranscriptProteinSpecie1)
-	# ~ print "Import of informations from specie 1 -> Done"
-	#~ dicoInfoG4Specie2 = importInfoG4(filenameInfoSpecie2, dicoGeneTranscriptProteinSpecie2)
-	# ~ print "Import of informations from specie 1 -> Done"
+	dicoBBH = imp.ImportBBH(filenameBBH)
+	print "Import of BBH -> Done"
+	dicoGeneTranscriptProteinSpecie1 = imp.ImportIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
+	print "Import of GTP from specie 1 -> Done"
+	dicoGeneTranscriptProteinSpecie2 = imp.ImportIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
+	print "Import of GTP from specie 2 -> Done"
+	dicoHomology = imp.ImportHomology(filenameHomology, dicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies, specie1, specie2)
+	print "Import of Homology -> Done"
+	dicoInfoG4Specie1 = imp.importInfoG4(filenameInfoSpecie1, dicoGeneTranscriptProteinSpecie1)
+	print "Import of informations from specie 1 -> Done"
+	dicoInfoG4Specie2 = imp.importInfoG4(filenameInfoSpecie2, dicoGeneTranscriptProteinSpecie2)
+	print "Import of informations from specie 1 -> Done"
 	
 	#~ pprint(dicoGeneTranscriptProteinSpecie2)
 	#~ pprint(dicoHomology)
 	#~ pprint(dicoInfoG4Specie2)
-	#~ return(dicoBBH, dicoHomology, dicoGeneTranscriptProteinSpecie2, dicoInfoG4Specie1, dicoInfoG4Specie2)
+	return(dicoBBH, dicoHomology, dicoGeneTranscriptProteinSpecie2, dicoInfoG4Specie1, dicoInfoG4Specie2)
 #----------------------------------------------------------------------#
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'InfoBBH')

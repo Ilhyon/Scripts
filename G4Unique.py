@@ -26,7 +26,7 @@ def CreateListeG4Unique(filename):
 	return G4Unique
 ########################################################################
 def ExtractionG4InTranscript(directory, specie, chromosome, G4InTranscript):
-	output= open(directory+"ShortNC_Uniques.txt","w") ## file opening
+	output= open(directory+"/"+specie+"_"+chromosome+"_G4InTranscript_Unique.txt","w") ## file opening
 	output.write("InfoG4ByTranscript\tcGcC\tG4Hunter\tsequenceG4\tG4NN\tlocalisation\ttranscriptBiotype\n")
 	for i in G4InTranscript:
 		output.write(i+"\n")
@@ -34,9 +34,9 @@ def ExtractionG4InTranscript(directory, specie, chromosome, G4InTranscript):
 ########################################################################
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Unique')
-	parser.add_argument ('-p', '--path', default = '/home/anais/Documents/Data/Human/All/')
-	parser.add_argument ('-CHR', '--CHROMOSOME', default = 'all')
-	parser.add_argument ('-specie', '--specie', default = 'MM')
+	parser.add_argument ('-p', '--path', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/Human/All/')
+	parser.add_argument ('-CHR', '--CHROMOSOME', default = 'All')
+	parser.add_argument ('-specie', '--specie', default = 'HS')
 	return parser
 ########################################################################
 def main():
@@ -46,7 +46,7 @@ def main():
 	CHROMOSOME=arg.CHROMOSOME	# chromosome to analyze
 	specie=arg.specie	# specie to analyse
 	
-	fileG4 = path+"ShortNC.txt"
+	fileG4 = path+specie+"_"+CHROMOSOME+"_G4InTranscript.txt"
 	UniqueG4 = CreateListeG4Unique(fileG4)
 	#~ print(UniqueG4)
 	ExtractionG4InTranscript(path, specie, CHROMOSOME, UniqueG4)

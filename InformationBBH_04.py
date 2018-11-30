@@ -241,31 +241,99 @@ def importInfoG4(filenameG4InTranscript, DicoGTP):
 					DicoInfoG4["Gene"][G4][gene]["Biotype"].append(biotypeTranscript)
 	return(DicoInfoG4)
 #----------------------------------------------------------------------#
-def FindCommonInformationsGene(dicoBBH, DicoInfoG4Specie1, DicoInfoG4Specie2):
-	""" find common informations between two BBH at the level of genome
+def FindHomologyInGene(dicoBBH, DicoHomology, DicoInfoG4Sp1, DicoInfoG4Sp2, DicoInfoG4, level):
+	""" Create a dictonary for each G4 with his localisation
 	Parameters
 	    ----------
-	    dicoBBH : dictionnary of BBH, see ImportBBH doc 
-	    DicoInfoG4Specie1 : dictionary of G4's information  for specie 1, see importInfoG4
-	    DicoInfoG4Specie2 : dictionary of G4's information  for specie 2, see importInfoG4
+	     dicoBBH : dictionnary of BBH, see ImportBBH doc
+	     DicoHomology : {"Gene":{idGeneSpecie1 : [idGeneSpecie2]}
+						"Transcript" : {idTranscririptSpecie1 : [idTranscriptSpecie2]}}
+		 DicoInfoG4Sp1 :{"Transcript" : {idTranscript : {idG4 : {"Localisation" : [localisation]
+																"Biotype" : [Biotype]}}}
+						 "Gene" : {idGene : {idG4 : {"Localisation" : [localisation]
+																"Biotype" : [Biotype]}}}
+		 DicoInfoG4Sp2 :{"Transcript" : {idTranscript : {idG4 : {"Localisation" : [localisation]
+																"Biotype" : [Biotype]}}}
+						 "Gene" : {idGene : {idG4 : {"Localisation" : [localisation]
+																"Biotype" : [Biotype]}}}
+		DicoInfoG4 : empty dictionnary for the part of gene level, se FindInfoHomology
+		level : string, to choose if we want the gene level or the transcript level
+		
 	    Returns
 	    -------
-	    dicoInformationCommon : 
+	    DicoInfoG4["Gene"] : {idBBH : {"Homology" : {idCoupleHomologue : {"Common Localisations" : [Localisations]
+																			"Common Biotypes" : [Biotypes]}}}}
 	"""
-	dicoInformationCommon = {"Location" : {}, "Biotype" : {}}
-	for G4Specie1 in dicoBBH : # browse of all the BBH
-		G4Specie2 = dicoBBH[G4Specie1]
+	for idG4Sp1 in dicoBBH :
+		idG4Sp2 = dicoBBH[idG4Sp1]
+		idBBH = str(idG4Sp1+"|"+idG4Sp2)
 		
-		if G4Specie1 in DicoInfoG4Specie1["Gene"] and G4Specie2 in DicoInfoG4Specie2["Gene"] :
-			infoG4Specie1 = DicoInfoG4Specie1["Gene"][G4]
-			infoG4Specie2 = DicoInfoG4Specie2["Gene"][G4]
-			localisationCommon = list(set(localisationG4Specie1).intersection(localisationG4Specie2))
-			BBH = str(G4Specie1+"|"+G4Specie2)
-			dicoInformationCommon["Location"][BBH] = localisationCommon
-
-	return(dicoInformationCommon)
+		# first we get the list of levelS where the G4 of each specie is
+		if idG4Sp1 in DicoInfoG4Sp1[level] :
+			levelsSp1 =  DicoInfoG4Sp1[level][idG4Sp1]
+		else :
+			print "Patate 2"
+		if idG4Sp2 in DicoInfoG4Sp2[level] :
+			levelsSp2 =  DicoInfoG4Sp2[level][idG4Sp2]
+		else :
+			print "Patate 3"
+		
+		# Then we get homology
+		for levelSp1 in levelsSp1 :
+			if levelSp1 in DicoHomology[level] : # if this gene have some homologues
+				HlevelSp1 = DicoHomology[level][levelSp1]
+			else : # there is no homologues for this gene
+				HlevelSp1 = []
+			
+			if list(set(HlevelSp1).intersection(levelsSp2)) : 
+				# there an intersection between the homologues of the gene of specie 1
+				# and with the levelS of the specie 2 where the G4 is
+				for levelSp2 in list(set(HlevelSp1).intersection(levelsSp2)) :
+					# for the first Specie
+					if idG4Sp1 in DicoInfoG4Sp1[level] :
+						if levelSp1 in DicoInfoG4Sp1[level][idG4Sp1] :
+							localisationsSp1 = DicoInfoG4Sp1[level][idG4Sp1][levelSp1]["Localisations"]
+							biotypesSp1 = DicoInfoG4Sp1[level][idG4Sp1][levelSp1]["Biotype"]
+						else :
+							print "Patate 4"
+					else :
+						print "Patate 5"
+					
+					# for the second Specie
+					if idG4Sp2 in DicoInfoG4Sp2[level] :
+						if levelSp2 in DicoInfoG4Sp2[level][idG4Sp2] :
+							localisationsSp2 = DicoInfoG4Sp2[level][idG4Sp2][levelSp2]["Localisations"]
+							biotypesSp2 = DicoInfoG4Sp2[level][idG4Sp2][levelSp2]["Biotype"]
+						else :
+							print "Patate 6"
+					else :
+						print "Patate 7"
+					
+					commonLocalisations = []
+					commonBiotypes = []
+					if list(set(localisationsSp1).intersection(localisationsSp2)) :
+						commonLocalisations = list(set(localisationsSp1).intersection(localisationsSp2))
+					if list(set(biotypesSp1).intersection(biotypesSp2)) :
+						commonBiotypes = list(set(biotypesSp1).intersection(biotypesSp2))
+					
+					coupleHomologue = str(levelSp1+"|"+levelSp2)
+					if idBBH not in DicoInfoBBH[level] :
+						# First time the couple of BBH is encounter
+						# so we create all information relative to it 
+						DicoInfoBBH[level][idBBH] = {"Homology" : {}}
+						DicoInfoBBH[level][idBBH]["Homology"][coupleHomologue] = {}
+						DicoInfoBBH[level][idBBH]["Homology"][coupleHomologue]["Common Localisations"] = commonLocalisations
+						DicoInfoBBH[level][idBBH]["Homology"][coupleHomologue]["Common Biotypes"] = commonBiotypes
+					elif idBBH in DicoInfoBBH[level] and coupleHomologue not in DicoInfoBBH[level][idBBH]["Homology"] :
+						# the couple of BBH is already in the dictionary but 
+						# not the couple there homologues's levelS
+						DicoInfoBBH[level][idBBH]["Homology"][coupleHomologue] = {}
+						DicoInfoBBH[level][idBBH]["Homology"][coupleHomologue]["Common Localisations"] = commonLocalisations
+						DicoInfoBBH[level][idBBH]["Homology"][coupleHomologue]["Common Biotypes"] = commonBiotypes
+	
+	return(DicoInfoBBH[level])
 #----------------------------------------------------------------------#
-def FindInfoHomology(dicoBBH, DicoHomology, DicoInfoG4):
+def FindInfoHomology(dicoBBH, DicoHomology, DicoInfoG4Sp1, DicoInfoG4Sp2):
 	""" Create a dictonary for each G4 with his localisation
 	Parameters
 	    ----------
@@ -275,34 +343,11 @@ def FindInfoHomology(dicoBBH, DicoHomology, DicoInfoG4):
 	    Returns
 	    -------
 	"""
-	DicoHomologyCommon = {"Gene" : {}, "Transcript" : {}}
-	for G4Specie1 in dicoBBH : # browse all the BBH
-		G4Specie2 = dicoBBH[G4Specie1]
-		BBH = str(G4Specie1+"|"+G4Specie2) # creation of an id for the couple of BBH
-		
-		# First at the gene level
-		listGeneSpecie1 = DicoInfoG4["Gene"][G4Specie1].keys()
-		listGeneSpecie2 = DicoInfoG4["Gene"][G4Specie2].keys()
-		for geneSpecie1 in listGeneSpecie1 : # browse all gene where the G4 of the first specie is
-			if list(set(listGeneSpecie2).intersection(DicoHomology["Gene"][geneSpecie1])) :
-				# if there common elements between the the gene of the first specie and his homologues
-				if BBH not in DicoHomologyCommon["Gene"] : # if the couple is not in the dictionary
-					#we add it
-					DicoHomologyCommon["Gene"][BBH] = list(set(listGeneSpecie2).intersection(DicoHomology["Gene"][geneSpecie1]))
-				else : # if the couple is already in the dictionary we just add the new homologues
-					DicoHomologyCommon["Gene"][BBH].append(list(set(listGeneSpecie2).intersection(DicoHomology["Gene"][geneSpecie1])))
-		
-		# then at the transcript level
-		listTranscriptSpecie1 = DicoInfoG4["Transcript"][G4Specie1].keys()
-		listTranscriptSpecie2 = DicoInfoG4["Transcript"][G4Specie2].keys()
-		for TranscriptSpecie1 in listTranscriptSpecie1 : # browse all transcript where the G4 of the first specie is
-			if list(set(listTranscriptSpecie2).intersection(DicoHomology["Transcript"][TranscriptSpecie1])) :
-				# if there common elements between the transcript of the first specie and his homologues
-				if BBH not in DicoHomologyCommon["Transcript"] : # if the couple is not in the dictionary
-					#we add it
-					DicoHomologyCommon["Transcript"][BBH] = list(set(listTranscriptSpecie2).intersection(DicoHomology["Transcript"][TranscriptSpecie1]))
-				else : # if the couple is already in the dictionary we just add the new homologues
-					DicoHomologyCommon["Transcript"][BBH].append(list(set(listTranscriptSpecie2).intersection(DicoHomology["Transcript"][TranscriptSpecie1])))
+	DicoInfoBBH = {"Gene" : {}, "Transcript" : {}}
+	
+	
+						
+						
 				
 			
 	return()
@@ -330,14 +375,14 @@ def importData(path, specie1, specie2, dicoTypeIdSpecies):
 	
 	#~ dicoBBH = ImportBBH(filenameBBH)
 	#~ dicoGeneTranscriptProteinSpecie1 = GetIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
-	dicoGeneTranscriptProteinSpecie2 = GetIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
+	#~ dicoGeneTranscriptProteinSpecie2 = GetIDGeneTranscriptProteins(filenameGeneTranscriptProteinSpecie2)
 	#~ dicoHomology = ImportHomology(filenameHomology, dicoGeneTranscriptProteinSpecie2, dicoTypeIdSpecies, specie1, specie2)
 	#~ dicoInfoG4Specie1 = importInfoG4(filenameInfoSpecie1, dicoGeneTranscriptProteinSpecie1)
-	dicoInfoG4Specie2 = importInfoG4(filenameInfoSpecie2, dicoGeneTranscriptProteinSpecie2)
+	#~ dicoInfoG4Specie2 = importInfoG4(filenameInfoSpecie2, dicoGeneTranscriptProteinSpecie2)
 	
 	#~ pprint(dicoGeneTranscriptProteinSpecie2)
 	#~ pprint(dicoHomology)
-	pprint(dicoInfoG4Specie2)
+	#~ pprint(dicoInfoG4Specie2)
 	#~ return(dicoBBH, dicoHomology, dicoGeneTranscriptProteinSpecie2, dicoInfoG4Specie1, dicoInfoG4Specie2)
 #----------------------------------------------------------------------#
 def build_arg_parser():

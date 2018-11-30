@@ -8,16 +8,13 @@ import argparse
 def parserBold(filename):
 	fileparse = []
 	e1 = r"(?i)(?P<run>g{3,})(.{1,7}?)(?P=run)(.{1,7}?)(?P=run)(.{1,7}?)(?P=run)"
-	#~ e1 = r"0\t[0-9]{2}nt,\s>ENSMUST[0-9]{1,15}.{7}\s.\n>"
 	with open(filename) as f: # file opening
 		content = f.read()
-		#print content
-		#~ print '\n'.join(str(e) for e in re.findall(e1,content))
 		lines = content.split('\n')
 		for l in lines: #parcour de toute les lignes
 			#~ print "---------------------------------"
 			#~ print l
-			if(re.search(e1,l)): # si tracks de G
+			if(re.search(e1,l)):
 				print re.findall(e1,l)
 ########################################################################
 def ExtractionG4InTranscript(directory, specie, chromosome, G4InTranscript):
@@ -28,7 +25,7 @@ def ExtractionG4InTranscript(directory, specie, chromosome, G4InTranscript):
 ########################################################################
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Unique')
-	parser.add_argument ('-p', '--path', default = '/home/anais/Documents/Data/Blast/')
+	parser.add_argument ('-p', '--path', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/Human/All/non_stop_decay.txt')
 	parser.add_argument ('-sf', '--subfamily', default = 'non_stop_decay')
 	parser.add_argument ('-s', '--specie', default = 'MM')
 	return parser
@@ -40,7 +37,7 @@ def main():
 	specie=arg.specie	# specie to analyse
 	subfamily=arg.subfamily 
 	
-	fileSubf = path+"non_stop_decay.txt"
+	fileSubf = path
 	parserBold(fileSubf)	
 	
 ########################################################################
