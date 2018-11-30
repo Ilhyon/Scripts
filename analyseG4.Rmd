@@ -1,0 +1,258 @@
+---
+title: "classification k-mer"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Initialisation
+
+We will start by load all library needed, and our list (they can be change in fonction of the organisme).
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+library("RColorBrewer")
+```
+
+
+```{r}
+Coding=c('IG_C_gene', 'IG_D_gene', 'IG_J_gene', 'IG_LV_gene', 'IG_M_gene', 'IG_V_gene', 'IG_Z_gene', 'nonsense_mediated_decay', 'nontranslating_CDS', 'non_stop_decay', 'protein_coding', 'TR_C_gene', 'TR_D_gene', 'TR_gene', 'TR_J_gene', 'TR_V_gene')
+Pseudogene=c('transcribed_unitary_pseudogene','disrupted_domain', 'IG_C_pseudogene', 'IG_J_pseudogene', 'IG_pseudogene', 'IG_V_pseudogene', 'processed_pseudogene', 'pseudogene', 'transcribed_processed_pseudogene', 'transcribed_unprocessed_pseudogene', 'translated_processed_pseudogene', 'translated_unprocessed_pseudogene', 'TR_J_pseudogene', 'TR_V_pseudogene', 'unitary_pseudogene', 'unprocessed_pseudogene','polymorphic_pseudogene')
+LongNC=c('macro_lncRNA','bidirectional_promoter_lncRNA','sense_intronic','3prime_overlapping_ncRNA','ambiguous_orf','antisense','lincRNA','ncrna_host','non_coding','processed_transcript','retained_intron','sense_overlapping')
+ShortNC=c('3prime_overlapping_ncRNA','scaRNA','miRNA', 'miRNA_pseudogene', 'misc_RNA', 'misc_RNA_pseudogene', 'Mt_rRNA' ,'Mt_tRNA', 'Mt_tRNA_pseudogene', 'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA', 'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene', 'scRNA_pseudogene', 'snlRNA', 'snoRNA', 'snoRNA_pseudogene', 'snRNA', 'snRNA_pseudogene', 'SRP_RNA', 'tmRNA', 'tRNA', 'tRNA_pseudogene')
+Predictif=c('TEC')
+NonCoding=c('macro_lncRNA','bidirectional_promoter_lncRNA','sense_intronic','3prime_overlapping_ncRNA','ambiguous_orf','antisense','lincRNA','ncrna_host','non_coding','processed_transcript','retained_intron','sense_overlapping','3prime_overlapping_ncRNA','scaRNA','miRNA', 'miRNA_pseudogene', 'misc_RNA', 'misc_RNA_pseudogene', 'Mt_rRNA' ,'Mt_tRNA', 'Mt_tRNA_pseudogene', 'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA', 'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene', 'scRNA_pseudogene', 'snlRNA', 'snoRNA', 'snoRNA_pseudogene', 'snRNA', 'snRNA_pseudogene', 'SRP_RNA', 'tmRNA', 'tRNA', 'tRNA_pseudogene')
+SupraFamilyName=c('Coding', 'NonCoding', 'Pseudogene', 'Predictif')
+SupraFamily=list()
+SupraFamily[[1]]=Coding
+SupraFamily[[2]]=ShortNC
+SupraFamily[[3]]=LongNC
+SupraFamily[[4]]=Pseudogene
+SupraFamily[[5]]=Predictif
+AllSubFamilly = c(Coding, Pseudogene, LongNC, ShortNC, Predictif)
+length(AllSubFamilly)
+```
+
+# Fonction
+
+## Data import
+
+First, we will import our Data in a list of data frame. One data frame will correspond to one family (Coding, NonCoding, Pseudogene, Predictif).
+
+```{r}
+DataImport = function(path, SupraFamily, NameFile) {
+  Data_perFamily = list()
+  for(j in seq(1,length(SupraFamily))){# for each family : Coding, NonCoding, Pseudogene, Predictif
+    Data_perFamily[[j]] = data.frame() # initialisation of the family
+    for(i in seq(1,length(NameFile))){# browse all subfamily
+      if(is.element(NameFile[i], SupraFamily[[j]])){ # if the subfamily is in the family
+        # choice of the family, it will be easier to do it know
+        if(length(SupraFamily[[j]])==16){
+          family = 'Coding'
+        }else if(length(SupraFamily[[j]])==25){
+          family = 'ShortNC'
+        }else if(length(SupraFamily[[j]])==12){
+          family = 'LongNC'
+        }else if(length(SupraFamily[[j]])==17){
+          family = 'Pseudogene'
+        }else{
+          family = 'Predictif'
+        }
+        filename=paste(path,NameFile[i], ".csv",  sep="") # creation of the input filename
+        tmp = read.csv(filename, header = T, sep = "\t") # read the input file in a tmp
+        tmp$subfamily = NameFile[i] # adding of the subfamily
+        tmp$family= family # adding of the family
+        Data_perFamily[[j]] = rbind(tmp, Data_perFamily[[j]]) # new subfamily add next to the other
+      }
+    }
+  }
+  # removal of some variable
+  remove(tmp)
+  remove(family)
+  return(Data_perFamily)
+}
+
+pathPrac='/home/anais/Documents/Data/mouse/All/Subset/'
+pathCoBius = '/home/local/USHERBROOKE/vana2406/Documents/Data/mouse/All/Subset/'
+pathHuman = '/home/local/USHERBROOKE/vana2406/Documents/Data/human/Subset/'
+pathMacMouse = '/Users/patate/Documents/Data/mouse/All/Subset/'
+pathMacHuman = '/Users/patate/Documents/Data/human/All/Subset/'
+
+NameFileMouse = c("3prime_overlapping_ncRNA","polymorphic_pseudogene","transcribed_processed_pseudogene","bidirectional_promoter_lncRNA","processed_pseudogene","transcribed_unitary_pseudogene","IG_C_gene","processed_transcript","transcribed_unprocessed_pseudogene","IG_V_gene","protein_coding","translated_processed_pseudogene","IG_V_pseudogene","pseudogene","TR_C_gene","lincRNA","retained_intron","TR_V_gene","macro_lncRNA","rRNA","TR_V_pseudogene","miRNA","sense_intronic","unitary_pseudogene","misc_RNA","sense_overlapping","unprocessed_pseudogene","nonsense_mediated_decay","snoRNA","non_stop_decay","TEC")
+
+NameFileHuman = c("3prime_overlapping_ncRNA","antisense","bidirectional_promoter_lncRNA","IG_C_gene","IG_C_pseudogene","IG_V_gene","IG_V_geneUTR","IG_V_pseudogene","lincRNA","macro_lncRNA","miRNA","misc_RNA","non_coding","nonsense_mediated_decay","nonsense_mediated_decayUTR","non_stop_decay","non_stop_decayUTR","polymorphic_pseudogene","processed_pseudogene","processed_transcript","protein_coding","protein_codingUTR","pseudogene","retained_intron","rRNA","sense_intronic","sense_overlapping","TEC","transcribed_processed_pseudogene","transcribed_unitary_pseudogene","transcribed_unprocessed_pseudogene","TR_C_gene","TR_V_gene","TR_V_geneUTR","TR_V_pseudogene","unitary_pseudogene","unprocessed_pseudogene")
+
+Data_Mouse_perFamily = list()
+Data_Mouse_perFamily = DataImport(pathMacMouse, SupraFamily, NameFileMouse)
+
+Data_Human_perFamily = list()
+Data_Human_perFamily = DataImport(pathMacHuman, SupraFamily, NameFileHuman)
+
+```
+
+## Graphic
+
+### All Color
+
+```{r}
+GetAllColor = function(ListeNom){
+  getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+  subFamily = ListeNom
+  subFamilyPalette = getPalette(length(subFamily))
+  DicoColor = vector(mode="list", length=length(subFamily))
+  for(i in seq(1,length(subFamily))){
+    DicoColor[[i]] = subFamilyPalette[i]
+    names(DicoColor[[i]]) = subFamily[i]
+  }
+  return(DicoColor)
+}
+
+#AllColor = GetAllColor(AllSubFamilly)
+```
+
+###
+
+```{r}
+GetListSubFam = function(Data, Family){
+  nPerSubFamily = 0
+  if(Family == 'Coding'){
+        nPerSubFamily = 9
+  }else{
+       nPerSubFamily = 5 
+  }
+  ListSubFamilly = vector("character", length = length(Data)/nPerSubFamily)
+  cpt=1
+  for(i in seq(1, nrow(Data), nPerSubFamily)){
+    ListSubFamilly[[cpt]] = Data$subfamily[i]
+    cpt = cpt + 1
+  }
+  return(ListSubFamilly)
+}
+```
+
+
+### For a graphe
+
+```{r}
+GetColor = function(ListSubFamily, ListColor){
+  ListColorSubFamilly = vector("character", length = length(ListSubFamily))
+  cpt = 1
+  for(i in seq(1,length(ListColor))){
+    nameColor = names(ListColor[[i]])
+    if(is.element(nameColor, ListSubFamily)){
+      ListColorSubFamilly[cpt]=ListColor[[i]]
+      cpt = cpt +1
+    }
+  }
+  return(ListColorSubFamilly)
+}
+
+#colorLongNC = GetColor(LongNC, AllColor)
+```
+
+### Mean Graphic
+
+The the graphic will be done. This is done in a function MeanGraphic(Data, family). The parameter correspond to :
+
+* Data : the list containing all the familly data frame
+* family : the family of which you want the graphic.
+
+The graphic is done thanks to the [tuto](https://datascienceplus.com/building-barplots-with-error-bars/).
+
+For each transcript, we compute the frequency of G4s in fonction of the position, then the mean of those frenquency is made in fonction of the localisation.
+
+```{r}
+MeanGraphic = function(Data, family, ListColorSubfamily) {
+  color = ListColorSubfamily
+  if(length(which(Data$Percent == '0'))>0){
+      tmp = which(Data$Percent == '0')
+      Data[tmp,]$Mean = 0.0001
+  }
+  p = ggplot(Data, aes(y=Mean, x=subfamily, fill=subfamily)) + 
+      geom_bar(stat = "identity",position = position_dodge(0.9)) +
+      facet_grid(".~ Localisation")+
+      theme(axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
+    
+  p + geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),size=0.5, width=.25,position=position_dodge(.9)) +
+      ggtitle(paste("Mean of frequency for each subfamilly of", Data$family[1], "family", sep = " "))+
+      scale_fill_manual(values = alpha(color, .8),name = "SubFamilly")+
+      facet_grid(".~ Localisation")
+}
+
+#MeanGraphic(Data_Mouse_perFamily[[3]],'LongNC', LongNC)
+```
+
+### Percent Graphic
+
+Same pipeline as the MeanGraphic(). It will produce the same graphic but this time ther is no error bar, and the y's axe corresponds to the percent of rG4s of each localisation and for each subfamily. Percent of transcript with G4 at this localisation for a subfamily.
+
+```{r}
+PercentGraphic = function(Data, family, ListColorSubfamily) {
+    color = ListColorSubfamily
+    Data$subfamily = as.factor(Data$subfamily)
+    if(length(which(Data$Percent == '0'))>0){
+      tmp = which(Data$Percent == '0')
+      Data[tmp,]$Percent = 0.0001
+    }
+    ggplot(Data, aes(y=Percent, x=subfamily, fill=paste(subfamily, " (",NbTRanscript,")", sep = ""))) + 
+    geom_bar( stat="identity") +
+    theme(axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())+
+    geom_text(aes(label=NbTRanscriptWithG4), vjust=-0.3, position = position_dodge(0.9), size=3.5)+
+    ggtitle(paste("Mean of frequency for each subfamilly of", Data$family[1], "family", sep = " "))+
+    facet_grid(".~ Localisation")+
+    scale_fill_manual(values = alpha(color, .8),name = "SubFamilly")
+    }
+
+#PercentGraphic(Data_Human_perFamily[[3]], 'LongNC', LongNC)
+#PercentGraphic(Data_Mouse_perFamily[[3]], 'LongNC', LongNC)
+```
+
+### Both graphic
+
+This function will serve to make both graphic, one under the other.
+
+```{r}
+Graphic = function(Data, family, ListAllColor){
+  ListSubFamily = GetListSubFam(Data, family)
+  ListColorSubfamily = GetColor(ListSubFamily,ListAllColor)
+  grid.arrange(PercentGraphic(Data, family, ListColorSubfamily), MeanGraphic(Data, family,ListColorSubfamily), nrow=2)
+}
+
+#Graphic(Data_Mouse_perFamily[[3]], 'Coding', LongNC)
+#Graphic(Data_Human_perFamily[[3]], 'Coding', LongNC)
+```
+
+### All familly
+
+```{r}
+AllGraphe = function(Data, ListAllSubFamilly){
+  AllColor = GetAllColor(ListAllSubFamilly)
+  for(i in seq(1,length(Data))){
+    DataFamily = Data[[i]]
+    Family = DataFamily$family[1]
+    if(Family == 'ShortNC'){
+        listSubFamily = ShortNC
+      }else if(Family == 'LongNC'){
+        listSubFamily = LongNC
+      }else if(Family == 'Predictif'){
+        listSubFamily = Predictif
+      }else if(Family == 'Coding'){
+        listSubFamily = Coding
+      }else if(Family == 'Pseudogene'){
+        listSubFamily = Pseudogene
+      }
+    Graphic(DataFamily, Family, AllColor)
+  }
+}
+
+AllGraphe(Data_Mouse_perFamily, AllSubFamilly)
+AllGraphe(Data_Human_perFamily, AllSubFamilly)
+```
+
