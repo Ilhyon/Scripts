@@ -1,0 +1,36 @@
+#install.packages("stringi")
+library("stringi")
+library("Biostrings")
+###### FONCTIONS
+fbio <- function(x){
+  t(sapply(x, function(x){x1 <-  DNAString(x); oligonucleotideFrequency(x1,3)})) # 3 of k-mer
+}
+
+database <- read.table("/home/local/USHERBROOKE/bels2814/Documents/These/cluster/regionG4Uniq.tsv", header = FALSE) # read file which contain the identifier of G4 regions (characterize by their localisations, format = chr:startRegionG4-endRegionG4|strand) [V1] and the correspondig sequence [V2]
+
+idRegionG4List<-database$V1[1:100] # List of identifiers of G4 regions
+seqList<-database$V2[1:100] # List of sequences of G4 regions
+result <- fbio(seqList) # count k-mer for each G4 region
+rownames(result) <- idRegionG4List #name of line
+
+resultNormalise<-matrix(nrow=nrow(result), ncol=ncol(result)) # Création d'une  matrice identiaue à 'result'
+colnames(resultNormalise)<-colnames(result) 
+rownames(resultNormalise)<-rownames(result)
+
+
+for (i in 1:nrow(result)) { # for each G4 region contain in the matrice
+  lengthSeq<-(nchar(as.character(seqList[i]))) # get the length of this G4 region
+  vecteurNormalise<-(result[i,]/lengthSeq) # normalise all the count row by the length
+  resultNormalise[i,]<-vecteurNormalise # add the row normalise in a new matrice
+}
+
+write.table(resultNormalise, "/home/local/USHERBROOKE/bels2814/Documents/These/cluster/MatriceNormalise.csv", row.names = TRUE, col.names = TRUE, sep=";", quote=FALSE) # write the matrice on a file, with the headers (row.names and col.names)
+
+# K-means cluster analysis
+resultCluster<-kmeans(resultNormalise, centers=10) # 10 clusters
+table(resultCluster$cluster)
+
+#write.table(resultCluster, "/home/local/USHERBROOKE/bels2814/Documents/These/cluster/TestCluster.csv")
+# get cluster means
+#aggregate(resultNormalise,by=list(resultCluster$cluster),FUN=mean)
+
