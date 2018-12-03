@@ -14,7 +14,7 @@ print "Connection to the data base Ensemble Genomes done.\n";
 
 #~ print "Adapator done. \n";
 
-my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
+#~ my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
 
 #~ foreach my $db_adaptor (@db_adaptors) {
     #~ my $db_connection = $db_adaptor->dbc();
@@ -52,7 +52,7 @@ foreach my $homology (@{$homologies}) {
   my $pair_homologues = $homology->gene_list();
   foreach my $gene (@{$pair_homologues}){
 		my $id = $gene->stable_id();
-		if($id ne 'ENSG00000100416' && $homology->description eq "ortholog_one2one"){
+		if($id ne 'ENSG00000100416' ){ # && $homology->description eq "ortholog_one2one"
 			print $homology->description," ", $homology->taxonomy_level;
 			print " ", $id, "\n";
 		}
