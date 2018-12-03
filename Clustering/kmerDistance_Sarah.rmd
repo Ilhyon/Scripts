@@ -1,0 +1,59 @@
+--- 
+title: "classification k-mer" 
+output: html_document 
+--- 
+Knit----> file HTML 
+```{r setup, include=FALSE} 
+#knitr::opts_chunk$set(echo = TRUE) 
+``` 
+ 
+# Package phylogram  
+ 
+website : https://rdrr.io/cran/phylogram/ 
+fonction kdistance : https://rdrr.io/cran/phylogram/man/kdistance.html 
+ 
+```{r} 
+#install.packages("phylogram") 
+library("phylogram") 
+ 
+x<-list("CAAACTGATTTT","GATGAAAGTAAAATACCG","ATTATGC","TGGAGG","CGCGCATCAA") 
+kdistance(x, k = 3) 
+``` 
+ 
+# Regex 
+ 
+https://stackoverflow.com/questions/26600735/matching-and-counting-strings-k-mer-of-dna-in-r 
+ 
+```{r} 
+#install.packages("stringi") 
+library("stringi") 
+library("Biostrings") 
+###### FONCTIONS 
+ 
+fbio <- function(x){ 
+    t(sapply(x, function(x){x1 <-  DNAString(x); oligonucleotideFrequency(x1,3)})) # 3 of k-mer 
+} 
+ 
+database <- read.table("/home/local/USHERBROOKE/bels2814/Documents/These/cluster/regionG4Uniq.tsv", header = FALSE) # read file which contain the identifier of G4 regions (characterize by their localisations, format = chr:startRegionG4-endRegionG4|strand) [V1] and the correspondig sequence [V2] 
+ 
+idRegionG4List<-database$V1[1:10] 
+seqList<-database$V2[1:10] 
+result <- fbio(seqList) 
+rownames(result) <- idRegionG4List #name of line 
+ 
+resultNormalise<-matrix(nrow=nrow(result), ncol=ncol(result)) # Création d'une  matrice identiaue à 'result' 
+colnames(resultNormalise)<-colnames(result) 
+rownames(resultNormalise)<-rownames(result) 
+ 
+ 
+for (i in 1:nrow(result)) { # for each sequence contain in the matrice 
+  lengthSeq<-(nchar(as.character(seqList[i]))) 
+  vecteurNormalise<-(result[i,]/lengthSeq) 
+  resultNormalise[i,]<-vecteurNormalise 
+} 
+resultNormalise 
+ 
+write.table(resultNormalise, "/home/local/USHERBROOKE/bels2814/Documents/These/cluster/MatriceNormalise.csv", row.names = TRUE, col.names = TRUE, sep=";") 
+ 
+ 
+``` 
