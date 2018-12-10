@@ -49,30 +49,63 @@ sub get_genomes_by_taxonID {
    return @tmp;
 }
 
-#~ sub get_all_genes {
-   #~ my (@genomes) = @_;
-   #~ my @tmp = ();
-   #~ foreach my $genome (@genomes){
-		#~ my $db_adaptor = $genome->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
-		#~ my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
-		#~ my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
-		#~ push @tmp, @genes; 
-	#~ }
-   #~ return @tmp;
-#~ }
+sub check_file{
+	my ($sp) = @_;
+	my $directory = "~/Documents/Data/",$sp;
+	if(-e $directory and -d $directory){
+		$directory = $directory, "/raw_material";
+		unless(-e $directory and -d $directory){
+			mkdir $directory;
+		}
+	} else {
+		mkdir $directory;
+		$directory = $directory, "/raw_material";
+		mkdir $directory;
+	}
+}
 
-#~ sub get_gene_unspliced {
-   #~ my (@genomes) = @_;
-   #~ my @tmp = ();
-   #~ foreach my $genome (@genomes){
-		#~ my $db_adaptor = $genome->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
-		#~ my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
-		#~ my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
-		#~ foreach
-		#~ push @tmp, @genes; 
-	#~ }
-   #~ return @tmp;
-#~ }
+sub write_output {
+	my ($filename, @output_list) = @_;
+	open(my $fh, '>', $filename) or die "Could not open file '$filename' $!";
+	foreach $line (@output_list){
+		my $toPrint = $line,"\n";
+		print $fh $toPrint;
+	}
+	close $fh;
+}
+
+sub get_gene_unspliced {
+	my ($genome) = @_;
+	my @tmp = ();
+	my $db_adaptor = $genome->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
+	my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
+	my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
+	foreach $gene (@genes){
+		my $geneID = $gene->stable_id();
+		my $strand = $gene->strand();
+		my $start = $gene->start();
+		my $end = $gene->end();
+		my $header = $geneID,"|",$strand,"|",$start,"|",$end,"\n";
+		my $gene_unspliced = $gene->seq();
+		my $fasta_gene_unspliced = $header, $gene_unspliced;
+		push @tmp, $fasta_gene_unspliced; 
+	}
+	check_file($genome->name());
+	my $filename = "~/Documents/Data/",$sp,"/raw_material/All_gene_unspliced.fasta";
+	write_output($filename, @tmp);
+}
+
+sub get_all_genes {
+	my ($genome) = @_;
+	my $db_adaptor = $genome->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
+	my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
+	my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
+	check_file($genome->name());
+	my $filename = "~/Documents/Data/",$sp,"/raw_material/All_GeneID.txt";
+	write_output($filename, @genes);
+}
+
+
 
 my @list_sp_ensembl=("homo_sapiens","pan_troglodytes","pongo_abelii","mus_musculus","monodelphis_domestica","anolis_carolinensis","Ornithorhynchus_anatinus","gallus_gallus","danio_rerio","gasterosteus_aculeatus","xenopus_tropicalis","ciona_savignyi");
 my @list_sp_metazoa=("caenorhabditis_elegans","drosophila_melanogaster","anopheles_gambiae","apis_mellifera","octopus_bimaculoides","pediculus_humanus","stegodyphus_mimosarum","amphimedon_queenslandica","brugia_malayi","mnemiopsis_leidyi","trichoplax_adhaerens");
@@ -100,25 +133,12 @@ push @genomes_db, get_genomes_by_name($genome_db_adaptor_bacteria,@list_sp_bacte
 push @genomes_db, get_genomes_by_taxonID($genome_db_adaptor_plants,@taxonID_plants); 
 push @genomes_db, get_genomes_by_taxonID($genome_db_adaptor_bacteria,@taxonID_bacteria); 
 
-print scalar @genomes_db,"\n";
+print scalar @genomes_db,"\n"; # 80
 
-#~ my @Genelist = ();
-#~ push @Genelist, get_all_genes(@genomes_db);
-#~ print scalar @Genelist,"\n";
-
-#~ foreach my $genome (@genomes_db){
-	#~ my $sp_name = $genome->name()
-	#~ my $db_adaptor = $genome->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
-	#~ my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
-	#~ my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
-	#~ push @Genelist, @genes; 
-#~ }
-
-
-
-
-
-
+foreach my $genome (@genomes_db){
+	get_all_genes($genome);
+	get_gene_unspliced($genome);
+}
 
 
 
