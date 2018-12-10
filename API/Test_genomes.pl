@@ -2,10 +2,6 @@ use strict;
 use warnings;
 use Bio::EnsEMBL::Registry;
 use Bio::Species;
-#~ use Bio::EnsEMBL::LookUp;
-#~ my $lookup = Bio::EnsEMBL::LookUp->new();
-#~ my $dba = $lookup->get_by_name_exact('escherichia_coli_str_k_12_substr_mg1655');   
-#~ my @dbas = @{$lookup->get_all_by_name_pattern('escherichia_coli_.*')};
 my $registry = 'Bio::EnsEMBL::Registry';
 
 $registry->load_registry_from_db(
@@ -13,14 +9,39 @@ $registry->load_registry_from_db(
     -port => 4157,
 );
 
-my $panH_genomeDB_adaptor = $registry->get_adaptor('pan_homology', 'compara', 'GenomeDB');
-my $genome_db = $panH_genomeDB_adaptor->fetch_by_name_assembly("haloarcula_marismortui_ATCC_43049"); # Bio::EnsEMBL::Compara::GenomeDB
+
+
+my $genome_db_adaptor = $registry->get_adaptor('metazoa', 'compara', 'GenomeDB');
+my $genome_db = $genome_db_adaptor->fetch_by_name_assembly("caenorhabditis_elegans"); # Bio::EnsEMBL::Compara::GenomeDB
+print $genome_db,"\n";
 my $db_adaptor = $genome_db->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
 my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
 my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
 
-foreach my $gene (@genes){
-	foreach my $g (@{$gene}){
-		print $g->stable_id(),"\n";
-	}
-}
+#~ my $panH_genomeDB_adaptor = $registry->get_adaptor('pan_homology', 'compara', 'GenomeDB'); #Bio::EnsEMBL::Compara::DBSQL::GenomeDBAdaptor
+#~ my $genome_db = $panH_genomeDB_adaptor->fetch_by_name_assembly("mus_musculus"); # Bio::EnsEMBL::Compara::GenomeDB
+#~ my $db_adaptor = $genome_db->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
+#~ my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
+#~ my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
+
+#~ foreach my $gene (@genes){
+	#~ foreach my $g (@{$gene}){
+		#~ print $g->stable_id(),"\n";
+	#~ }
+#~ }
+
+#~ foreach my $g (@{$genome_db}){
+	#~ my $db_adaptor = $g->db_adaptor();
+	#~ print $db_adaptor;
+#~ }
+
+#~ Bio::EnsEMBL::Registry->load_registry_from_db(
+    #~ -host => 'mysql-eg-publicsql.ebi.ac.uk',
+    #~ -user => 'anonymous',
+    #~ -port => 5306);
+
+
+#~ my $genome_db_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Multi', 'compara', 'GenomeDB');
+#~ my $genome_db = $genome_db_adaptor->fetch_by_name_assembly("chlamydomonas_reinhardtii"); # Bio::EnsEMBL::Compara::GenomeDB
+#~ my $db_adaptor = $genome_db->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
+#~ print $db_adaptor;
