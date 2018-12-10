@@ -49,17 +49,28 @@ sub get_genomes_by_taxonID {
    return @tmp;
 }
 
+sub get_short_species_names {
+	my ($sp) = @_;
+	my $separator = "_";
+	my $positionSecondWord = index($sp,$separator) + 1;
+	my $initiales = substr($sp,0,1);
+	$initiales = $initiales . substr($sp,$positionSecondWord,1);
+	$initiales = uc($initiales);
+	return $initiales;
+}
+
 sub check_file{
 	my ($sp) = @_;
-	my $directory = "~/Documents/Data/",$sp;
+	my $directory = "~/Documents/Data/" . $sp;
 	if(-e $directory and -d $directory){
-		$directory = $directory, "/raw_material";
+		$directory = $directory . "/raw_material";
 		unless(-e $directory and -d $directory){
 			mkdir $directory;
 		}
 	} else {
+		print $directory, "\n";
 		mkdir $directory;
-		$directory = $directory, "/raw_material";
+		$directory = $directory . "/raw_material";
 		mkdir $directory;
 	}
 }
@@ -67,8 +78,8 @@ sub check_file{
 sub write_output {
 	my ($filename, @output_list) = @_;
 	open(my $fh, '>', $filename) or die "Could not open file '$filename' $!";
-	foreach $line (@output_list){
-		my $toPrint = $line,"\n";
+	foreach my $line (@output_list){
+		my $toPrint = $line ."\n";
 		print $fh $toPrint;
 	}
 	close $fh;
@@ -80,28 +91,32 @@ sub get_gene_unspliced {
 	my $db_adaptor = $genome->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
 	my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
 	my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
-	foreach $gene (@genes){
+	my $sp = $genome->name();
+	my $initiales = get_short_species_names($sp);
+	foreach my $gene (@genes){
 		my $geneID = $gene->stable_id();
 		my $strand = $gene->strand();
 		my $start = $gene->start();
 		my $end = $gene->end();
-		my $header = $geneID,"|",$strand,"|",$start,"|",$end,"\n";
+		my $header = $geneID . "|" . $strand . "|" . $start . "|" . $end . "\n";
 		my $gene_unspliced = $gene->seq();
-		my $fasta_gene_unspliced = $header, $gene_unspliced;
+		my $fasta_gene_unspliced = $header . $gene_unspliced;
 		push @tmp, $fasta_gene_unspliced; 
 	}
-	check_file($genome->name());
-	my $filename = "~/Documents/Data/",$sp,"/raw_material/All_gene_unspliced.fasta";
+	check_file($sp);
+	my $filename = "~/Documents/Data/" . $sp . "/raw_material/All_gene_unspliced.fasta";
 	write_output($filename, @tmp);
 }
 
 sub get_all_genes {
 	my ($genome) = @_;
+	my $sp = $genome->name();
+	my $initiales = get_short_species_names($sp);
 	my $db_adaptor = $genome->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
 	my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
 	my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
-	check_file($genome->name());
-	my $filename = "~/Documents/Data/",$sp,"/raw_material/All_GeneID.txt";
+	check_file($sp);
+	my $filename = "~/Documents/Data/" . $sp . "/raw_material/All_GeneID.txt";
 	write_output($filename, @genes);
 }
 
@@ -133,9 +148,11 @@ push @genomes_db, get_genomes_by_name($genome_db_adaptor_bacteria,@list_sp_bacte
 push @genomes_db, get_genomes_by_taxonID($genome_db_adaptor_plants,@taxonID_plants); 
 push @genomes_db, get_genomes_by_taxonID($genome_db_adaptor_bacteria,@taxonID_bacteria); 
 
-print scalar @genomes_db,"\n"; # 80
+#~ print scalar @genomes_db,"\n"; # 80
 
-foreach my $genome (@genomes_db){
+my @genomes_test = $genomes_db[1];
+
+foreach my $genome (@genomes_test){
 	get_all_genes($genome);
 	get_gene_unspliced($genome);
 }
