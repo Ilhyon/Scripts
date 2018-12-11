@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use Bio::EnsEMBL::Registry;
 use Bio::Species;
+use File::Path qw(make_path);
 my $registry = 'Bio::EnsEMBL::Registry';
 
 $registry->load_registry_from_db(
@@ -65,13 +66,13 @@ sub check_file{
 	if(-e $directory and -d $directory){
 		$directory = $directory . "/raw_material";
 		unless(-e $directory and -d $directory){
-			mkdir $directory;
+			make_path($directory);
 		}
 	} else {
-		print $directory, "\n";
-		mkdir $directory;
+		make_path($directory);
 		$directory = $directory . "/raw_material";
-		mkdir $directory;
+		make_path($directory);
+		print $directory, "\n";
 	}
 }
 
@@ -104,7 +105,7 @@ sub get_gene_unspliced {
 		push @tmp, $fasta_gene_unspliced; 
 	}
 	check_file($sp);
-	my $filename = "~/Documents/Data/" . $sp . "/raw_material/All_gene_unspliced.fasta";
+	my $filename = "~/Documents/Data/" . $sp . "/raw_material/" . $initiales . "_All_gene_unspliced.fasta";
 	write_output($filename, @tmp);
 }
 
@@ -116,7 +117,7 @@ sub get_all_genes {
 	my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
 	my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
 	check_file($sp);
-	my $filename = "~/Documents/Data/" . $sp . "/raw_material/All_GeneID.txt";
+	my $filename = "~/Documents/Data/" . $sp . "/raw_material/" . $initiales . "_All_GeneID.txt";
 	write_output($filename, @genes);
 }
 
