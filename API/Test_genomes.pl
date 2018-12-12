@@ -24,11 +24,12 @@ my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
 #~ my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
 #~ my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
 
-#~ foreach my $gene (@genes){
-	#~ foreach my $g (@{$gene}){
-		#~ print $g->stable_id(),"\n";
-	#~ }
-#~ }
+foreach my $gene (@genes){
+	print $gene, "\n";
+	foreach my $g (@{$gene}){
+		print $g->stable_id(),"\n";
+	}
+}
 
 #~ foreach my $g (@{$genome_db}){
 	#~ my $db_adaptor = $g->db_adaptor();

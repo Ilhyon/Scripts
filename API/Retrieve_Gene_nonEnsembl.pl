@@ -94,15 +94,23 @@ sub get_gene_unspliced {
 	my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
 	my $sp = $genome->name();
 	my $initiales = get_short_species_names($sp);
+	print $initiales,"\n";
 	foreach my $gene (@genes){
-		my $geneID = $gene->stable_id();
-		my $strand = $gene->strand();
-		my $start = $gene->start();
-		my $end = $gene->end();
-		my $header = $geneID . "|" . $strand . "|" . $start . "|" . $end . "\n";
-		my $gene_unspliced = $gene->seq();
-		my $fasta_gene_unspliced = $header . $gene_unspliced;
-		push @tmp, $fasta_gene_unspliced; 
+		print $gene,"\n";
+		foreach my $g (@{$gene}){
+			my $geneID = $g->stable_id();
+			print $geneID, "\n";
+			my $strand = $g->strand();
+			print $strand, "\n";
+			my $start = $g->start();
+			print $start, "\n";
+			my $end = $g->end();
+			print $end, "\n";
+			my $header = $geneID . "|" . $strand . "|" . $start . "|" . $end . "\n";
+			my $gene_unspliced = $g->seq();
+			my $fasta_gene_unspliced = $header . $gene_unspliced;
+			push @tmp, $fasta_gene_unspliced; 
+		}
 	}
 	check_file($sp);
 	my $filename = "~/Documents/Data/" . $sp . "/raw_material/" . $initiales . "_All_gene_unspliced.fasta";
@@ -152,9 +160,11 @@ push @genomes_db, get_genomes_by_taxonID($genome_db_adaptor_bacteria,@taxonID_ba
 #~ print scalar @genomes_db,"\n"; # 80
 
 my @genomes_test = $genomes_db[1];
+print $genomes_db[1],"\n";
 
 foreach my $genome (@genomes_test){
 	get_all_genes($genome);
+	print "Patate\n";
 	get_gene_unspliced($genome);
 }
 
