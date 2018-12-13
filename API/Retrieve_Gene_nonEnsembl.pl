@@ -62,7 +62,7 @@ sub get_short_species_names {
 
 sub check_file{
 	my ($sp) = @_;
-	my $directory = "~/Documents/Data/" . $sp;
+	my $directory = "/home/anais/Documents/Data/" . $sp;
 	if(-e $directory and -d $directory){
 		$directory = $directory . "/raw_material";
 		unless(-e $directory and -d $directory){
@@ -72,7 +72,6 @@ sub check_file{
 		make_path($directory);
 		$directory = $directory . "/raw_material";
 		make_path($directory);
-		print $directory, "\n";
 	}
 }
 
@@ -86,85 +85,110 @@ sub write_output {
 	close $fh;
 }
 
+sub get_transcript_info{
+	my ($transcripts,$geneID,$strand) = @_;
+	my @lines = ();
+	foreach my $tr (@{$transcripts}){
+		my $line = undef;
+		my $five_UTR_start = undef;
+		my $five_UTR_end = undef;
+		my $three_UTR_start = undef;
+		my $three_UTR_end = undef;
+		my $trID = $tr->stable_id();
+		my $CDS = $tr->get_all_CDS();
+		my $exons = $tr->get_all_Exons();
+		my $five_UTRs = $tr->get_all_five_prime_UTRs();
+		my $three_UTRs = $tr->get_all_three_prime_UTRs();
+		my $biotype = $tr->biotype();
+		my $tr_start = $tr->start();
+		my $tr_end = $tr->end();
+		my $chr = $tr->seq_region_name();
+		print $chr,"\n";
+		foreach my $five_UTR (@{$five_UTRs}){
+			$five_UTR_start = $five_UTR->start();
+			$five_UTR_end = $five_UTR->end();
+		}
+		foreach my $three_UTR (@{$three_UTRs}){
+			$three_UTR_start = $three_UTR->start();
+			$three_UTR_end = $three_UTR->end();
+		}
+		foreach my $exon (@{$exons}){
+			my $exon_start = $exon->start();
+			my $exon_end = $exon->end();
+			my $rank = $exon->rank($tr);
+			$line = $geneID . "\t" . $trID . "\t" . $biotype . "\t" . $five_UTR_start . "\t" . $five_UTR_end . "\t" . $three_UTR_start . "\t" . $three_UTR_end . "\t" . $exon_start . "\t" . $exon_end . "\t" . $rank . "\t" . $strand;
+			push @lines, $line;
+		}
+	}
+	return @lines;
+}
+
 sub get_gene_unspliced {
 	my ($genome) = @_;
 	my @tmp = ();
-	my $db_adaptor = $genome->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
-	my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
-	my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
+	my @all_genes_ID = ();
+	my @transcripts_info = ();
 	my $sp = $genome->name();
 	my $initiales = get_short_species_names($sp);
-	print $initiales,"\n";
-	foreach my $gene (@genes){
-		print $gene,"\n";
-		foreach my $g (@{$gene}){
-			my $geneID = $g->stable_id();
-			print $geneID, "\n";
-			my $strand = $g->strand();
-			print $strand, "\n";
-			my $start = $g->start();
-			print $start, "\n";
-			my $end = $g->end();
-			print $end, "\n";
-			my $header = $geneID . "|" . $strand . "|" . $start . "|" . $end . "\n";
-			my $gene_unspliced = $g->seq();
-			my $fasta_gene_unspliced = $header . $gene_unspliced;
-			push @tmp, $fasta_gene_unspliced; 
-		}
+	my $db_adaptor = $genome->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
+	my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
+	my $genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
+	print $sp,"\n";
+	my @transcript_unspliced = undef;
+	foreach my $gene (@{$genes}){
+		my $geneID = $gene->stable_id();
+		my $strand = $gene->strand();
+		my $start = $gene->start();
+		my $end = $gene->end();
+		my $header = $geneID . "|" . $strand . "|" . $start . "|" . $end . "\n";
+		my $gene_unspliced = $gene->seq();
+		my $fasta_gene_unspliced = $header . $gene_unspliced;
+		push @tmp, $fasta_gene_unspliced; 
+		push @all_genes_ID, $geneID;
+		my $transcripts = $gene->get_all_Transcripts();
+		@transcript_unspliced = get_transcript_info($transcripts,$geneID,$strand);
 	}
 	check_file($sp);
-	my $filename = "~/Documents/Data/" . $sp . "/raw_material/" . $initiales . "_All_gene_unspliced.fasta";
+	my $filename = "/home/anais/Documents/Data/" . $sp . "/" . $initiales . "_gene_unspliced.fasta";
 	write_output($filename, @tmp);
+	$filename = "/home/anais/Documents/Data/" . $sp . "/" . $initiales . "_GeneID.txt";
+	write_output($filename, @all_genes_ID);
+	$filename = "/home/anais/Documents/Data/" . $sp . "/" . $initiales . "_transcript_unspliced.txt";
+	write_output($filename, @transcript_unspliced);
+	
 }
 
-sub get_all_genes {
-	my ($genome) = @_;
-	my $sp = $genome->name();
-	my $initiales = get_short_species_names($sp);
-	my $db_adaptor = $genome->db_adaptor(); # Bio::EnsEMBL::DBSQL::DBAdaptor
-	my $gene_adaptor = $db_adaptor->get_GeneAdaptor(); # Bio::EnsEMBL::DBSQL::GeneAdaptor
-	my @genes = $gene_adaptor->fetch_all(); # Bio::EnsEMBL::Gene
-	check_file($sp);
-	my $filename = "~/Documents/Data/" . $sp . "/raw_material/" . $initiales . "_All_GeneID.txt";
-	write_output($filename, @genes);
-}
-
-
-
-my @list_sp_ensembl=("homo_sapiens","pan_troglodytes","pongo_abelii","mus_musculus","monodelphis_domestica","anolis_carolinensis","Ornithorhynchus_anatinus","gallus_gallus","danio_rerio","gasterosteus_aculeatus","xenopus_tropicalis","ciona_savignyi");
-my @list_sp_metazoa=("caenorhabditis_elegans","drosophila_melanogaster","anopheles_gambiae","apis_mellifera","octopus_bimaculoides","pediculus_humanus","stegodyphus_mimosarum","amphimedon_queenslandica","brugia_malayi","mnemiopsis_leidyi","trichoplax_adhaerens");
-my @list_sp_plants=("chlamydomonas_reinhardtii","chondrus_crispus","amborella_trichopoda","physcomitrella_patens","selaginella_moellendorffii","solanum_lycopersicum","vitis_vinifera","arabidopsis_thaliana");
+#~ my @list_sp_metazoa=("caenorhabditis_elegans","drosophila_melanogaster","anopheles_gambiae","apis_mellifera","octopus_bimaculoides","pediculus_humanus","stegodyphus_mimosarum","amphimedon_queenslandica","brugia_malayi","mnemiopsis_leidyi","trichoplax_adhaerens");
+#~ my @list_sp_plants=("oryza_sativa","chlamydomonas_reinhardtii","chondrus_crispus","amborella_trichopoda","physcomitrella_patens","selaginella_moellendorffii","solanum_lycopersicum","vitis_vinifera","arabidopsis_thaliana");
 my @list_sp_fungi=("aspergillus_nidulans","neurospora_crassa","saccharomyces_cerevisiae","schizosaccharomyces_pombe");
 my @list_sp_protist=("bigelowiella_natans","dictyostelium_discoideum","emiliania_huxleyi","leishmania_major","tetrahymena_thermophila");
-my @list_sp_bacteria=("francisella_tularensis_subsp_tularensis_schu_s4","escherichia_coli_str_k_12_substr_mg1655","bacillus_subtilis_subsp_subtilis_str_168","mycobacterium_tuberculosis_h37rv","enterococcus_faecalis_v583","mycoplasma_pneumoniae_m129","streptococcus_pneumoniae_TIGR4","borrelia_burgdorferi_B31","thermus_thermophilus_HB8","geobacter_sulfurreducens_PCA","wolbachia_endosymbiont_of_drosophila_melanogaster","aquifex_aeolicus_VF5","caulobacter_crescentus_CB15","cenarchaeum_symbiosum_a","coxiella_burnetii_rsa_493","gardnerella_vaginalis_0288E","helicobacter_pylori_26695","lactobacillus_plantarum_WCFS1","moraxella_catarrhalis_7169","myxococcus_xanthus_DK_1622","neisseria_meningitidis_Z2491","sulfolobus_solfataricus_P2","thermoplasma_acidophilum_DSM_1728","methanosarcina_acetivorans_C2A","pyrococcus_horikoshii_OT3","methanopyrus_kandleri_AV19","methanococcus_maripaludis_S2","aeropyrum_pernix_K1","archaeoglobus_fulgidus_DSM_4304","candidatus_korarchaeum_cryptofilum_OPF8","haloarcula_marismortui_ATCC_43049","halobacterium_salinarum_R1","hyperthermus_butylicus_DSM_5456");
-my @taxonID_plants=("39947");
-my @taxonID_bacteria=("158879","169963","272561","192222","262698","1131758","229193","212042","324602","716541","71421","272620","297246","203120","243277","228908","178306","420247");
+my @list_sp_bacteria=("campylobacter_jejuni_subsp_jejuni_nctc_11168_atcc_700819","brucella_abortus_bv_1_str_9_941","pseudomonas_aeruginosa_mpao1_p2","yersinia_pestis_biovar_microtus_str_91001","anaplasma_phagocytophilum_str_hz","chloroflexus_aurantiacus_j_10_fl","haemophilus_influenzae_rd_kw20","legionella_pneumophila_str_paris","vibrio_cholerae_o1_biovar_el_tor_str_n16961","nanoarchaeum_equitans_kin4_m","pyrobaculum_aerophilum_str_im2","methanobrevibacter_smithii_atcc_35061","staphylococcus_aureus_subsp_aureus_n315","francisella_tularensis_subsp_tularensis_schu_s4","escherichia_coli_str_k_12_substr_mg1655","bacillus_subtilis_subsp_subtilis_str_168","mycobacterium_tuberculosis_h37rv","enterococcus_faecalis_v583","mycoplasma_pneumoniae_m129","streptococcus_pneumoniae_TIGR4","borrelia_burgdorferi_B31","thermus_thermophilus_HB8","geobacter_sulfurreducens_PCA","wolbachia_endosymbiont_of_drosophila_melanogaster","aquifex_aeolicus_VF5","cenarchaeum_symbiosum_a","gardnerella_vaginalis_0288E","myxococcus_xanthus_DK_1622","neisseria_meningitidis_Z2491","sulfolobus_solfataricus_P2","thermoplasma_acidophilum_DSM_1728","methanosarcina_acetivorans_C2A","pyrococcus_horikoshii_OT3","methanococcus_maripaludis_S2","aeropyrum_pernix_K1","archaeoglobus_fulgidus_DSM_4304","candidatus_korarchaeum_cryptofilum_OPF8","halobacterium_salinarum_R1");
 
-my $genome_db_adaptor_metazoa = $registry->get_adaptor('metazoa', 'compara', 'GenomeDB');
-my $genome_db_adaptor_plants = $registry->get_adaptor('plants', 'compara', 'GenomeDB');
+my @error = ("chlamydia_trachomatis_d_uw_3_cx",);
+
+#~ my $genome_db_adaptor_metazoa = $registry->get_adaptor('metazoa', 'compara', 'GenomeDB');
+#~ my $genome_db_adaptor_plants = $registry->get_adaptor('plants', 'compara', 'GenomeDB');
 my $genome_db_adaptor_fungi = $registry->get_adaptor('fungi', 'compara', 'GenomeDB');
 my $genome_db_adaptor_protist = $registry->get_adaptor('protists', 'compara', 'GenomeDB');
 my $genome_db_adaptor_bacteria = $registry->get_adaptor('bacteria', 'compara', 'GenomeDB');
 
 my @genomes_db = ();
 
-push @genomes_db, get_genomes_by_name($genome_db_adaptor_metazoa,@list_sp_metazoa); 
-push @genomes_db, get_genomes_by_name($genome_db_adaptor_plants,@list_sp_plants); 
+#~ push @genomes_db, get_genomes_by_name($genome_db_adaptor_metazoa,@list_sp_metazoa); 
+#~ push @genomes_db, get_genomes_by_name($genome_db_adaptor_plants,@list_sp_plants); 
 push @genomes_db, get_genomes_by_name($genome_db_adaptor_fungi,@list_sp_fungi); 
 push @genomes_db, get_genomes_by_name($genome_db_adaptor_protist,@list_sp_protist); 
 push @genomes_db, get_genomes_by_name($genome_db_adaptor_bacteria,@list_sp_bacteria);
 
-push @genomes_db, get_genomes_by_taxonID($genome_db_adaptor_plants,@taxonID_plants); 
-push @genomes_db, get_genomes_by_taxonID($genome_db_adaptor_bacteria,@taxonID_bacteria); 
-
 #~ print scalar @genomes_db,"\n"; # 80
 
-my @genomes_test = $genomes_db[1];
-print $genomes_db[1],"\n";
+#~ my @genomes_test = $genomes_db[1];
+#print $genomes_db[1],"\n";
 
-foreach my $genome (@genomes_test){
-	get_all_genes($genome);
-	print "Patate\n";
+#~ my $test = $genome_db_adaptor_bacteria->fetch_by_name_assembly("campylobacter_jejuni_subsp_jejuni_nctc_11168_atcc_700819"); # Bio::EnsEMBL::Compara::GenomeDB
+		
+#~ get_gene_unspliced($test);
+foreach my $genome (@genomes_db){
 	get_gene_unspliced($genome);
 }
 
