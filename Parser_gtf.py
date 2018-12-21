@@ -102,4 +102,8 @@ for sp in listSp :
 					strand = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Strand"]
 					output.write(gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t"+""+"\t"+""+"\t"+""+"\t"+""+"\t"+start+"\t"+end+"\t"+rank+"\t"+strand+"\n")
 		output.close()
-
+		
+		output = open("/home/anais/Documents/Data/"+sp+"/"+ini+"_gene_list.txt","w") # file opening for reading
+		for gene in dicoFeature :
+			output.write(gene+"\n")
+		output.close()
