@@ -64,7 +64,7 @@ for sp in listSp :
 						elif feature == "exon" :
 							rank = attribute[2].split('"')[1]
 							idTr = attribute[1].split('"')[1]
-							biotype = attribute[5].split('"')[1]
+							biotype = attribute[-3].split('"')[1]
 							idExon = attribute[-2].split('"')[1]
 							if "Transcript" in dicoFeature[idGene]:
 								if idTr not in dicoFeature[idGene]["Transcript"] :
@@ -84,7 +84,22 @@ for sp in listSp :
 								dicoFeature[idGene].update({"Transcript" : idTr})
 								dicoFeature[idGene]["Transcript"][idTr] = {"Exon" : idExon}
 								dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
-		pprint(dicoFeature)
-	
-	#~ else :
-		#~ print filename
+		
+		#~ pprint(dicoFeature)
+		words = sp.split("_")
+		letters = [word[0] for word in words]
+		ini = "".join(letters)
+		ini = ini.upper()
+		output = open("/home/anais/Documents/Data/"+sp+"/"+ini+"_transcript_unspliced.txt","w") # file opening for reading
+		for gene in dicoFeature :
+			for transcript in dicoFeature[gene]["Transcript"] :
+				for exon in dicoFeature[gene]["Transcript"][transcript]["Exon"]:
+					chromosome = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Chromosome"]
+					biotype = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Biotype"]
+					start = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Start"]
+					end = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["End"]
+					rank = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Rank"]
+					strand = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Strand"]
+					output.write(gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t"+""+"\t"+""+"\t"+""+"\t"+""+"\t"+start+"\t"+end+"\t"+rank+"\t"+strand+"\n")
+		output.close()
+
