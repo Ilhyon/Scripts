@@ -1,8 +1,11 @@
 ---
 title: 'rG4 : hierarchical clustering'
 output: html_document
+<<<<<<< HEAD
 editor_options: 
   chunk_output_type: console
+=======
+>>>>>>> master
 ---
 
 ```{r setup, include=FALSE}
@@ -17,12 +20,15 @@ library("stringi")
 #source("http://bioconductor.org/biocLite.R")
 #biocLite("Biostrings")
 library("Biostrings")
+<<<<<<< HEAD
 #install.packages("gplots", dependencies = TRUE)
 library(gplots)
 #install.packages("RColorBrewer", dependencies = TRUE)
 library(RColorBrewer)
 #install.packages("rafalib", dependencies = TRUE)
 library(rafalib)
+=======
+>>>>>>> master
 ```
 
 ## Data processing
@@ -65,6 +71,7 @@ d = dist(normalized_kmer_matrix, method = "euclidean")
 At this point, we get our matrix of k-mer and we even normalised it in function of the length of sequences. It is time to do the clustering !
 
 ```{r}
+<<<<<<< HEAD
 hc = hclust(d, method = 'complete')
 plot(hc,labels=name,cex=0.5)
 hclusters <- cutree(hc, k=6)
@@ -120,6 +127,19 @@ heatmap(normalized_kmer_matrix[cutree(hc.rows,k=2)==1,], Colv=as.dendrogram(hc.c
 # draw heatmap for second cluster
 heatmap(normalized_kmer_matrix[cutree(hc.rows,k=2)==2,], Colv=as.dendrogram(hc.cols), scale='none')
 ```
+=======
+dendro = hclust(d, method = 'ward.D')
+plot(dendro, hang = -1) # hang pour l'axe commence à zero
+heatmap(as.dendro(dendro))
+```
+
+
+
+
+
+
+
+>>>>>>> master
 
 
 

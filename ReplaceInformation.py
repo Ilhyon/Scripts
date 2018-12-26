@@ -156,6 +156,7 @@ def Fasta(geneID,chromosome,start,end, strand,specie):
 	elif (specie == 'MM'):# mouse
 		nameSpecie='Mus_musculus'
 	url = 'http://useast.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
+	#~ url = 'https://fungi.ensembl.org/Saccharomyces_cerevisiae/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g=YDL168W;output=fasta;r=4:159604-160764;strand=forward;genomic=unmasked;_format=Text'
 	response = urllib2.urlopen(url)
 	fasta = response.read()
 	return fasta
