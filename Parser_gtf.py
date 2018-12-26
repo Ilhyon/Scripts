@@ -27,20 +27,24 @@ for sp in listSp :
 					startFeature = words[3]
 					endFeature = words[4]
 					strand = words[6]
+					biotype = ""
+					for i in range(0,len(attribute)):
+						if re.search("transcript_biotype", attribute[i]):
+							biotype = attribute[i].split('"')[1]
 					if idGene not in dicoFeature :
 						if feature == "gene" :
-							biotype = attribute[2].split('"')[1]
 							dicoFeature[idGene] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
 						elif feature == "transcript" :
 							idTr = attribute[1].split('"')[1]
-							biotype = attribute[5].split('"')[1]
 							dicoFeature[idGene] = {"Transcript" : idTr}
 							dicoFeature[idGene]["Transcript"][idTr] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
 						elif feature == "exon" :
-							rank = attribute[2].split('"')[1]
+							rank = ""
+							for i in range(0,len(attribute)):
+								if re.search("exon_number", attribute[i]):
+									rank = attribute[i].split('"')[1]
 							idTr = attribute[1].split('"')[1]
 							idExon = attribute[-2].split('"')[1]
-							biotype = attribute[5].split('"')[1]
 							dicoFeature[idGene] = {"Transcript" : idTr}
 							dicoFeature[idGene]["Transcript"][idTr] = {"Exon" : idExon}
 							dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
@@ -51,7 +55,6 @@ for sp in listSp :
 							print "Chromosome : "+chrm+" | Start : "+startFeature+" | End :"+endFeature+" | Biotype : "+biotype+" | Strand : "+strand
 						elif feature == "transcript" :
 							idTr = attribute[1].split('"')[1]
-							biotype = attribute[5].split('"')[1]
 							if "Transcript" in dicoFeature[idGene]:
 								if idTr not in dicoFeature[idGene]["Transcript"] :
 									dicoFeature[idGene]["Transcript"][idTr] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
@@ -63,9 +66,11 @@ for sp in listSp :
 								dicoFeature[idGene]["Transcript"] = {idTr:{}}
 								dicoFeature[idGene]["Transcript"][idTr] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
 						elif feature == "exon" :
-							rank = attribute[2].split('"')[1]
+							rank = ""
+							for i in range(0,len(attribute)):
+								if re.search("exon_number", attribute[i]):
+									rank = attribute[i].split('"')[1]
 							idTr = attribute[1].split('"')[1]
-							biotype = attribute[-3].split('"')[1]
 							idExon = attribute[-2].split('"')[1]
 							if "Transcript" in dicoFeature[idGene]:
 								if idTr not in dicoFeature[idGene]["Transcript"] :
