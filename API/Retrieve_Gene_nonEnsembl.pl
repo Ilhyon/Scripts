@@ -97,7 +97,7 @@ sub get_transcript_info{
 			my $tr_start = $tr->start();
 			my $tr_end = $tr->end();
 			my $chr = $tr->seq_region_name();
-			print $chr,"\n";
+			#~ print $chr,"\n";
 			foreach my $five_UTR (@{$five_UTRs}){
 				$five_UTR_start = $five_UTR->start();
 				$five_UTR_end = $five_UTR->end();
@@ -165,9 +165,9 @@ sub get_gene_unspliced {
 #~ my @list_sp_plants=("oryza_sativa","chlamydomonas_reinhardtii","chondrus_crispus","amborella_trichopoda","physcomitrella_patens","selaginella_moellendorffii","solanum_lycopersicum","vitis_vinifera","arabidopsis_thaliana");
 #~ my @list_sp_fungi=("aspergillus_nidulans","neurospora_crassa","saccharomyces_cerevisiae","schizosaccharomyces_pombe");
 #~ my @list_sp_protist=("bigelowiella_natans","dictyostelium_discoideum","emiliania_huxleyi","leishmania_major","tetrahymena_thermophila");
-my @list_sp_bacteria=("borrelia_burgdorferi_B31","thermus_thermophilus_HB8","geobacter_sulfurreducens_PCA","wolbachia_endosymbiont_of_drosophila_melanogaster","aquifex_aeolicus_VF5","cenarchaeum_symbiosum_a","gardnerella_vaginalis_0288E","myxococcus_xanthus_DK_1622","neisseria_meningitidis_Z2491","sulfolobus_solfataricus_P2","thermoplasma_acidophilum_DSM_1728","methanosarcina_acetivorans_C2A","pyrococcus_horikoshii_OT3","methanococcus_maripaludis_S2","aeropyrum_pernix_K1","archaeoglobus_fulgidus_DSM_4304","candidatus_korarchaeum_cryptofilum_OPF8","halobacterium_salinarum_R1");
-# "campylobacter_jejuni_subsp_jejuni_nctc_11168_atcc_700819","brucella_abortus_bv_1_str_9_941","pseudomonas_aeruginosa_mpao1_p2","yersinia_pestis_biovar_microtus_str_91001","anaplasma_phagocytophilum_str_hz","chloroflexus_aurantiacus_j_10_fl","haemophilus_influenzae_rd_kw20","legionella_pneumophila_str_paris","vibrio_cholerae_o1_biovar_el_tor_str_n16961","pyrobaculum_aerophilum_str_im2","methanobrevibacter_smithii_atcc_35061","staphylococcus_aureus_subsp_aureus_n315","francisella_tularensis_subsp_tularensis_schu_s4","escherichia_coli_str_k_12_substr_mg1655","bacillus_subtilis_subsp_subtilis_str_168","mycobacterium_tuberculosis_h37rv","enterococcus_faecalis_v583","mycoplasma_pneumoniae_m129",
-my @error = ("chlamydia_trachomatis_d_uw_3_cx","nanoarchaeum_equitans_kin4_m","streptococcus_pneumoniae_TIGR4");
+my @list_sp_bacteria=("methanococcus_maripaludis_S2","aeropyrum_pernix_K1","archaeoglobus_fulgidus_DSM_4304","candidatus_korarchaeum_cryptofilum_OPF8");
+# "thermoplasma_acidophilum_DSM_1728","methanosarcina_acetivorans_C2A","campylobacter_jejuni_subsp_jejuni_nctc_11168_atcc_700819","brucella_abortus_bv_1_str_9_941","pseudomonas_aeruginosa_mpao1_p2","yersinia_pestis_biovar_microtus_str_91001","anaplasma_phagocytophilum_str_hz","chloroflexus_aurantiacus_j_10_fl","haemophilus_influenzae_rd_kw20","legionella_pneumophila_str_paris","vibrio_cholerae_o1_biovar_el_tor_str_n16961","pyrobaculum_aerophilum_str_im2","methanobrevibacter_smithii_atcc_35061","staphylococcus_aureus_subsp_aureus_n315","francisella_tularensis_subsp_tularensis_schu_s4","escherichia_coli_str_k_12_substr_mg1655","bacillus_subtilis_subsp_subtilis_str_168","mycobacterium_tuberculosis_h37rv","enterococcus_faecalis_v583","mycoplasma_pneumoniae_m129","borrelia_burgdorferi_B31","thermus_thermophilus_HB8","geobacter_sulfurreducens_PCA","wolbachia_endosymbiont_of_drosophila_melanogaster","aquifex_aeolicus_VF5","cenarchaeum_symbiosum_a","gardnerella_vaginalis_0288E","myxococcus_xanthus_DK_1622","neisseria_meningitidis_Z2491",
+my @error = ("chlamydia_trachomatis_d_uw_3_cx","nanoarchaeum_equitans_kin4_m","streptococcus_pneumoniae_TIGR4","sulfolobus_solfataricus_P2","pyrococcus_horikoshii_OT3","halobacterium_salinarum_R1");
 
 #~ my $genome_db_adaptor_metazoa = $registry->get_adaptor('metazoa', 'compara', 'GenomeDB');
 #~ my $genome_db_adaptor_plants = $registry->get_adaptor('plants', 'compara', 'GenomeDB');
