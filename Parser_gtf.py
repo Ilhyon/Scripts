@@ -28,6 +28,10 @@ for sp in listSp :
 					startFeature = words[3]
 					endFeature = words[4]
 					strand = words[6]
+					if strand == "+":
+						strand = 1
+					elif strand == "-":
+						strand = -1
 					biotype = ""
 					for i in range(0,len(attribute)):
 						if re.search("transcript_biotype", attribute[i]):
@@ -55,6 +59,20 @@ for sp in listSp :
 							dicoFeature[idGene] = {"Transcript" : idTr}
 							dicoFeature[idGene]["Transcript"][idTr] = {"Exon" : idExon}
 							dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
+						elif feature == "five_prime_utr" :
+							idTr = 0
+							for i in range(0,len(attribute)):
+								if re.search("transcript_id", attribute[i]):
+									idTr = attribute[i].split('"')[1]
+							dicoFeature[idGene] = {"Transcript" : idTr}
+							dicoFeature[idGene]["Transcript"][idTr]={"5UTR" :{"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}
+						elif feature == "three_prime_utr" :
+							idTr = 0
+							for i in range(0,len(attribute)):
+								if re.search("transcript_id", attribute[i]):
+									idTr = attribute[i].split('"')[1]
+							dicoFeature[idGene] = {"Transcript" : idTr}
+							dicoFeature[idGene]["Transcript"][idTr]={"3UTR" :{"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}
 					else:
 						if feature == "gene" :
 							print "This gene already exist :"
@@ -107,6 +125,43 @@ for sp in listSp :
 								dicoFeature[idGene].update({"Transcript" : idTr})
 								dicoFeature[idGene]["Transcript"][idTr] = {"Exon" : idExon}
 								dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
+						elif feature == "five_prime_utr" :
+							idTr = 0
+							for i in range(0,len(attribute)):
+								if re.search("transcript_id", attribute[i]):
+									idTr = attribute[i].split('"')[1]
+							if "Transcript" in dicoFeature[idGene]:
+								if idTr not in dicoFeature[idGene]["Transcript"] :
+									dicoFeature[idGene]["Transcript"].update({idTr : {"5UTR" :{"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}})
+								else :
+									if "5UTR" in dicoFeature[idGene]["Transcript"][idTr] :
+										if (strand == "1" and startFeature == dicoFeature[idGene]["Transcript"][idTr]["Start"]) or (strand == "-1" and endFeature == dicoFeature[idGene]["Transcript"][idTr]["End"]):
+											dicoFeature[idGene]["Transcript"][idTr]["5UTR"] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
+										#~ print "This 5UTR already exist :"
+										#~ pprint(dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon])
+										#~ print "Transcrit : "+idTr+" | Chromosome : "+chrm+" | Start : "+startFeature+" | End :"+endFeature+" | Biotype : "+biotype+" | Strand : "+strand
+									else :
+										dicoFeature[idGene]["Transcript"][idTr]["5UTR"] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
+							else : 
+								dicoFeature[idGene].update({"Transcript" : idTr})
+								dicoFeature[idGene]["Transcript"][idTr] = {"5UTR" : {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}
+						elif feature == "three_prime_utr" :
+							idTr = 0
+							for i in range(0,len(attribute)):
+								if re.search("transcript_id", attribute[i]):
+									idTr = attribute[i].split('"')[1]
+							if "Transcript" in dicoFeature[idGene]:
+								if idTr not in dicoFeature[idGene]["Transcript"] :
+									dicoFeature[idGene]["Transcript"].update({idTr : {"3UTR" :{"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}})
+								else :
+									if "3UTR" in dicoFeature[idGene]["Transcript"][idTr]:
+										if (strand == "1" and endFeature == dicoFeature[idGene]["Transcript"][idTr]["End"]) or (strand == "-1" and startFeature == dicoFeature[idGene]["Transcript"][idTr]["Start"]):
+											dicoFeature[idGene]["Transcript"][idTr]["3UTR"] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
+									else :
+										dicoFeature[idGene]["Transcript"][idTr]["3UTR"] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
+							else : 
+								dicoFeature[idGene].update({"Transcript" : idTr})
+								dicoFeature[idGene]["Transcript"][idTr] = {"3UTR" : {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}
 		
 		#~ pprint(dicoFeature)
 		words = sp.split("_")
@@ -124,8 +179,23 @@ for sp in listSp :
 					start = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Start"]
 					end = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["End"]
 					rank = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Rank"]
-					strand = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Strand"]
-					output.write(gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t"+""+"\t"+""+"\t"+""+"\t"+""+"\t"+start+"\t"+end+"\t"+rank+"\t"+strand+"\n")
+					strand = str(dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Strand"])
+					output.write(gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t\t\t\t\t"+start+"\t"+end+"\t"+rank+"\t"+strand+"\n")
+				if "5UTR" in dicoFeature[gene]["Transcript"][transcript] :
+					chromosome = dicoFeature[gene]["Transcript"][transcript]["5UTR"]["Chromosome"]
+					biotype = dicoFeature[gene]["Transcript"][transcript]["5UTR"]["Biotype"]
+					start = dicoFeature[gene]["Transcript"][transcript]["5UTR"]["Start"]
+					end = dicoFeature[gene]["Transcript"][transcript]["5UTR"]["End"]
+					strand = str(dicoFeature[gene]["Transcript"][transcript]["5UTR"]["Strand"])
+					output.write(gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t"+start+"\t"+end+"\t\t\t\t\t\t"+strand+"\n")
+				if "3UTR" in dicoFeature[gene]["Transcript"][transcript] :
+					chromosome = dicoFeature[gene]["Transcript"][transcript]["3UTR"]["Chromosome"]
+					biotype = dicoFeature[gene]["Transcript"][transcript]["3UTR"]["Biotype"]
+					start = dicoFeature[gene]["Transcript"][transcript]["3UTR"]["Start"]
+					end = dicoFeature[gene]["Transcript"][transcript]["3UTR"]["End"]
+					strand = str(dicoFeature[gene]["Transcript"][transcript]["3UTR"]["Strand"])
+					output.write(gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t\t\t"+start+"\t"+end+"\t\t\t\t"+strand+"\n")
+				
 		output.close()
 		
 		#~ output = open("/home/anais/Documents/Data/"+sp+"/"+ini+"_gene_list.txt","w") # file opening for reading
