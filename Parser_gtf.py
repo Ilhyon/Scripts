@@ -9,7 +9,8 @@ listSp = ("pyrobaculum_aerophilum_str_im2","methanobrevibacter_smithii_atcc_3506
 #~ listSp = ("pyrobaculum_aerophilum_str_im2")
 for sp in listSp :
 	sp = "mus_musculus"
-	filename = "/home/anais/Documents/Data/"+sp+"/"+sp+".gtf"
+	#~ filename = "/home/anais/Documents/Data/"+sp+"/"+sp+".gtf"
+	filename = "/home/local/USHERBROOKE/vana2406/Documents/Data/"+sp+"/"+sp+".gtf"
 	exists = os.path.isfile(filename)
 	if exists :	
 		dicoFeature = {}
@@ -35,16 +36,22 @@ for sp in listSp :
 						if feature == "gene" :
 							dicoFeature[idGene] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
 						elif feature == "transcript" :
-							idTr = attribute[1].split('"')[1]
+							for i in range(0,len(attribute)):
+								if re.search("transcript_id", attribute[i]):
+									idTr = attribute[i].split('"')[1]
 							dicoFeature[idGene] = {"Transcript" : idTr}
 							dicoFeature[idGene]["Transcript"][idTr] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
 						elif feature == "exon" :
 							rank = ""
+							idExon = 0
+							idTr = 0
 							for i in range(0,len(attribute)):
 								if re.search("exon_number", attribute[i]):
 									rank = attribute[i].split('"')[1]
-							idTr = attribute[1].split('"')[1]
-							idExon = attribute[-2].split('"')[1]
+								elif re.search("exon_id", attribute[i]):
+									idExon = attribute[i].split('"')[1]
+								elif re.search("transcript_id", attribute[i]):
+									idTr = attribute[i].split('"')[1]
 							dicoFeature[idGene] = {"Transcript" : idTr}
 							dicoFeature[idGene]["Transcript"][idTr] = {"Exon" : idExon}
 							dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
@@ -54,12 +61,16 @@ for sp in listSp :
 							pprint(dicoFeature[idGene])
 							print "Chromosome : "+chrm+" | Start : "+startFeature+" | End :"+endFeature+" | Biotype : "+biotype+" | Strand : "+strand
 						elif feature == "transcript" :
-							idTr = attribute[1].split('"')[1]
+							idTr = 0
+							for i in range(0,len(attribute)):
+								if re.search("transcript_id", attribute[i]):
+									idTr = attribute[i].split('"')[1]
 							if "Transcript" in dicoFeature[idGene]:
 								if idTr not in dicoFeature[idGene]["Transcript"] :
 									dicoFeature[idGene]["Transcript"][idTr] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
 								else :
 									print "This transcript already exist :"
+									print idTr
 									pprint(dicoFeature[idGene]["Transcript"][idTr])
 									print "Chromosome : "+chrm+" | Start : "+startFeature+" | End :"+endFeature+" | Biotype : "+biotype+" | Strand : "+strand
 							else : 
@@ -67,14 +78,19 @@ for sp in listSp :
 								dicoFeature[idGene]["Transcript"][idTr] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
 						elif feature == "exon" :
 							rank = ""
+							idExon = 0
+							idTr = 0
 							for i in range(0,len(attribute)):
 								if re.search("exon_number", attribute[i]):
 									rank = attribute[i].split('"')[1]
-							idTr = attribute[1].split('"')[1]
-							idExon = attribute[-2].split('"')[1]
+								elif re.search("exon_id", attribute[i]):
+									idExon = attribute[i].split('"')[1]
+								elif re.search("transcript_id", attribute[i]):
+									idTr = attribute[i].split('"')[1]
 							if "Transcript" in dicoFeature[idGene]:
 								if idTr not in dicoFeature[idGene]["Transcript"] :
-									dicoFeature[idGene]["Transcript"][idTr] = {"Exon" : idExon}
+									dicoFeature[idGene]["Transcript"].update({idTr : {}})
+									dicoFeature[idGene]["Transcript"][idTr]["Exon"] = {idExon:{}}
 									dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
 								else :
 									if "Exon" in dicoFeature[idGene]["Transcript"][idTr]:
@@ -97,9 +113,11 @@ for sp in listSp :
 		letters = [word[0] for word in words]
 		ini = "".join(letters)
 		ini = ini.upper()
-		output = open("/home/anais/Documents/Data/"+sp+"/"+ini+"_transcript_unspliced.txt","w") # file opening for reading
+		#~ output = open("/home/anais/Documents/Data/"+sp+"/"+ini+"_transcript_unspliced.txt","w") # file opening for reading
+		output = open("/home/local/USHERBROOKE/vana2406/Documents/Data/"+sp+"/"+ini+"_transcript_unspliced.txt","w") # file opening for reading
 		for gene in dicoFeature :
 			for transcript in dicoFeature[gene]["Transcript"] :
+				#~ print str(gene) +"\t"+ str(transcript)
 				for exon in dicoFeature[gene]["Transcript"][transcript]["Exon"]:
 					chromosome = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Chromosome"]
 					biotype = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Biotype"]
@@ -110,7 +128,8 @@ for sp in listSp :
 					output.write(gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t"+""+"\t"+""+"\t"+""+"\t"+""+"\t"+start+"\t"+end+"\t"+rank+"\t"+strand+"\n")
 		output.close()
 		
-		output = open("/home/anais/Documents/Data/"+sp+"/"+ini+"_gene_list.txt","w") # file opening for reading
+		#~ output = open("/home/anais/Documents/Data/"+sp+"/"+ini+"_gene_list.txt","w") # file opening for reading
+		output = open("/home/local/USHERBROOKE/vana2406/Documents/Data/"+sp+"/"+ini+"_gene_list.txt","w") # file opening for reading
 		for gene in dicoFeature :
 			output.write(gene+"\n")
 		output.close()
