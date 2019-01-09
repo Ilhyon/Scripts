@@ -38,14 +38,11 @@ for sp in listSp :
 						startFeature = words[3]
 						endFeature = words[4]
 						strand = words[6]
-						if idGene == "GB50793" :
-							print startFeature
-							print endFeature
 						if strand == "+":
 							strand = 1
 						elif strand == "-":
 							strand = -1
-						geneSequence = dicoChromosome[chrm][(int(startFeature)-1):(int(endFeature)-1)]
+						geneSequence = dicoChromosome[chrm][(int(startFeature)-1):(int(endFeature)-1+1)]
 						dicoGene.update({idGene : {"Chromosome" : chrm, "Start" : startFeature, "End" : endFeature, "Strand" : str(strand), "Sequence" : geneSequence}})
 	
 	words = sp.split("_")
@@ -62,9 +59,24 @@ for sp in listSp :
 		output.write(">"+gene+"|"+chromosome+"|"+start+"|"+end+"|"+strand+"\n")
 		nbLine = math.ceil(float(int(end)-int(start))/60)
 		cpt1 = 0
-		cpt2 = 59
+		cpt2 = 60
 		if nbLine < 0 :
 			print AH
+		if strand == "-1" :
+			reverse = ""
+			for n in Sequence:
+				if n == "A" :
+					tmp = "T"
+				elif n == "T" :
+					tmp = "A"
+				elif n == "G" :
+					tmp = "C"
+				elif n == "C" :
+					tmp = "G"
+				else :
+					tmp = n
+				reverse = reverse + tmp
+			Sequence = reverse[::-1]
 		for i in range(0,int(nbLine)) :
 			output.write(Sequence[cpt1:cpt2]+"\n")
 			cpt1 += 60
@@ -74,12 +86,20 @@ for sp in listSp :
 
 
 
-
-
-
-
-
-
+reverse = ""
+for l in word:
+	if l == "A" :
+		tmp = "T"
+	elif l == "T" :
+		tmp = "A"
+	elif l == "G" :
+		tmp = "C"
+	elif l == "C" :
+		tmp = "G"
+	else :
+		tmp = l
+	reverse = reverse + tmp
+print reverse[::-1]
 
 
 
