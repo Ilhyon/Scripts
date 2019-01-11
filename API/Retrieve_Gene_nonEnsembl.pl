@@ -152,7 +152,7 @@ sub get_gene_unspliced {
 		push @transcript_unspliced, get_transcript_info($transcripts,$geneID,$strand);
 	}
 	check_file($sp);
-	my $filename = "/home/anais/Documents/Data/" . $sp . "/" . $initiales . "_gene_unspliced.fasta";
+	my $filename = "/home/anais/Documents/Data/" . $sp . "/" . $initiales . "_gene_unspliced.txt";
 	write_output($filename, @tmp);
 	$filename = "/home/anais/Documents/Data/" . $sp . "/" . $initiales . "_GeneID.txt";
 	write_output($filename, @all_genes_ID);
