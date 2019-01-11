@@ -81,5 +81,6 @@ for sp in listSp :
 			output.write(Sequence[cpt1:cpt2]+"\n")
 			cpt1 += 60
 			cpt2 += 60
+	output.close()
 	
 # ~ pprint(dicoGene)
