@@ -143,7 +143,7 @@ sub get_gene_unspliced {
 		my $strand = $gene->strand();
 		my $start = $gene->start();
 		my $end = $gene->end();
-		my $header = $geneID . "|" . $strand . "|" . $start . "|" . $end . "\n";
+		my $header = ">" . $geneID . "|" . $strand . "|" . $start . "|" . $end . "\n";
 		my $gene_unspliced = $gene->seq();
 		my $fasta_gene_unspliced = $header . $gene_unspliced;
 		push @tmp, $fasta_gene_unspliced; 
