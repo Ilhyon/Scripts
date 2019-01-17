@@ -38,7 +38,6 @@ my $homology_adaptor = $registry->get_adaptor('pan_homology', 'compara', 'Homolo
 # other species and paralogues in the same one)
 # Then for each homology, you can get all the Members implicated
 
-my %Dico_homology;
 
 foreach my $gene (@gene_list) {
 	my $gene_member = $pan_homology_adaptor->fetch_by_stable_id($gene);
@@ -47,11 +46,10 @@ foreach my $gene (@gene_list) {
 	  # You will find different kind of description
 	  # see ensembl-compara/docs/docs/schema_doc.html for more details
 	  my $pair_homologues = $homology->gene_list();
-	  foreach my $gene (@{$pair_homologues}){
-			my $id = $gene->stable_id();
-			if($id ne 'ENSG00000100416' ){ # && $homology->description eq "ortholog_one2one"
-				print $homology->description," ", $homology->taxonomy_level;
-				print " ", $id, "\n";
+	  foreach my $genes (@{$pair_homologues}){
+			my $id = $genes->stable_id();
+			if($id ne $gene ){ # && $homology->description eq "ortholog_one2one"
+				print $homology->description,"\t", $id, "\n";
 			}
 		}
 	}
