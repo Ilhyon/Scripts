@@ -10,6 +10,7 @@ import os
 import scipy.sparse as sparse
 import re
 import random
+import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 from Bio import SeqIO
@@ -34,7 +35,7 @@ def OrderInformationBiomart(directory,inputfilename): ### create one line per tr
 	inputfile= open(directory+inputfilename,"r") 
 	for line in inputfile:
 		if (re.search('ENS', line)): 
-			words=line.split('\t')
+			words=line.split(',')
 			geneID=words[0].rstrip() # gene Id 
 			transcriptID=words[1].rstrip() # transcropt Id 
 			chromosome=words[2].rstrip() 
@@ -73,11 +74,10 @@ def OrderInformationBiomart(directory,inputfilename): ### create one line per tr
 				end3=end_3
 			InformationPerGeneAndTranscript[geneID+"-"+transcriptID]=chromosome+"|"+biotype+"|"+start5+"|"+end5+"|"+start3+"|"+end3+"|"+var_startExon +"|"+var_endExon+"|"+var_rank+"|"+strand ## la
 	return InformationPerGeneAndTranscript
-	
+
 def ExonTotal(rank, strand, start_exon, end_exon):
 	i=0
 	exon_total=[]
-	exonTotalOrdered=[]
 	while i < len(rank):
 			exon=[]
 			if (strand == str(1)): ## if gene positif
@@ -89,12 +89,7 @@ def ExonTotal(rank, strand, start_exon, end_exon):
 				exon.append(str(start_exon[i]))
 				i=i+1
 			exon_total.append(exon) ## create array of array with start and end of each exon 
-	for i in range(len(rank)):
-		exonTotalOrdered.append(0)
-	for i in range(len(rank)):
-		numberExon=rank[i]
-		exonTotalOrdered[int(numberExon)-1]=exon_total[i]
-	return exonTotalOrdered
+	return exon_total
 
 def CreateStartIntron(exon_total, rank, strand):
 	start_intron=[]
@@ -107,11 +102,9 @@ def CreateStartIntron(exon_total, rank, strand):
 			start_intron.append(debut_intron)
 	return start_intron ## create array  with start of each intron 
 
-def CreateEndIntron(geneID,exon_total, rank, strand):
+def CreateEndIntron(exon_total, rank, strand):
 	end_intron=[]
-	
 	for i in exon_total:
-		
 		if ( int(i[0]) != int(exon_total[-len(rank)][0]) ): ## EXCEPT start firt exon
 			if (strand == str(1)):
 				fin_intron=int(i[0])-1 ## end exon +1 == > debut intron 
@@ -153,10 +146,9 @@ def Fasta(geneID,chromosome,start,end, strand,specie):
 	nameSpecie=''
 	if (specie == 'HS'): # human
 		nameSpecie='Homo_sapiens'
-	elif (specie == 'MM'):# mouse
+	elif (specie == 'MS'):# mouse
 		nameSpecie='Mus_musculus'
 	url = 'http://useast.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
-	#~ url = 'https://fungi.ensembl.org/Saccharomyces_cerevisiae/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g=YDL168W;output=fasta;r=4:159604-160764;strand=forward;genomic=unmasked;_format=Text'
 	response = urllib2.urlopen(url)
 	fasta = response.read()
 	return fasta
@@ -165,7 +157,14 @@ def Sequence(fasta, strand):
 	sequence=""
 	for i in fasta.split("\r\n"):
 		if not (re.search('^>', i) or re.search('\n', i)):
+			#if (strand == str(1)):
 			sequence=sequence+i
+			#else:
+				#dna = Seq(i, generic_dna)
+				#sequence_reverse= dna.reverse_complement()
+				#sequence=sequence_reverse+sequence
+				#sequence=i+sequence
+				
 	return sequence
 	
 def CreateSequence(directory, inputfilename, IntronPerGene, InfoPerGene, extension,specie):
@@ -176,7 +175,7 @@ def CreateSequence(directory, inputfilename, IntronPerGene, InfoPerGene, extensi
 			chromosome=InfoPerGene.get(key).split("\t")[0]
 			biotype=InfoPerGene.get(key).split("\t")[1]
 			strand=InfoPerGene.get(key).split("\t")[2]
-			for value_intron in value: # for each intron of this gene
+			for value_intron in value:
 				start_intron=value_intron[0]
 				end_intron=value_intron[1]
 				if (strand == str(1)): ## if gene positif
@@ -186,10 +185,14 @@ def CreateSequence(directory, inputfilename, IntronPerGene, InfoPerGene, extensi
 					end_inf=int(end_intron)+1+extension
 					fasta_amont=Fasta(geneID,chromosome,start_sup,end_sup,strand,specie)
 					sequence_amont=Sequence(fasta_amont, strand)
+					#if (sequence_amont):
+						#print' yes'
+					#else:
+						#print ' no'
 					fasta_aval=Fasta(geneID,chromosome,start_inf,end_inf,strand,specie)
 					sequence_aval=Sequence(fasta_aval, strand)
 			
-				else : ## if gene negatif
+				else :
 					start_sup=int(start_intron)+1+extension
 					end_sup=int(start_intron)+1
 					start_inf=int(end_intron)-1
@@ -200,6 +203,7 @@ def CreateSequence(directory, inputfilename, IntronPerGene, InfoPerGene, extensi
 					fasta_aval=Fasta(geneID,chromosome,end_inf,start_inf,strand,specie)
 					sequence_aval=Sequence(fasta_aval, strand)
 				sequence=sequence_amont+sequence_aval
+				#print sequence
 				output1.write(">"+geneID+"|"+"-".join(value_intron)+"\n"+str(sequence)+"\n")
 
 def CreateIndex(directory, inputfilename,InformationPerGeneAndTranscript,ExonPerTranscript, IntronPerTranscript):
@@ -234,9 +238,10 @@ def CreateIndex(directory, inputfilename,InformationPerGeneAndTranscript,ExonPer
 	
 		
 def build_arg_parser():
+	GITDIR=os.getcwd()+'/../'
 	parser = argparse.ArgumentParser(description = 'ReplaceInformationBiomart')
-	parser.add_argument ('-p', '--path', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/Human')
-	parser.add_argument ('-chr', '--chromosome', default = 'X')
+	parser.add_argument ('-p', '--path', default = GITDIR+'data')
+	parser.add_argument ('-chr', '--chromosome', default = '21')
 	parser.add_argument ('-specie', '--specie', default = 'HS')
 	parser.add_argument ('-ext', '--extension', default = 100)
 	return parser
@@ -268,6 +273,7 @@ def main () :
 
 	InformationPerGeneAndTranscript=OrderInformationBiomart(directory, inputfilename)
 	
+	
 	for key, values in InformationPerGeneAndTranscript.items():
 		geneID=key.split("-")[0]
 		transcriptID=key.split("-")[1]
@@ -287,7 +293,7 @@ def main () :
 											### if biotype gene = coding mais absence de 5' et 3' --> biotype transcript = non coding
 		exon_total=ExonTotal(rank, strand, start_exon, end_exon)
 		start_intron=CreateStartIntron(exon_total, rank, strand)
-		end_intron=CreateEndIntron(geneID,exon_total, rank, strand)
+		end_intron=CreateEndIntron(exon_total, rank, strand)
 		intron_total = IntronTotal(start_intron, end_intron, strand)
 		ExonPerTranscript[transcriptID] = exon_total
 		IntronPerTranscript[transcriptID] = intron_total
@@ -301,17 +307,31 @@ def main () :
 		IntronPerGene[geneID] = Intron ## add information in dico (modification of value if key already exist)
 		TranscriptPerIntron=AddTranscriptPerIntron(intron_total, TranscriptPerIntron, transcriptID)
 	
-	
-	
 ###################################################################################################################################### CREATE FILES
 	##Create file Sequence
-	
-	#CreateSequence(directory, inputfilename,IntronPerGene, InfoPerGene, extension,specie)
-	
+	CreateSequence(directory, inputfilename,IntronPerGene, InfoPerGene, extension,specie)
+	'''
+	##Create file IntronPerGene		
+	output2= open(directory+inputfilename.split(".")[0]+"_IntronPerGene.txt","w") 	
+	for key, value in IntronPerGene.items():
+		string=""
+		for i in value:
+			string=string+"-".join(i)+"|"
+		output2.write(key+"\t"+string+"\n")
+
+	##Create file TranscriptPerIntron
+	output3= open(directory+inputfilename.split(".")[0]+"_TranscriptPerIntron.txt","w") 	
+	for key, value in TranscriptPerIntron.items():
+		output3.write(key+"\t"+value+"\n")
+
+	##Create file InfoPerGene
+	output4= open(directory+inputfilename.split(".")[0]+"_InfoPerGene.txt","w") 	
+	for key, value in InfoPerGene.items():
+		output4.write(key+"\t"+value+"\n")
+	'''
 
 	CreateIndex(directory, inputfilename,InformationPerGeneAndTranscript,ExonPerTranscript, IntronPerTranscript)
 
-	
 	
 				
 		
