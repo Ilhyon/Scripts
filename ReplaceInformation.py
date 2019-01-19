@@ -1,5 +1,3 @@
-#! usr/bin/python
-
 import csv, math, numpy
 import string
 import subprocess
@@ -10,14 +8,14 @@ import os
 import scipy.sparse as sparse
 import re
 import random
-import matplotlib.pyplot as plt
+# ~ import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 from Bio import SeqIO
 from scipy import stats
 import copy
 import urllib 
-import urllib2
+# ~ import urllib2
 from Bio import SeqIO
 
 from Bio.Seq import Seq
@@ -91,6 +89,134 @@ def ExonTotal(rank, strand, start_exon, end_exon):
 			exon_total.append(exon) ## create array of array with start and end of each exon 
 	return exon_total
 
+def SpecieSelction(sp):
+	if sp == "APSH":
+		return "Anaplasma_phagocytophilum_str_hz"
+	elif sp == "AC":
+		return "Anolis_carolinensis"
+	elif sp == "AM":
+		return "Apis_mellifera"
+	elif sp == "AAV":
+		return "Aquifex_aeolicus_vf5"
+	elif sp == "AT":
+		return "Arabidopsis_thaliana"
+	elif sp == "AFD4":
+		return "Archaeoglobus_fulgidus_dsm_4304"
+	elif sp == "AN":
+		return "Aspergillus_nidulans"
+	elif sp == "BSSSS1":
+		return "Bacillus_subtilis_subsp_subtilis_str_168"
+	elif sp == "BBB":
+		return "Borrelia_burgdorferi_b31"
+	elif sp == "BAB1S99":
+		return "Brucella_abortus_bv_1_str_9_941"
+	elif sp == "CE":
+		return "Caenorhabditis_elegans"
+	elif sp == "CJSJN1A7":
+		return "Campylobacter_jejuni_subsp_jejuni_nctc_11168_atcc_700819"
+	elif sp == "CKCO":
+		return "Candidatus_korarchaeum_cryptofilum_opf8"
+	elif sp == "CSA":
+		return "Cenarchaeum_symbiosum_a"
+	elif sp == "CTDU3C":
+		return "Chlamydia_trachomatis_d_uw_3_cx"
+	elif sp == "CR":
+		return "Chlamydomonas_reinhardtii"
+	elif sp == "CAJ1F":
+		return "Chloroflexus_aurantiacus_j_10_fl"
+	elif sp == "CC":
+		return "Chondrus_crispus"
+	elif sp == "DR":
+		return "Danio_rerio"
+	elif sp == "DD":
+		return "Dictyostelium_discoideum"
+	elif sp == "DM":
+		return "Drosophila_melanogaster"
+	elif sp == "EH":
+		return "Emiliania_huxleyi"
+	elif sp == "EFV":
+		return "Enterococcus_faecalis_v583"
+	elif sp == "ECSK1SM":
+		return "Escherichia_coli_str_k_12_substr_mg1655"
+	elif sp == "FTSTSS":
+		return "Francisella_tularensis_subsp_tularensis_schu_s4"
+	elif sp == "GG":
+		return "Gallus_gallus"
+	elif sp == "GA":
+		return "Gasterosteus_aculeatus"
+	elif sp == "GSP":
+		return "Geobacter_sulfurreducens_pca"
+	elif sp == "HIRK":
+		return "Haemophilus_influenzae_rd_kw20"
+	elif sp == "HSR":
+		return "Halobacterium_salinarum_r1"
+	elif sp == "HS":
+		return "Homo_sapiens"
+	elif sp == "HBD5":
+		return "Hyperthermus_butylicus_dsm_5456"
+	elif sp == "LPSP":
+		return "Legionella_pneumophila_str_paris"
+	elif sp == "LM":
+		return "Leishmania_major"
+	elif sp == "MSA3":
+		return "Methanobrevibacter_smithii_atcc_35061"
+	elif sp == "MAC":
+		return "Methanosarcina_acetivorans_c2a"
+	elif sp == "MD":
+		return "Monodelphis_domestica"
+	elif sp == "MM":
+		return "Mus_musculus"
+	elif sp == "MTH":
+		return "Mycobacterium_tuberculosis_h37rv"
+	elif sp == "MPM":
+		return "Mycoplasma_pneumoniae_m129"
+	elif sp == "MXD1":
+		return "Myxococcus_xanthus_dk_1622"
+	elif sp == "NEKM":
+		return "Nanoarchaeum_equitans_kin4_m"
+	elif sp == "NMZ":
+		return "Neisseria_meningitidis_z2491"
+	elif sp == "NC":
+		return "Neurospora_crassa"
+	elif sp == "OA":
+		return "Ornithorhynchus_anatinus"
+	elif sp == "OS":
+		return "Oryza_sativa"
+	elif sp == "PT":
+		return "Pan_troglodyte"
+	elif sp == "PP":
+		return "Physcomitrella_patens"
+	elif sp == "PA":
+		return "Pongo_abelii"
+	elif sp == "PASI":
+		return "Pyrobaculum_aerophilum_str_im2"
+	elif sp == "PHO":
+		return "Pyrococcus_horikoshii_ot3"
+	elif sp == "SC":
+		return "Saccharomyces_cerevisiae"
+	elif sp == "SP":
+		return "Schizosaccharomyces_pombe"
+	elif sp == "SL":
+		return "Solanum_lycopersicum"
+	elif sp == "SASAN":
+		return "Staphylococcus_aureus_subsp_aureus_n315"
+	elif sp == "SPT":
+		return "Streptococcus_pneumoniae_tigr4"
+	elif sp == "SSP":
+		return "Sulfolobus_solfataricus_p2"
+	elif sp == "TAD1":
+		return "Thermoplasma_acidophilum_dsm_1728"
+	elif sp == "TTH":
+		return "Thermus_thermophilus_hb8"
+	elif sp == "VCOBETSN":
+		return "Vibrio_cholerae_o1_biovar_el_tor_str_n16961"
+	elif sp == "VV":
+		return "Vitis_vinifera"
+	elif sp == "WEODM":
+		return "Wolbachia_endosymbiont_of_drosophila_melanogaster"
+	elif sp == "YPBMS9":
+		return 	"Yersinia_pestis_biovar_microtus_str_91001"
+
 def CreateStartIntron(exon_total, rank, strand):
 	start_intron=[]
 	for i in exon_total:
@@ -143,14 +269,43 @@ def AddTranscriptPerIntron(intron_total, Dico, transcriptID):
 	return Dico
 
 def Fasta(geneID,chromosome,start,end, strand,specie):
-	nameSpecie=''
-	if (specie == 'HS'): # human
-		nameSpecie='Homo_sapiens'
-	elif (specie == 'MS'):# mouse
-		nameSpecie='Mus_musculus'
-	url = 'http://useast.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
-	response = urllib2.urlopen(url)
-	fasta = response.read()
+	nameSpecie = SpecieSelction(specie)
+	ensembl = ("Homo_sapiens","Pan_troglodytes","Pongo_abelii","Mus_musculus","Monodelphis_domestica","Anolis_carolinensis","Ornithorhynchus_anatinus","Gallus_gallus","Danio_rerio","Gasterosteus_aculeatus")
+	metazoa = ("Caenorhabditis_elegans","Drosophila_melanogaster","Apis_mellifera")
+	plants = ("Oryza_sativa","Chlamydomonas_reinhardtii","Chondrus_crispus","Physcomitrella_patens","Solanum_lycopersicum","Vitis_vinifera","Arabidopsis_thaliana")
+	fungi = ("Aspergillus_nidulans","Neurospora_crassa","Saccharomyces_cerevisiae","Schizosaccharomyces_pombe")
+	protist = ("Dictyostelium_discoideum","Emiliania_huxleyi","Leishmania_major")
+	bacteria = ("Mycoplasma_pneumoniae","Staphylococcus_aureus","Bacillus_subtilis","Enterococcus_faecalis","Streptococcus_pneumoniae","Chlamydia_trachomatis","Borrelia_burgdorferi","Mycobacterium_tuberculosis","Thermus_thermophilus","Geobacter_sulfurreducens","Campylobacter_jejuni","Wolbachia","Brucella_abortus","Escherichia_coli","Yersinia_pestis","Anaplasma_phagocytophilum","Aquifex_aeolicus","Chloroflexus_aurantiacus","Francisella_tularensis","Haemophilus_influenzae","Legionella_pneumophila","Myxococcus_xanthus","Neisseria_meningitidis","Vibrio_cholerae","Nanoarchaeum_equitans","Cenarchaeum_symbiosum","Pyrobaculum_aerophilum","Sulfolobus_solfataricus","Thermoplasma_acidophilum","Methanosarcina_acetivorans","Pyrococcus_horikoshii","Archaeoglobus_fulgidus","Candidatus_Korarchaeum","Halobacterium_salinarum","Hyperthermus_butylicus","Methanobrevibacter")
+	archive_jul2016 = ("Gallus_gallus","Pan_trogolodytes")
+	archive_feb2014 = ("Homo_sapiens","Mus_musculus")
+	boo = False
+	if specie in ensembl :
+		url = 'http://useast.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
+	elif specie in metazoa :
+		url = 'https://metazoa.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
+	elif specie in plants :
+		url = 'https://plants.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
+	elif specie in fungi :
+		url = 'https://fungi.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
+	elif specie in protist :
+		url = 'https://protist.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
+	elif specie in bacteria :
+		url = 'https://bacteria.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
+	else :
+		print(specie)
+	if specie in archive_jul2016 :
+		url = 'http://jul2016.archive.ensembl.org/'+nameSpecie+'/Export/Output/Gene?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
+		boo = True
+	elif specie in archive_feb2014 :
+		url = 'http://feb2014.archive.ensembl.org/'+nameSpecie+'/Export/Output/Gene?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
+		boo = True
+	if urllib2.urlopen(url) :
+		response = urllib2.urlopen(url)
+		fasta = response.read()
+	else :
+		print("Specie : "+specie+"\tgeneID : "+geneID)
+		if boo :
+			print(archive+"\n----------------")
 	return fasta
 
 def Sequence(fasta, strand):
@@ -226,13 +381,13 @@ def CreateIndex(directory, inputfilename,InformationPerGeneAndTranscript,ExonPer
 				for couple in exon:
 					exonList=exonList+'-'.join(couple)+";"
 		else:
-			print "error exon", geneID, transcriptID
+			print("error exon "+geneID+" "+transcriptID)
 		if (IntronPerTranscript.has_key(transcriptID) == True): 
 				intron=IntronPerTranscript.get(transcriptID)
 				for couple in intron:
 					intronList=intronList+'-'.join(couple)+";"
 		else:
-			print "error intron", geneID, transcriptID
+			print("error intron "+geneID+" "+transcriptID)
 		
 		output5.write(transcriptID+"|"+geneID+"|"+chromosome+"|"+strand+"|"+biotype+"|"+exonList[:-1]+"|"+intronList[:-1]+"|"+start5+"|"+end5+"|"+start3+"|"+end3+"\n")
 	
@@ -240,25 +395,24 @@ def CreateIndex(directory, inputfilename,InformationPerGeneAndTranscript,ExonPer
 def build_arg_parser():
 	GITDIR=os.getcwd()+'/../'
 	parser = argparse.ArgumentParser(description = 'ReplaceInformationBiomart')
-	parser.add_argument ('-p', '--path', default = GITDIR+'data')
-	parser.add_argument ('-chr', '--chromosome', default = '21')
-	parser.add_argument ('-specie', '--specie', default = 'HS')
+	parser.add_argument ('-p', '--path', default = GITDIR+'Data/Genomes/')
+	parser.add_argument ('-sp', '--specie', default = 'HS')
 	parser.add_argument ('-ext', '--extension', default = 100)
 	return parser
-
-
 
 def main () :
 	parser = build_arg_parser()
 	arg = parser.parse_args()
-	path=arg.path
-	chromosome=arg.chromosome
-	specie=arg.specie
+	directory=arg.path
+	sp=arg.specie
 	extension=arg.extension
 	
-	directory=path+'/chr'+chromosome+'/'
-	inputfilename = specie+'_transcript_unspliced_chr'+chromosome+'.txt'
+	words = sp.split("_")
+	letters = [word[0] for word in words]
+	specie = "".join(letters)
+	specie = ini.upper()
 	
+	inputfilename = specie+'_transcript_unspliced.txt'
 	
 	old_gene=""
 	
@@ -269,8 +423,6 @@ def main () :
 	TranscriptPerIntron = {}
 	InfoPerGene={}
 	
-
-
 	InformationPerGeneAndTranscript=OrderInformationBiomart(directory, inputfilename)
 	
 	

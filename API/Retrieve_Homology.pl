@@ -41,15 +41,19 @@ my $homology_adaptor = $registry->get_adaptor('pan_homology', 'compara', 'Homolo
 
 foreach my $gene (@gene_list) {
 	my $gene_member = $pan_homology_adaptor->fetch_by_stable_id($gene);
-	my $homologies = $homology_adaptor->fetch_all_by_Member($gene_member);
-	foreach my $homology (@{$homologies}) {
-	  # You will find different kind of description
-	  # see ensembl-compara/docs/docs/schema_doc.html for more details
-	  my $pair_homologues = $homology->gene_list();
-	  foreach my $genes (@{$pair_homologues}){
-			my $id = $genes->stable_id();
-			if($id ne $gene ){ # && $homology->description eq "ortholog_one2one"
-				print $homology->description,"\t", $id, "\n";
+	if($gene_member){
+		my $homologies = $homology_adaptor->fetch_all_by_Member($gene_member);
+		if($homologies){
+			foreach my $homology (@{$homologies}) {
+			  # You will find different kind of description
+			  # see ensembl-compara/docs/docs/schema_doc.html for more details
+			  my $pair_homologues = $homology->gene_list();
+			  foreach my $genes (@{$pair_homologues}){
+					my $id = $genes->stable_id();
+					if($id ne $gene ){ # && $homology->description eq "ortholog_one2one"
+						print $gene, "\t", $homology->description,"\t", $id, "\n";
+					}
+				}
 			}
 		}
 	}
