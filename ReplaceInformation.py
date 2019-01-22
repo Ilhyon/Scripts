@@ -15,7 +15,7 @@ from Bio import SeqIO
 from scipy import stats
 import copy
 import urllib 
-# ~ import urllib2
+import urllib2
 from Bio import SeqIO
 
 from Bio.Seq import Seq
@@ -32,8 +32,9 @@ def OrderInformationBiomart(directory,inputfilename): ### create one line per tr
 	InformationPerGeneAndTranscript={}
 	inputfile= open(directory+inputfilename,"r") 
 	for line in inputfile:
-		if (re.search('ENS', line)): 
-			words=line.split(',')
+		if not (re.search('Gene stable ID', line)): 
+			words=line.split("\t")
+			# ~ print words
 			geneID=words[0].rstrip() # gene Id 
 			transcriptID=words[1].rstrip() # transcropt Id 
 			chromosome=words[2].rstrip() 
@@ -78,11 +79,11 @@ def ExonTotal(rank, strand, start_exon, end_exon):
 	exon_total=[]
 	while i < len(rank):
 			exon=[]
-			if (strand == str(1)): ## if gene positif
+			if (strand == str(1)): ## forward strand
 				exon.append(str(start_exon[i]))
 				exon.append(str(end_exon[i]))
 				i=i+1
-			else:  ## if gene negatif
+			else:  ## reverse strand
 				exon.append(str(end_exon[i]))
 				exon.append(str(start_exon[i]))
 				i=i+1
@@ -217,6 +218,23 @@ def SpecieSelction(sp):
 	elif sp == "YPBMS9":
 		return 	"Yersinia_pestis_biovar_microtus_str_91001"
 
+def sortExon(exon_total):
+	exonSorted = []
+	for exon in exon_total:
+		if not exonSorted :
+			exonSorted = [exon]
+		elif exon[0] < exonSorted[0][0]: # the new exon start is the first exon
+			exonSorted.insert(0, exon) # then we change the first exon
+		elif exon[0] > exonSorted[-1][0]: # the new exon start is the last exon
+			exonSorted.insert(-1, exon)
+		else:
+			for i in exon_total[1::-2]:
+				if exon[0] < i[0]:
+					exonSorted.insert(exon_total.index(i),exon)
+				else:
+					exonSorted.insert(exon_total.index(i)+1,exon)
+	return exonSorted
+			
 def CreateStartIntron(exon_total, rank, strand):
 	start_intron=[]
 	for i in exon_total:
@@ -231,7 +249,7 @@ def CreateStartIntron(exon_total, rank, strand):
 def CreateEndIntron(exon_total, rank, strand):
 	end_intron=[]
 	for i in exon_total:
-		if ( int(i[0]) != int(exon_total[-len(rank)][0]) ): ## EXCEPT start firt exon
+		if ( int(i[0]) != int(exon_total[-len(rank)][0]) ): ## EXCEPT start first exon
 			if (strand == str(1)):
 				fin_intron=int(i[0])-1 ## end exon +1 == > debut intron 
 			else:
@@ -268,42 +286,46 @@ def AddTranscriptPerIntron(intron_total, Dico, transcriptID):
 				Dico[i[0]+'-'+i[1]] = last_transcript +"-"+transcriptID
 	return Dico
 
-def Fasta(geneID,chromosome,start,end, strand,specie):
-	nameSpecie = SpecieSelction(specie)
-	ensembl = ("Homo_sapiens","Pan_troglodytes","Pongo_abelii","Mus_musculus","Monodelphis_domestica","Anolis_carolinensis","Ornithorhynchus_anatinus","Gallus_gallus","Danio_rerio","Gasterosteus_aculeatus")
+def Fasta(geneID,chromosome,start,end, strand,nameSpecie):
+	ensembl = ("Pongo_abelii","Monodelphis_domestica","Anolis_carolinensis","Ornithorhynchus_anatinus","Danio_rerio","Gasterosteus_aculeatus")
 	metazoa = ("Caenorhabditis_elegans","Drosophila_melanogaster","Apis_mellifera")
 	plants = ("Oryza_sativa","Chlamydomonas_reinhardtii","Chondrus_crispus","Physcomitrella_patens","Solanum_lycopersicum","Vitis_vinifera","Arabidopsis_thaliana")
 	fungi = ("Aspergillus_nidulans","Neurospora_crassa","Saccharomyces_cerevisiae","Schizosaccharomyces_pombe")
 	protist = ("Dictyostelium_discoideum","Emiliania_huxleyi","Leishmania_major")
-	bacteria = ("Mycoplasma_pneumoniae","Staphylococcus_aureus","Bacillus_subtilis","Enterococcus_faecalis","Streptococcus_pneumoniae","Chlamydia_trachomatis","Borrelia_burgdorferi","Mycobacterium_tuberculosis","Thermus_thermophilus","Geobacter_sulfurreducens","Campylobacter_jejuni","Wolbachia","Brucella_abortus","Escherichia_coli","Yersinia_pestis","Anaplasma_phagocytophilum","Aquifex_aeolicus","Chloroflexus_aurantiacus","Francisella_tularensis","Haemophilus_influenzae","Legionella_pneumophila","Myxococcus_xanthus","Neisseria_meningitidis","Vibrio_cholerae","Nanoarchaeum_equitans","Cenarchaeum_symbiosum","Pyrobaculum_aerophilum","Sulfolobus_solfataricus","Thermoplasma_acidophilum","Methanosarcina_acetivorans","Pyrococcus_horikoshii","Archaeoglobus_fulgidus","Candidatus_Korarchaeum","Halobacterium_salinarum","Hyperthermus_butylicus","Methanobrevibacter")
+	bacteria = ("Campylobacter_jejuni_subsp_jejuni_nctc_11168_atcc_700819","Brucella_abortus_bv_1_str_9_941","Yersinia_pestis_biovar_microtus_str_91001","Anaplasma_phagocytophilum_str_hz","Chloroflexus_aurantiacus_j_10_fl","Haemophilus_influenzae_rd_kw20","Legionella_pneumophila_str_paris","Vibrio_cholerae_o1_biovar_el_tor_str_n16961","Staphylococcus_aureus_subsp_aureus_n315","Francisella_tularensis_subsp_tularensis_schu_s4","Escherichia_coli_str_k_12_substr_mg1655","Bacillus_subtilis_subsp_subtilis_str_168","Mycobacterium_tuberculosis_h37rv","Enterococcus_faecalis_v583","Mycoplasma_pneumoniae_m129","Streptococcus_pneumoniae_tigr4","Borrelia_burgdorferi_b31","Thermus_thermophilus_hb8","Geobacter_sulfurreducens_pca","Wolbachia_endosymbiont_of_drosophila_melanogaster","Aquifex_aeolicus_vf5","Myxococcus_xanthus_dk_1622","Neisseria_meningitidis_z2491","Chlamydia_trachomatis_d_uw_3_cx","Nanoarchaeum_equitans_kin4_m","Pyrobaculum_aerophilum_str_im2","Methanobrevibacter_smithii_atcc_35061","Cenarchaeum_symbiosum_a","Sulfolobus_solfataricus_p2","Thermoplasma_acidophilum_dsm_1728","Methanosarcina_acetivorans_c2a","Pyrococcus_horikoshii_ot3","Archaeoglobus_fulgidus_dsm_4304","Candidatus_korarchaeum_cryptofilum_opf8","Halobacterium_salinarum_r1","Hyperthermus_butylicus_dsm_5456")
 	archive_jul2016 = ("Gallus_gallus","Pan_trogolodytes")
 	archive_feb2014 = ("Homo_sapiens","Mus_musculus")
 	boo = False
-	if specie in ensembl :
+	url = ""
+	if nameSpecie in ensembl :
 		url = 'http://useast.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
-	elif specie in metazoa :
+	elif nameSpecie in metazoa :
 		url = 'https://metazoa.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
-	elif specie in plants :
+	elif nameSpecie in plants :
 		url = 'https://plants.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
-	elif specie in fungi :
+	elif nameSpecie in fungi :
 		url = 'https://fungi.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
-	elif specie in protist :
+	elif nameSpecie in protist :
 		url = 'https://protist.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
-	elif specie in bacteria :
+	elif nameSpecie in bacteria :
 		url = 'https://bacteria.ensembl.org/'+nameSpecie+'/Export/Output/Location?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
 	else :
-		print(specie)
-	if specie in archive_jul2016 :
+		print "Not in a list for url : "+nameSpecie
+	if nameSpecie in archive_jul2016 :
 		url = 'http://jul2016.archive.ensembl.org/'+nameSpecie+'/Export/Output/Gene?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
 		boo = True
-	elif specie in archive_feb2014 :
+	elif nameSpecie in archive_feb2014 :
 		url = 'http://feb2014.archive.ensembl.org/'+nameSpecie+'/Export/Output/Gene?db=core;flank3_display=0;flank5_display=0;g='+geneID+';output=fasta;r='+chromosome+':'+str(start)+'-'+str(end)+';strand='+strand+';genomic=unmasked;_format=Text'
 		boo = True
-	if urllib2.urlopen(url) :
+	if url != "":
 		response = urllib2.urlopen(url)
 		fasta = response.read()
 	else :
-		print("Specie : "+specie+"\tgeneID : "+geneID)
+		print("Bug url for specie : "+nameSpecie+"\tgeneID : "+geneID)
+		print chromosome
+		print start
+		print end
+		print strand
 		if boo :
 			print(archive+"\n----------------")
 	return fasta
@@ -323,9 +345,17 @@ def Sequence(fasta, strand):
 	return sequence
 	
 def CreateSequence(directory, inputfilename, IntronPerGene, InfoPerGene, extension,specie):
+	nameSpecie = SpecieSelction(specie)
 	output1= open(directory+inputfilename.split(".")[0]+"_Sequence.txt","w") ## file opening
 	for key, value in IntronPerGene.items():# for every intron by gene
-		if (InfoPerGene.has_key(key) == True): 
+		# ~ if key == "Cj1325":
+			# ~ print key
+			# ~ print value
+			# ~ print InfoPerGene
+			# ~ print "------"
+		
+		# ~ if (InfoPerGene.has_key(key)): 
+		if key in InfoPerGene :
 			geneID=key
 			chromosome=InfoPerGene.get(key).split("\t")[0]
 			biotype=InfoPerGene.get(key).split("\t")[1]
@@ -338,13 +368,10 @@ def CreateSequence(directory, inputfilename, IntronPerGene, InfoPerGene, extensi
 					end_sup=int(start_intron)-1
 					start_inf=int(end_intron)+1
 					end_inf=int(end_intron)+1+extension
-					fasta_amont=Fasta(geneID,chromosome,start_sup,end_sup,strand,specie)
+					nameSpecie = SpecieSelction(specie)
+					fasta_amont=Fasta(geneID,chromosome,start_sup,end_sup,strand,nameSpecie)
 					sequence_amont=Sequence(fasta_amont, strand)
-					#if (sequence_amont):
-						#print' yes'
-					#else:
-						#print ' no'
-					fasta_aval=Fasta(geneID,chromosome,start_inf,end_inf,strand,specie)
+					fasta_aval=Fasta(geneID,chromosome,start_inf,end_inf,strand,nameSpecie)
 					sequence_aval=Sequence(fasta_aval, strand)
 			
 				else :
@@ -352,14 +379,19 @@ def CreateSequence(directory, inputfilename, IntronPerGene, InfoPerGene, extensi
 					end_sup=int(start_intron)+1
 					start_inf=int(end_intron)-1
 					end_inf=int(end_intron)-1-extension
-					fasta_amont=Fasta(geneID,chromosome,end_sup,start_sup,strand,specie)
+					fasta_amont=Fasta(geneID,chromosome,end_sup,start_sup,strand,nameSpecie)
 					#print fasta_amont
 					sequence_amont=Sequence(fasta_amont, strand)
-					fasta_aval=Fasta(geneID,chromosome,end_inf,start_inf,strand,specie)
+					fasta_aval=Fasta(geneID,chromosome,end_inf,start_inf,strand,nameSpecie)
 					sequence_aval=Sequence(fasta_aval, strand)
 				sequence=sequence_amont+sequence_aval
 				#print sequence
+				if geneID == "Cj1325":
+					print value_intron
+					print fasta_amont
 				output1.write(">"+geneID+"|"+"-".join(value_intron)+"\n"+str(sequence)+"\n")
+	output1.close()
+	print "\t\t Junction done."
 
 def CreateIndex(directory, inputfilename,InformationPerGeneAndTranscript,ExonPerTranscript, IntronPerTranscript):
 	output5= open(directory+inputfilename.split(".")[0]+"_Index.txt","w")
@@ -390,12 +422,13 @@ def CreateIndex(directory, inputfilename,InformationPerGeneAndTranscript,ExonPer
 			print("error intron "+geneID+" "+transcriptID)
 		
 		output5.write(transcriptID+"|"+geneID+"|"+chromosome+"|"+strand+"|"+biotype+"|"+exonList[:-1]+"|"+intronList[:-1]+"|"+start5+"|"+end5+"|"+start3+"|"+end3+"\n")
-	
+	output5.close()
+	print "\t\t Index done."
 		
 def build_arg_parser():
 	GITDIR=os.getcwd()+'/../'
 	parser = argparse.ArgumentParser(description = 'ReplaceInformationBiomart')
-	parser.add_argument ('-p', '--path', default = GITDIR+'Data/Genomes/')
+	parser.add_argument ('-p', '--path', default = "/home/anais/Documents/Data/Genomes/")
 	parser.add_argument ('-sp', '--specie', default = 'HS')
 	parser.add_argument ('-ext', '--extension', default = 100)
 	return parser
@@ -410,9 +443,10 @@ def main () :
 	words = sp.split("_")
 	letters = [word[0] for word in words]
 	specie = "".join(letters)
-	specie = ini.upper()
+	specie = specie.upper()
 	
-	inputfilename = specie+'_transcript_unspliced.txt'
+	print "Parser started for : "+sp+"\t"+specie
+	inputfilename = sp+"/"+specie+'_transcript_unspliced.txt'
 	
 	old_gene=""
 	
@@ -440,10 +474,11 @@ def main () :
 		rank=values.split("|")[8].split(";")
 		strand=values.split("|")[9]
 
-		if (re.compile('[1-9, X, Y]' ).search(chromosome) and not re.compile('[A-W, Z]' ).search(chromosome)):
-				InfoPerGene[geneID] = chromosome+'\t'+biotype+'\t'+strand ### ajout de 5' et 3' ?
+		# ~ if (re.compile('[1-9, X, Y]' ).search(chromosome) and not re.compile('[A-W, Z]' ).search(chromosome)):
+		InfoPerGene[geneID] = chromosome+'\t'+biotype+'\t'+strand ### ajout de 5' et 3' ?
 											### if biotype gene = coding mais absence de 5' et 3' --> biotype transcript = non coding
 		exon_total=ExonTotal(rank, strand, start_exon, end_exon)
+		exon_total = sortExon(exon_total)
 		start_intron=CreateStartIntron(exon_total, rank, strand)
 		end_intron=CreateEndIntron(exon_total, rank, strand)
 		intron_total = IntronTotal(start_intron, end_intron, strand)
@@ -456,9 +491,12 @@ def main () :
 		else: ## if other transcript
 			Intron=AddIntron(intron_total, Intron)	 ## copy information other transcripts
 			old_gene=geneID
+		
 		IntronPerGene[geneID] = Intron ## add information in dico (modification of value if key already exist)
 		TranscriptPerIntron=AddTranscriptPerIntron(intron_total, TranscriptPerIntron, transcriptID)
-	
+		# ~ if transcriptID == "CAL35439":
+			# ~ print IntronPerGene
+			
 ###################################################################################################################################### CREATE FILES
 	##Create file Sequence
 	CreateSequence(directory, inputfilename,IntronPerGene, InfoPerGene, extension,specie)
