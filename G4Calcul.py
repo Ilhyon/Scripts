@@ -566,8 +566,8 @@ def CalculStandardError(squareRoot, uneListe):
 ######################################################################################################################################################
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
-	parser.add_argument ('-p', '--path', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/Mouse')
-	parser.add_argument ('-CHR', '--CHROMOSOME', default = 'X')
+	parser.add_argument ('-p', '--path', default = '/home/anais/Documents/Data/Human/')
+	parser.add_argument ('-CHR', '--CHROMOSOME', default = 'All_chr')
 	parser.add_argument ('-specie', '--specie', default = 'MM')
 	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
 	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 4.5)
@@ -604,7 +604,7 @@ def main () :
 	
 	
 	#### path for files depending of chromosome or for all
-	if (CHROMOSOME == 'All' or CHROMOSOME == 'All0-80' or CHROMOSOME == 'All0-85' or CHROMOSOME == 'All0-75' or CHROMOSOME == 'All0-70'):	## if for all
+	if (CHROMOSOME == 'All_chr' or CHROMOSOME == 'All0-80' or CHROMOSOME == 'All0-85' or CHROMOSOME == 'All0-75' or CHROMOSOME == 'All0-70'):	## if for all
 		directory=path+'/'+CHROMOSOME
 		index=directory+'/'+specie+'_transcript_unspliced_All_Index.txt'	
 		indextranscriptBiotype=directory+'/'+specie+'_All_TranscriptType.txt'

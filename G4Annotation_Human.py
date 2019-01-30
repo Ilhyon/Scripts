@@ -16,13 +16,15 @@ This software is a computer program whose annote the G4 region of one chromosome
 From a csv files which contain windows of G4 screener of a chromosome, this module annote
 the G4 region for each transcript. The program create differents files output:
 
+    * 
+    * 
 
 .. moduleauthor:: Sarah.Belhamiti
 
 December 2017
 
 """
-
+import pprint
 import csv, math, numpy
 import string
 import subprocess
@@ -102,6 +104,9 @@ def positionChromosomiqueGeneNegatif(position, EXTENSION, startIntron, endIntron
 		integer
 		position chromosomique of the start or end G4
 	"""
+
+	#if (int(position) <= EXTENSION+1):	## because strart G4 classifier from 0
+		#position=int(startIntron)+1+EXTENSION+1-int(position)
 	if (int(position) <= EXTENSION+1):	## because strart G4 classifier from 0
 		position=int(startIntron)+1+EXTENSION+1-int(position)
 	else:	# if from sequence aval
@@ -126,10 +131,11 @@ def CreateDictionaryBiotypeByTranscript (filename):
 	inputfile= open(filename,"r")	# file opening for reading
 	for line in inputfile:	# for each line in the file (for each transcript)
 		words=line.split('|')	# parsing by the separator, here '|'
-		transcript=words[1].rstrip()	#I D of transcript
+		transcript=words[1].rstrip()	#ID of transcript
 		biotypeTranscript=words[3].rstrip() # biotype of the transcript
 		if (dico.has_key(transcript) == False):	# if transcript not contain his biotype in the dico
 			dico[transcript]=biotypeTranscript # create an entry (biotype) for this transcript
+	inputfile.close()
 	return dico	# return dico with all transcript of this chromosome
 ######################################################################################################################################################
 def CreateDictionaryStrandByGene (filename): 
@@ -154,10 +160,11 @@ def CreateDictionaryStrandByGene (filename):
 		strand=words[3].rstrip() # strand of this gene
 		if (dico.has_key(gene) == False):	# if gene not contain his strand in the dico
 			dico[gene]=strand # create an entry (strand) for this gene
+	inputfile.close()
 	return dico	# return dico with all gene of this chromosome
 
 ######################################################################################################################################################
-def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool, StrandByGene): ## for G4 in gene
+def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool, StrandByGene, dicoPosition): ## for G4 in gene
 	""" Add informations in dictionary with informations of region G4 detected (score cgCc, scote G4Hunter, sequence and score G4NN) for each 
 		regions of G4 discovered in the genes
 
@@ -190,6 +197,7 @@ def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool, StrandByGene): #
 	oldPassed=False
 	passed= False
 	inputfile= open(inputfile,"r")	# file opening for reading
+	geneNotinDico = []
 	for line in inputfile:	# for each file csv create by G4 screener
 		if (re.search('^[0-9]', line)): # if the line is not the header of the file 
 			words=line.split('\t') # parsing by the separator, here '\t' (file csv)
@@ -197,8 +205,12 @@ def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool, StrandByGene): #
 			description=words[1].rstrip() # description of the sequence ( geneId|startBorder|endBorder )
 			gene=words[1].rstrip().split("|")[0] # geneID
 			strand=StrandByGene.get(gene) # get strand for this gene from the dictionary StrandByGene
-			startBorder=int(words[1].rstrip().split("|")[1]) # start of the gene sequence
-			endBorder=int(words[1].rstrip().split("|")[2])  # end of the gene sequence
+			if gene in dicoPosition :
+				startBorder=int(dicoPosition[gene]["Start"]) # start of the gene sequence
+				endBorder=int(dicoPosition[gene]["End"])  # end of the gene sequence
+			else :
+				startBorder = 0
+				endBorder = 0
 			cGcC=float(words[2].rstrip()) #  score cGcC for this window
 			g4H=float(words[3].rstrip()) #  score G4Hunter for this window 
 			sequence=words[4].rstrip()	# sequence for this window
@@ -255,20 +267,10 @@ def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool, StrandByGene): #
 						continue #strand == None, some gene doesnt have annotation
 					if (G4DetectedInGene.has_key(headerG4) == False and strand != None): 
 						G4DetectedInGene[headerG4]=str(meanCGcC), str(meanG4Hunter),sequenceG4 , str(meanG4NN)	
+	inputfile.close()
 	return G4DetectedInGene
 ######################################################################################################################################################
 def G4IsOnJunction(startG4, endG4, startBorder, endBorder):
-	""" Response of a PG4r localisation at a junction 
-	    Parameters
-	    ----------
-	    startG4 : integer
-	    endG4 : integer
-	    startBorder : integer
-	    endBorder : integer
-	    Returns
-	    -------
-	    onJunction : boolean
-	"""
 	onJunction=False
 	if ((startG4 <startBorder and endG4 >startBorder) or (startG4 >startBorder and endG4<startBorder)):
 		onJunction=True
@@ -375,18 +377,26 @@ def ReturnG4InJunction(G4DetectedInJunction, inputfile, parametersTool,EXTENSION
 						startG4=positionChromosomiqueGenePositif(startG4, EXTENSION, startFirstWindow, endFirstWindow)	
 						endG4=positionChromosomiqueGenePositif(endG4, EXTENSION, startFirstWindow, endFirstWindow)
 					else: # if gene negatif
+						if gene == "ENSMUSG00000094951" :
+								print 'hello1', startG4, EXTENSION
 						startG4=positionChromosomiqueGeneNegatif(startG4, EXTENSION, startFirstWindow, endFirstWindow)	
 						endG4=positionChromosomiqueGeneNegatif(endG4, EXTENSION, startFirstWindow, endFirstWindow)
+						if gene == "ENSMUSG00000094951" :
+								print 'hello2', startG4, EXTENSION
 					if (strand == str(1)):
 						headerG4=gene+"|"+str(startG4)+"|"+str(endG4)+"|"+strand
 					elif (strand == str(-1)):
 						headerG4=gene+"|"+str(endG4)+"|"+str(startG4)+"|"+strand
 					else:
 						continue #strand == None, some gene doesnt have annotation
-					onJonction=G4IsOnJunction(startG4, endG4, startBorder, endBorder)	
+					onJonction=G4IsOnJunction(startG4, endG4, startBorder, endBorder)
+					if gene == "ENSMUSG00000094951" :
+						print str(startG4)+"\t"+str(endG4)+"\t"+str(startBorder)+"\t"+str(endBorder), onJonction
+						print "startG4\tendG4\tstartBorder\tenBorder"
+						print "----------------------------------"
 					if (G4DetectedInJunction.has_key(headerG4) == False and onJonction==True):
 						G4DetectedInJunction[headerG4]=str(meanCGcC), str(meanG4Hunter),sequenceG4 , str(meanG4NN)
-					
+	inputfile.close()
 	return G4DetectedInJunction	
 
 ######################################################################################################################################################
@@ -504,6 +514,7 @@ def G4IsInTranscript(strand, coordG4, borderTranscript):
 	borderInferior=int(borderTranscript[0])
 	borderSuperior=int(borderTranscript[1])
 	inTranscript=False
+	#~ print borderInferior, borderSuperior, coordG4
 	if (strand == str(1)): ## gene positif
 		if (int(startG4) >= int(borderInferior) and int(startG4) <= int(borderSuperior) and int(endG4) >= int(borderInferior) and int(endG4) <= int(borderSuperior)):
 			inTranscript=True
@@ -783,6 +794,7 @@ def AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informations
 	headerG4=transcriptId+'|'+descriptionG4 # header uniq by G4 in transcript
 	if (G4InTranscript.has_key(headerG4) == False): # if the transcript doesn't be traited before
 		G4InTranscript[headerG4]=value # add this G4 in the dictionary
+	#~ print G4InTranscript
 	return G4InTranscript	# return the dictionary
 ######################################################################################################################################################
 def AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript):
@@ -869,30 +881,30 @@ def GetlisteG4InGene(G4Detected, listeG4InGene):
 	return listeG4InGene
 
 ######################################################################################################################################################
-def ExtractionG4InTranscript(directory, specie, chromosome, G4InTranscript):
-	output= open(directory+"/"+specie+"_chr"+chromosome+"_G4InTranscript.txt","w") ## file opening
+def ExtractionG4InTranscript(directory, specie, G4InTranscript):
+	output= open(directory+"/"+specie+"_G4InTranscript.txt","w") ## file opening
 	output.write("InfoG4ByTranscript\tcGcC\tG4Hunter\tsequenceG4\tG4NN\tlocalisation\ttranscriptBiotype\n")
 	for key,value in G4InTranscript.items():
+		#~ print key
 		if None not in value: # because some transcriptID from ensembl donMt contain info of biotype (as ENST00000604369)
 			output.write(key+"\t"+'\t'.join(value)+"\n")
 
-def ExtractionG4InGenome(directory, specie, chromosome, G4InGenome):
-	output= open(directory+"/"+specie+"_chr"+chromosome+"_G4InGenome.txt","w") ## file opening
+def ExtractionG4InGenome(directory, specie, G4InGenome):
+	output= open(directory+"/"+specie+"_G4InGenome.txt","w") ## file opening
 	output.write("InfoG4ByGene\tLocalisation(s)\n")
 	for key,value in G4InGenome.items():
 		output.write(key+"\t"+value+"\n")
 
-def ExtractionTranscriptPerG4(directory, specie, chromosome, TranscriptPerG4):
-	output= open(directory+"/"+specie+"_chr"+chromosome+"_TranscriptPerG4.txt","w") ## file opening
+def ExtractionTranscriptPerG4(directory, specie, TranscriptPerG4):
+	output= open(directory+"/"+specie+"_TranscriptPerG4.txt","w") ## file opening
 	output.write("CoordonnéesG4\tTranscript(s)\n")
 	for key,value in TranscriptPerG4.items():
 		output.write(key+"\t"+value+"\n")
 ######################################################################################################################################################
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
-	GITDIR=os.getcwd()+'/'
-	parser.add_argument ('-p', '--path', default = GITDIR+'data')
-	parser.add_argument ('-CHR', '--chromosome', default = 'X')
+	parser.add_argument ('-p', '--path', default = '/home/anais/Documents/Data/Human/All_chr/')
+	parser.add_argument ('-o', '--outPut', default = '/home/anais/Documents/Data/Human/All_chr/')
 	parser.add_argument ('-specie', '--specie', default = 'HS')
 	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
 	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 4.5)
@@ -905,8 +917,8 @@ def build_arg_parser():
 def main () :
 	parser = build_arg_parser()
 	arg = parser.parse_args()
-	path=arg.path	# directory which contain all the directory chromosome
-	chromosome=arg.chromosome	# chromosome to analyze
+	path=arg.path	# directory which contain all the directory
+	outPut=arg.outPut # directory used for output
 	specie=arg.specie	# specie to analyse
 	THRESHOLD_G4H=float(arg.THRESHOLD_G4H)	# threshold use to discriminate the score G4H (litterature = 0.9)
 	THRESHOLD_CGCC=float(arg.THRESHOLD_CGCC)	# threshold use to discriminate the score G4H (litterature = 4.5)
@@ -915,8 +927,8 @@ def main () :
 	WINDOW=arg.WINDOW	# size of window use in G4 screener
 	STEP=arg.STEP	# size of step use in G4 screener
 
-	GITDIR=os.getcwd()
-	print "Chromosome : "+chromosome
+
+
 	ProteinCoding=['IG_C_gene', 'IG_D_gene', 'IG_J_gene', 'IG_LV_gene', 'IG_M_gene', 'IG_V_gene', 'IG_Z_gene', 'nonsense_mediated_decay', 'nontranslating_CDS', 'non_stop_decay', 'protein_coding', 'TR_C_gene', 'TR_D_gene', 'TR_gene', 'TR_J_gene', 'TR_V_gene']
 
 	BiotypeByTranscript={}	# dictionary of strand for each transcript
@@ -926,9 +938,8 @@ def main () :
 	listeG4InGeneEntire={}
 	listeG4InGeneJunction={}
 
-	directory=path+'/chr'+chromosome	# variable directory which contain the data for this chromosome
-	index=directory+'/'+specie+'_transcript_unspliced_chr'+chromosome+'_Index.txt'	# file which contain info by transcript for this chromosome
-	indexBiotypeTranscript=path+'/transcriptType/transcriptType_chr'+chromosome	# file which contain biotype of transcript for this chromosome
+	index=path+specie+'_transcript_unspliced_Index.txt'	# file which contain info by transcript
+	indexBiotypeTranscript=path+specie+'_TranscriptType.txt'	# file which contain biotype of transcript
 
 	BiotypeByTranscript=CreateDictionaryBiotypeByTranscript (indexBiotypeTranscript) # dictionary of biotype for each transcript
 	StrandByGene=CreateDictionaryStrandByGene (index)	# dictionary of strand for each transcript
@@ -937,127 +948,135 @@ def main () :
 	AnnotationTranscript=GetAnnotationTranscript(index,ProteinCoding,BiotypeByTranscript) # annotation transcript
 	
 	
+	dicoGene = {}
+	filenametmp = "/home/anais/Documents/Data/Human/All_chr/HS_gene_position.txt"
+	with open(filenametmp) as f: # file opening
+		content = f.read()
+		lines = content.split('\n')
+		for l in lines: # browse all lines
+			if not l.startswith('#') and l:
+				words=l.split('\t')
+				dicoGene[words[0]] = {"Start":words[1], "End":words[2]}
 
-	
-	
 	
 	#####Creation dictionary G4_detected_gene and G4_detected_junction , for G4 found in gene and junction with scores > thresolds
-	for path, dirs, files in os.walk(directory): # for each element of the directory to passed
-		for filename in files: # for each files
-			inputfile=directory+'/'+filename
-			parametersTool=[THRESHOLD_CGCC,THRESHOLD_G4H,THRESHOLD_G4NN, WINDOW, STEP]
-			##EXTRACTION OF G4 BY SCORE G4NN > THRESHOLD IN A DICO
-			if ('gene_unspliced' in filename and '.csv' in filename ): ## for G4 in gene	
-				G4DetectedInGene=ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool, StrandByGene)
-			elif ('transcript_unspliced' in filename and '.csv' in filename): ## for G4 in junction CDS-CDS --> from splicing
-				G4DetectedInJunction=ReturnG4InJunction(G4DetectedInJunction, inputfile, parametersTool, EXTENSION, StrandByGene)
-
+	inputfile_gene=path+specie+"_gene_unspliced.csv"
+	inputfile_junction=path+specie+"_transcript_unspliced.csv"
+	parametersTool=[THRESHOLD_CGCC,THRESHOLD_G4H,THRESHOLD_G4NN, WINDOW, STEP]
+	##EXTRACTION OF G4 BY SCORE G4NN > THRESHOLD IN A DICO
+	G4DetectedInGene=ReturnG4InGene(G4DetectedInGene, inputfile_gene, parametersTool, StrandByGene, dicoGene)
+	# ~ G4DetectedInJunction=ReturnG4InJunction(G4DetectedInJunction, inputfile_junction, parametersTool, EXTENSION, StrandByGene)
+	# ~ print "Extraction of pG4 for G4nn > "+THRESHOLD_G4NN+" done."
 
 	
-	listeG4InGeneEntire=GetlisteG4InGene(G4DetectedInGene, listeG4InGeneEntire)
-	listeG4InGeneJunction=GetlisteG4InGene(G4DetectedInJunction, listeG4InGeneJunction)
+	# ~ listeG4InGeneEntire=GetlisteG4InGene(G4DetectedInGene, listeG4InGeneEntire)
+	# ~ listeG4InGeneJunction=GetlisteG4InGene(G4DetectedInJunction, listeG4InGeneJunction)
 	
 
 
-	G4InTranscript={}
-	G4InGenome={}
-	TranscriptPerG4={}
+	# ~ G4InTranscript={}
+	# ~ G4InGenome={}
+	# ~ TranscriptPerG4={}
 	
 	
-	############################################################################## g4 entire
-	inputfile= open(index,"r") # file opening for reading
-	for line in inputfile: # for each transcript
-			words=line.split('|')
-			transcriptId=words[0].rstrip() 
-			geneId=words[1].rstrip() 
-			chromosome=words[2].rstrip() 
-			strand=words[3].rstrip() 
-			biotypeGene=words[4].rstrip() 
-			exonList=words[5].rstrip().split(";") ## transform in array
-			intronList=words[6].rstrip().split(";") ## transform in array
-			### resolution probleme start5 and end5 for gene negatif
-			if (strand == str(1)):
-				start5=words[7].rstrip()
-				end5=words[8].rstrip()
-				start3=words[9].rstrip()
-				end3=words[10].rstrip()
-			else:
+	# ~ ############################################################################## g4 entire
+	# ~ inputfile= open(index,"r") # file opening for reading
+	# ~ for line in inputfile: # for each transcript
+			# ~ words=line.split('|')
+			# ~ transcriptId=words[0].rstrip() 
+			# ~ geneId=words[1].rstrip() 
+			# ~ chromosome=words[2].rstrip() 
+			# ~ strand=words[3].rstrip() 
+			# ~ biotypeGene=words[4].rstrip() 
+			# ~ exonList=words[5].rstrip().split(";") ## transform in array
+			# ~ intronList=words[6].rstrip().split(";") ## transform in array
+			# ~ ### resolution probleme start5 and end5 for gene negatif
+			# ~ if (strand == str(1)):
+				# ~ start5=words[7].rstrip()
+				# ~ end5=words[8].rstrip()
+				# ~ start3=words[9].rstrip()
+				# ~ end3=words[10].rstrip()
+			# ~ else:
 
-				end5=words[7].rstrip()
-				start5=words[8].rstrip() 
-				end3=words[9].rstrip()
-				start3=words[10].rstrip()
+				# ~ end5=words[7].rstrip()
+				# ~ start5=words[8].rstrip() 
+				# ~ end3=words[9].rstrip()
+				# ~ start3=words[10].rstrip()
 			
-			biotypeTranscript=BiotypeByTranscript.get(transcriptId) # get biotype of this transcript
-			borderTranscript=BorderOfTranscript(start5 , end5 , start3 , end3, exonList, intronList, strand)
-			if (listeG4InGeneEntire.has_key(geneId) == False): # if gene not contain G4 detected
-				continue
-			else: # if gene contain G4 detected
-				listeG4InGene=listeG4InGeneEntire.get(geneId)
-				for G4InGene in listeG4InGene:
-					startG4=int(G4InGene.split('|')[1])
-					endG4=int(G4InGene.split('|')[2])
-					coordG4=[startG4,endG4]
-					g4inTranscript=G4IsInTranscript(strand, coordG4, borderTranscript)
-					annotationTranscript=AnnotationTranscript.get(transcriptId)
-					if (g4inTranscript == True and annotationTranscript ==True):
-						informationsOfG4=list(G4DetectedInGene.get(G4InGene))
-						localisationInTranscript=GetLocalisationG4InTranscript(BiotypeByTranscript,ProteinCoding,transcriptId,borderTranscript,coordG4, end5, start3, exonList, intronList, strand)	
-						descriptionG4=chromosome+':'+str(startG4)+'-'+str(endG4)+'|'+strand
-						G4InTranscript=AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informationsOfG4,localisationInTranscript, biotypeTranscript)
-						G4InGenome=AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript)
-						TranscriptPerG4=AddTranscriptPerG4(TranscriptPerG4, descriptionG4,transcriptId)
-
-
-	############################################################################## g4 junction
-	inputfile= open(index,"r") # file opening for reading
-	for line in inputfile: # for each transcript
-			words=line.split('|')
-			transcriptId=words[0].rstrip() 
-			geneId=words[1].rstrip() 
-			chromosome=words[2].rstrip() 
-			strand=words[3].rstrip() 
-			biotypeGene=words[4].rstrip() 
-			exonList=words[5].rstrip().split(";") ## transform in array
-			intronList=words[6].rstrip().split(";") ## transform in array
-			### resolution probleme start5 and end5 for gene negatif
-			if (strand == str(1)):
-				start5=words[7].rstrip()
-				end5=words[8].rstrip()
-				start3=words[9].rstrip()
-				end3=words[10].rstrip()
-			else:
-
-				end5=words[7].rstrip()
-				start5=words[8].rstrip() 
-				end3=words[9].rstrip()
-				start3=words[10].rstrip()
-			biotypeTranscript=BiotypeByTranscript.get(transcriptId) # get biotype of this transcript
-			if (listeG4InGeneJunction.has_key(geneId) == False): # if gene not contain G4 detected
-				continue
-			else:	# if gene contain G4 detected
-				listeG4InGene=listeG4InGeneJunction.get(geneId)
-				for G4InGene in listeG4InGene:
-					startG4=int(G4InGene.split("|")[1])
-					endG4=int(G4InGene.split("|")[2])
-					coordG4=[startG4,endG4]
-					junctionInTranscript=JuncionIsInTranscript(coordG4,intronList)
-					annotationTranscript=AnnotationTranscript.get(transcriptId)
-					if (junctionInTranscript == True and annotationTranscript ==True):
-						informationsOfG4=list(G4DetectedInJunction.get(G4InGene))
-						localisationInTranscript=GetLocalisationG4InJunction(BiotypeByTranscript,ProteinCoding,transcriptId)
+			# ~ biotypeTranscript=BiotypeByTranscript.get(transcriptId) # get biotype of this transcript
+			# ~ borderTranscript=BorderOfTranscript(start5 , end5 , start3 , end3, exonList, intronList, strand)
+			# ~ if (listeG4InGeneEntire.has_key(geneId) == False): # if gene not contain G4 detected
+				# ~ continue
+			# ~ else: # if gene contain G4 detected
+				# ~ listeG4InGene=listeG4InGeneEntire.get(geneId)
+				# ~ for G4InGene in listeG4InGene:
+					# ~ startG4=int(G4InGene.split('|')[1])
+					# ~ endG4=int(G4InGene.split('|')[2])
+					# ~ coordG4=[startG4,endG4]
+					# ~ g4inTranscript=G4IsInTranscript(strand, coordG4, borderTranscript)
+					# ~ annotationTranscript=AnnotationTranscript.get(transcriptId)
 					
-						descriptionG4=chromosome+':'+str(startG4)+'-'+str(endG4)+'|'+strand
-						G4InTranscript=AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informationsOfG4,localisationInTranscript, biotypeTranscript)
-						G4InGenome=AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript)
-						TranscriptPerG4=AddTranscriptPerG4(TranscriptPerG4, descriptionG4,transcriptId)
-				
+					# ~ if (g4inTranscript == True and annotationTranscript ==True):
+						# ~ informationsOfG4=list(G4DetectedInGene.get(G4InGene))
+						# ~ localisationInTranscript=GetLocalisationG4InTranscript(BiotypeByTranscript,ProteinCoding,transcriptId,borderTranscript,coordG4, end5, start3, exonList, intronList, strand)	
+						# ~ descriptionG4=chromosome+':'+str(startG4)+'-'+str(endG4)+'|'+strand
+						# ~ G4InTranscript=AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informationsOfG4,localisationInTranscript, biotypeTranscript)
+						# ~ G4InGenome=AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript)
+						# ~ TranscriptPerG4=AddTranscriptPerG4(TranscriptPerG4, descriptionG4,transcriptId)
+						# ~ #~ if (localisationInTranscript=='NAP' or localisationInTranscript=='NAN' ):
+						 # ~ #~ print localisationInTranscript
+							 # ~ #~ print  localisationInTranscript, descriptionG4, exonList, start5, end5, start3, end3, strand
+							 # ~ #~ print '-------------------------------'
+	# ~ inputfile.close()
+	# ~ ############################################################################## g4 junction
+	# ~ inputfile= open(index,"r") # file opening for reading
+	# ~ for line in inputfile: # for each transcript
+			# ~ words=line.split('|')
+			# ~ transcriptId=words[0].rstrip() 
+			# ~ geneId=words[1].rstrip() 
+			# ~ chromosome=words[2].rstrip() 
+			# ~ strand=words[3].rstrip() 
+			# ~ biotypeGene=words[4].rstrip() 
+			# ~ exonList=words[5].rstrip().split(";") ## transform in array
+			# ~ intronList=words[6].rstrip().split(";") ## transform in array
+			# ~ ### resolution probleme start5 and end5 for gene negatif
+			# ~ if (strand == str(1)):
+				# ~ start5=words[7].rstrip()
+				# ~ end5=words[8].rstrip()
+				# ~ start3=words[9].rstrip()
+				# ~ end3=words[10].rstrip()
+			# ~ else:
+
+				# ~ end5=words[7].rstrip()
+				# ~ start5=words[8].rstrip() 
+				# ~ end3=words[9].rstrip()
+				# ~ start3=words[10].rstrip()
+			# ~ biotypeTranscript=BiotypeByTranscript.get(transcriptId) # get biotype of this transcript
+			# ~ if (listeG4InGeneJunction.has_key(geneId) == False): # if gene not contain G4 detected
+				# ~ continue
+			# ~ else:	# if gene contain G4 detected
+				# ~ listeG4InGene=listeG4InGeneJunction.get(geneId)
+				# ~ for G4InGene in listeG4InGene:
+					# ~ startG4=int(G4InGene.split("|")[1])
+					# ~ endG4=int(G4InGene.split("|")[2])
+					# ~ coordG4=[startG4,endG4]
+					# ~ junctionInTranscript=JuncionIsInTranscript(coordG4,intronList)
+					# ~ annotationTranscript=AnnotationTranscript.get(transcriptId)
+					# ~ if (junctionInTranscript == True and annotationTranscript ==True):
+						# ~ informationsOfG4=list(G4DetectedInJunction.get(G4InGene))
+						# ~ localisationInTranscript=GetLocalisationG4InJunction(BiotypeByTranscript,ProteinCoding,transcriptId)
+					
+						# ~ descriptionG4=chromosome+':'+str(startG4)+'-'+str(endG4)+'|'+strand
+						# ~ G4InTranscript=AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informationsOfG4,localisationInTranscript, biotypeTranscript)
+						# ~ G4InGenome=AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript)
+						# ~ TranscriptPerG4=AddTranscriptPerG4(TranscriptPerG4, descriptionG4,transcriptId)
+	# ~ inputfile.close()
 	
 	
-	ExtractionG4InTranscript(GITDIR+'/results/perChromosome', specie, chromosome, G4InTranscript)	
-	ExtractionG4InGenome(GITDIR+'/results/perChromosome', specie, chromosome, G4InGenome)	
-	ExtractionTranscriptPerG4(GITDIR+'/results/perChromosome', specie, chromosome, TranscriptPerG4)
-	print "Done"
+	# ~ ExtractionG4InTranscript(outPut, specie, G4InTranscript)	
+	# ~ ExtractionG4InGenome(outPut, specie, G4InGenome)	
+	# ~ ExtractionTranscriptPerG4(outPut, specie, TranscriptPerG4)
 	
+
 main()
 	
