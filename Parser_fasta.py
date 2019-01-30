@@ -4,13 +4,22 @@
 import re
 import os
 import math
+import argparse
 from pprint import pprint
 
-listSp = ("pyrococcus_horikoshii_ot3","halobacterium_salinarum_r1","hyperthermus_butylicus_dsm_5456")
-for sp in listSp :	
+def build_arg_parser():
+	parser = argparse.ArgumentParser(description = 'Parser_Fasta')
+	parser.add_argument ('-s', '--specie', default = 'MM')
+	return parser
+	
+def main () :
+	parser = build_arg_parser()
+	arg = parser.parse_args()
+	sp=arg.specie	# specie to analyse
 	directory = "/home/anais/Documents/Data/Genomes/"+sp+"/Fasta/"
 	dicoChromosome = {}
 	listFile = os.listdir(directory)
+	print "Fasta for "+sp
 	for filename in listFile :
 		with open(directory+filename) as f: # file opening
 			content = f.read()
@@ -20,6 +29,7 @@ for sp in listSp :
 				chrm = header.split(' ')[0][1:]
 				sequence = "".join(l[1:])
 				dicoChromosome.update({chrm : sequence})
+	print "dico fasta done"
 	filename = "/home/anais/Documents/Data/Genomes/"+sp+"/"+sp+".gtf"
 	exists = os.path.isfile(filename)
 	if exists :	
@@ -41,8 +51,9 @@ for sp in listSp :
 							strand = 1
 						elif strand == "-":
 							strand = -1
-						geneSequence = dicoChromosome[chrm][(int(startFeature)-1):(int(endFeature)-1+1)]
-						dicoGene.update({idGene : {"Chromosome" : chrm, "Start" : startFeature, "End" : endFeature, "Strand" : str(strand), "Sequence" : geneSequence}})
+						if chrm in dicoChromosome :
+							geneSequence = dicoChromosome[chrm][(int(startFeature)-1):(int(endFeature)-1+1)]
+							dicoGene.update({idGene : {"Chromosome" : chrm, "Start" : startFeature, "End" : endFeature, "Strand" : str(strand), "Sequence" : geneSequence}})
 	
 	words = sp.split("_")
 	letters = [word[0] for word in words]
@@ -55,7 +66,7 @@ for sp in listSp :
 		end = dicoGene[gene]["End"]
 		Sequence = dicoGene[gene]["Sequence"]
 		strand = str(dicoGene[gene]["Strand"])
-		output.write(">"+gene+"|"+strand+"|"+start+"|"+end+"\n")
+		output.write(">"+gene+"|"+chromosome+"|"+strand+"|"+start+"|"+end+"\n")
 		nbLine = math.ceil(float(int(end)-int(start))/60)
 		cpt1 = 0
 		cpt2 = 60
@@ -81,5 +92,8 @@ for sp in listSp :
 			cpt1 += 60
 			cpt2 += 60
 	output.close()
+	print "Done"
 	
 # ~ pprint(dicoGene)
+
+main()

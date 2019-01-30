@@ -2,14 +2,23 @@
 # -*- coding: utf-8 -*-:v
 
 import re
+import argparse
 import os
 from pprint import pprint
 
-listSp = ("escherichia_coli_str_k_12_substr_mg1655","bacillus_subtilis_subsp_subtilis_str_168","mycobacterium_tuberculosis_h37rv","enterococcus_faecalis_v583","mycoplasma_pneumoniae_m129","borrelia_burgdorferi_b31","thermus_thermophilus_hb8","geobacter_sulfurreducens_pca","wolbachia_endosymbiont_of_drosophila_melanogaster","aquifex_aeolicus_vf5","myxococcus_xanthus_dk_1622","neisseria_meningitidis_z2491","methanobrevibacter_smithii_atcc_35061","cenarchaeum_symbiosum_a","thermoplasma_acidophilum_dsm_1728","methanosarcina_acetivorans_c2a","methanococcus_maripaludis_s2","aeropyrum_pernix_k1","archaeoglobus_fulgidus_dsm_4304","candidatus_korarchaeum_cryptofilum_opf8","pyrobaculum_aerophilum_str_im2","francisella_tularensis_subsp_tularensis_schu_s4","staphylococcus_aureus_subsp_aureus_n315","vibrio_cholerae_o1_biovar_el_tor_str_n16961","legionella_pneumophila_str_paris","haemophilus_influenzae_rd_kw20","chloroflexus_aurantiacus_j_10_fl","anaplasma_phagocytophilum_str_hz","yersinia_pestis_biovar_microtus_str_91001","vitis_vinifera","bigelowiella_natans","emiliania_huxleyi","streptococcus_pneumoniae_tigr4","chlamydia_trachomatis_d_uw_3_cx","nanoarchaeum_equitans_kin4_m","sulfolobus_solfataricus_p2","pyrococcus_horikoshii_ot3","halobacterium_salinarum_r1","hyperthermus_butylicus_dsm_5456","tetrahymena_thermophila","campylobacter_jejuni_subsp_jejuni_nctc_11168_atcc_700819","brucella_abortus_bv_1_str_9_941")
-for sp in listSp :
+def build_arg_parser():
+	parser = argparse.ArgumentParser(description = 'Parser_gtf')
+	parser.add_argument ('-s', '--specie', default = 'MM')
+	return parser
+	
+def main () :
+	parser = build_arg_parser()
+	arg = parser.parse_args()
+	sp=arg.specie	# specie to analyse
 	filename = "/home/anais/Documents/Data/Genomes/"+sp+"/"+sp+".gtf"
 	exists = os.path.isfile(filename)
 	if exists :	
+		print "GTF for "+sp
 		dicoFeature = {}
 		with open(filename) as f: # file opening
 			content = f.read()
@@ -195,5 +204,8 @@ for sp in listSp :
 		for gene in dicoFeature :
 			output.write(gene+"\n")
 		output.close()
+		print "Done"
 	else :
-		print sp
+		print "Echec for : "+sp
+
+main()
