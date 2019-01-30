@@ -38,34 +38,9 @@ my $homology_adaptor = $registry->get_adaptor('pan_homology', 'compara', 'Homolo
 # other species and paralogues in the same one)
 # Then for each homology, you can get all the Members implicated
 
-my $cpt = 0;
-print "0%";
-
 $filename = '/home/anais/Documents/Data/Homology/Output.txt';
 open($fh, '>', $filename) or die "Could not open file '$filename' $!";
 foreach my $gene (@gene_list) {
-	$cpt +=1;
-	if($cpt == 64969){
-		print "-10%";
-	}elsif($cpt == 129939){
-		print "--20%";
-	}elsif($cpt == 194908){
-		print "---30%";
-	}elsif($cpt == 259877){
-		print "----40%";
-	}elsif($cpt == 324846){
-		print "-----50%";
-	}elsif($cpt == 389815){
-		print "------60%";
-	}elsif($cpt == 454784){
-		print "-------70%";
-	}elsif($cpt == 519753){
-		print "--------80%";
-	}elsif($cpt == 584722){
-		print "---------90%";
-	}elsif($cpt == 649696){
-		print "----------100%";
-	}
 	my $gene_member = $pan_homology_adaptor->fetch_by_stable_id($gene);
 	if($gene_member){
 		my $homologies = $homology_adaptor->fetch_all_by_Member($gene_member);
