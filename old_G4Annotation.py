@@ -16,6 +16,8 @@ This software is a computer program whose annote the G4 region of one chromosome
 From a csv files which contain windows of G4 screener of a chromosome, this module annote
 the G4 region for each transcript. The program create differents files output:
 
+    * 
+    * 
 
 .. moduleauthor:: Sarah.Belhamiti
 
@@ -102,8 +104,8 @@ def positionChromosomiqueGeneNegatif(position, EXTENSION, startIntron, endIntron
 		integer
 		position chromosomique of the start or end G4
 	"""
-	if (int(position) <= EXTENSION+1):	## because strart G4 classifier from 0
-		position=int(startIntron)+1+EXTENSION+1-int(position)
+	if (int(position) <= EXTENSION):	## because strart G4 classifier from 0
+		position=int(startIntron)+1+EXTENSION-int(position)
 	else:	# if from sequence aval
 		position=int(endIntron)+EXTENSION-int(position)
 	return position
@@ -126,7 +128,7 @@ def CreateDictionaryBiotypeByTranscript (filename):
 	inputfile= open(filename,"r")	# file opening for reading
 	for line in inputfile:	# for each line in the file (for each transcript)
 		words=line.split('|')	# parsing by the separator, here '|'
-		transcript=words[1].rstrip()	#I D of transcript
+		transcript=words[1].rstrip()	#ID of transcript
 		biotypeTranscript=words[3].rstrip() # biotype of the transcript
 		if (dico.has_key(transcript) == False):	# if transcript not contain his biotype in the dico
 			dico[transcript]=biotypeTranscript # create an entry (biotype) for this transcript
@@ -258,17 +260,6 @@ def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool, StrandByGene): #
 	return G4DetectedInGene
 ######################################################################################################################################################
 def G4IsOnJunction(startG4, endG4, startBorder, endBorder):
-	""" Response of a PG4r localisation at a junction 
-	    Parameters
-	    ----------
-	    startG4 : integer
-	    endG4 : integer
-	    startBorder : integer
-	    endBorder : integer
-	    Returns
-	    -------
-	    onJunction : boolean
-	"""
 	onJunction=False
 	if ((startG4 <startBorder and endG4 >startBorder) or (startG4 >startBorder and endG4<startBorder)):
 		onJunction=True
@@ -504,6 +495,7 @@ def G4IsInTranscript(strand, coordG4, borderTranscript):
 	borderInferior=int(borderTranscript[0])
 	borderSuperior=int(borderTranscript[1])
 	inTranscript=False
+	#~ print borderInferior, borderSuperior, coordG4
 	if (strand == str(1)): ## gene positif
 		if (int(startG4) >= int(borderInferior) and int(startG4) <= int(borderSuperior) and int(endG4) >= int(borderInferior) and int(endG4) <= int(borderSuperior)):
 			inTranscript=True
@@ -706,7 +698,6 @@ def GetAnnotationTranscript(filename,ProteinCoding,BiotypeByTranscript):
 			if (start5!='' or end5!='' or start3!='' or end3!='' ): # but if transcript has a 5'UTR or an 3' UTR
 				answer=False # has not a good annotation in Ensembl
 		AnnotationTranscript[transcriptId]=answer
-	inputfile.close()
 	return AnnotationTranscript
 ######################################################################################################################################################
 def GetLocalisationG4InJunction(BiotypeByTranscript,ProteinCoding,transcriptId):
@@ -891,10 +882,11 @@ def ExtractionTranscriptPerG4(directory, specie, chromosome, TranscriptPerG4):
 ######################################################################################################################################################
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
-	GITDIR=os.getcwd()+'/'
-	parser.add_argument ('-p', '--path', default = GITDIR+'data')
-	parser.add_argument ('-CHR', '--chromosome', default = 'X')
-	parser.add_argument ('-specie', '--specie', default = 'HS')
+	parser.add_argument ('-pG4', '--pathG4', default = '/home/anais/Documents/Data/Mouse/mouseEssai')
+	parser.add_argument ('-pBtp', '--pathBiotype', default = '/home/anais/Documents/Data/Mouse/All/MM_All_TranscriptType.txt')
+	parser.add_argument ('-o', '--outPut', default = '/home/anais/Documents/Data/Mouse/mouseEssai/out')
+	parser.add_argument ('-CHR', '--CHROMOSOME', default = 'X')
+	parser.add_argument ('-specie', '--specie', default = 'MM')
 	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
 	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 4.5)
 	parser.add_argument ('-G4NN', '--THRESHOLD_G4NN', default = 0.5)
@@ -906,18 +898,20 @@ def build_arg_parser():
 def main () :
 	parser = build_arg_parser()
 	arg = parser.parse_args()
-	path=arg.path	# directory which contain all the directory chromosome
-	chromosome=arg.chromosome	# chromosome to analyze
+	pathG4=arg.pathG4	# directory which contain all the directory chromosome
+	pathBiotype=arg.pathBiotype # directory which contain all the biotype
+	outPut=arg.outPut # directory used for output
+	CHROMOSOME=arg.CHROMOSOME	# chromosome to analyze
 	specie=arg.specie	# specie to analyse
-	THRESHOLD_G4H=float(arg.THRESHOLD_G4H)	# threshold use to discriminate the score G4H (litterature = 0.9)
-	THRESHOLD_CGCC=float(arg.THRESHOLD_CGCC)	# threshold use to discriminate the score G4H (litterature = 4.5)
-	THRESHOLD_G4NN=float(arg.THRESHOLD_G4NN)	# threshold use to discriminate the score G4NN (litterature = 0.5)
+	THRESHOLD_G4H=int(arg.THRESHOLD_G4H)	# threshold use to discriminate the score G4H (litterature = 0.9)
+	THRESHOLD_CGCC=int(arg.THRESHOLD_CGCC)	# threshold use to discriminate the score G4H (litterature = 4.5)
+	THRESHOLD_G4NN=arg.THRESHOLD_G4NN	# threshold use to discriminate the score G4NN (litterature = 0.5)
 	EXTENSION=arg.EXTENSION	# EXTENSION use for create the junction exon_exon previously
 	WINDOW=arg.WINDOW	# size of window use in G4 screener
 	STEP=arg.STEP	# size of step use in G4 screener
 
-	GITDIR=os.getcwd()
-	# ~ print "Chromosome : "+chromosome
+
+
 	ProteinCoding=['IG_C_gene', 'IG_D_gene', 'IG_J_gene', 'IG_LV_gene', 'IG_M_gene', 'IG_V_gene', 'IG_Z_gene', 'nonsense_mediated_decay', 'nontranslating_CDS', 'non_stop_decay', 'protein_coding', 'TR_C_gene', 'TR_D_gene', 'TR_gene', 'TR_J_gene', 'TR_V_gene']
 
 	BiotypeByTranscript={}	# dictionary of strand for each transcript
@@ -927,9 +921,9 @@ def main () :
 	listeG4InGeneEntire={}
 	listeG4InGeneJunction={}
 
-	directory=path+'/chr'+chromosome	# variable directory which contain the data for this chromosome
-	index=directory+'/'+specie+'_transcript_unspliced_chr'+chromosome+'_Index.txt'	# file which contain info by transcript for this chromosome
-	indexBiotypeTranscript=path+'/transcriptType/transcriptType_chr'+chromosome	# file which contain biotype of transcript for this chromosome
+	directory=pathG4+'/chr'+CHROMOSOME	# variable directory which contain the data for this chromosome
+	index=directory+'/'+specie+'_transcript_unspliced_chr'+CHROMOSOME+'_Index.txt'	# file which contain info by transcript for this chromosome
+	indexBiotypeTranscript=pathBiotype
 
 	BiotypeByTranscript=CreateDictionaryBiotypeByTranscript (indexBiotypeTranscript) # dictionary of biotype for each transcript
 	StrandByGene=CreateDictionaryStrandByGene (index)	# dictionary of strand for each transcript
@@ -937,9 +931,7 @@ def main () :
 	AnnotationTranscript={}
 	AnnotationTranscript=GetAnnotationTranscript(index,ProteinCoding,BiotypeByTranscript) # annotation transcript
 	
-	for i in AnnotationTranscript :
-		if AnnotationTranscript[i]:
-			print i
+	
 
 	
 	
@@ -1003,6 +995,7 @@ def main () :
 					coordG4=[startG4,endG4]
 					g4inTranscript=G4IsInTranscript(strand, coordG4, borderTranscript)
 					annotationTranscript=AnnotationTranscript.get(transcriptId)
+					
 					if (g4inTranscript == True and annotationTranscript ==True):
 						informationsOfG4=list(G4DetectedInGene.get(G4InGene))
 						localisationInTranscript=GetLocalisationG4InTranscript(BiotypeByTranscript,ProteinCoding,transcriptId,borderTranscript,coordG4, end5, start3, exonList, intronList, strand)	
@@ -1010,7 +1003,10 @@ def main () :
 						G4InTranscript=AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informationsOfG4,localisationInTranscript, biotypeTranscript)
 						G4InGenome=AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript)
 						TranscriptPerG4=AddTranscriptPerG4(TranscriptPerG4, descriptionG4,transcriptId)
-
+					#	if (localisationInTranscript=='NAP' or localisationInTranscript=='NAN' ):
+						#~ print localisationInTranscript
+							#~ print  localisationInTranscript, descriptionG4, exonList, start5, end5, start3, end3, strand
+							#~ print '-------------------------------'
 
 	############################################################################## g4 junction
 	inputfile= open(index,"r") # file opening for reading
@@ -1057,10 +1053,10 @@ def main () :
 				
 	
 	
-	ExtractionG4InTranscript(GITDIR+'/results/perChromosome', specie, chromosome, G4InTranscript)	
-	ExtractionG4InGenome(GITDIR+'/results/perChromosome', specie, chromosome, G4InGenome)	
-	ExtractionTranscriptPerG4(GITDIR+'/results/perChromosome', specie, chromosome, TranscriptPerG4)
-	# ~ print "Done"
+	ExtractionG4InTranscript(outPut, specie, CHROMOSOME, G4InTranscript)	
+	ExtractionG4InGenome(outPut, specie, CHROMOSOME, G4InGenome)	
+	ExtractionTranscriptPerG4(outPut, specie, CHROMOSOME, TranscriptPerG4)
 	
+
 main()
 	
