@@ -11,7 +11,7 @@ def build_arg_parser():
 	return parser
 
 def lengthG4() :
-	directory = "/home/anais/Documents/Data/Mouse/results/MM_All_G4InTranscript.txt"
+	directory = "/home/anais/Documents/Data/Mouse/mouseEssai/out_all_score/MM_All_G4InTranscript.txt"
 	totLengthG4 = 0
 	with open(directory) as f: # file opening
 		content = f.read()
@@ -28,28 +28,45 @@ def lengthG4() :
 	return totLengthG4
 
 def importInfoTr():
-	directory = "/home/anais/Documents/Data/Mouse/All/MM_All_TranscriptType.txt"
+	directory = "/home/anais/Documents/Data/Mouse/All/MM_All_Transcript_location.txt"
 	dicoTr = {}
 	with open(directory) as f: # file opening
 		content = f.read()
 		lines = content.split('\n')
 		for l in lines:
 			if l:
-				words = l.split('|')
+				words = l.split('\t')
 				idTr = words[0]
-				coord = words[5].split(";")
-				strand = words[3]
-				if strand == "1":
-					start = int(coord[0].split('-')[0])
-					end = int(coord[-1].split('-')[1])
-				else:
-					end = int(coord[0].split('-')[0])
-					start = int(coord[-1].split('-')[1])
-				dicoTr[idTr] = {"Start" : start, "End" : end}
+				strand = words[1]
+				# ~ exonList = words[5]
+				# ~ exonList = exonList.split(";")
+				# ~ exon_total = []
+				# ~ for i in exonList :
+					# ~ if strand == 1 :
+						# ~ exon_total.append([int(i.split("-")[0]),int(i.split("-")[1])])
+					# ~ else :
+						# ~ exon_total.append([int(i.split("-")[1]),int(i.split("-")[0])])
+				# ~ exonSorted = []
+				# ~ for exon in exon_total:
+					# ~ if not exonSorted :
+						# ~ exonSorted = [exon]
+					# ~ elif exon[0] < exonSorted[0][0]: # the new exon start is the first exon
+						# ~ exonSorted.insert(0, exon) # then we change the first exon
+					# ~ elif exon[0] > exonSorted[-1][0]: # the new exon start is the last exon
+						# ~ exonSorted.insert(-1, exon)
+					# ~ else:
+						# ~ for i in exon_total[1::-2]:
+							# ~ if exon[0] < i[0]:
+								# ~ exonSorted.insert(exon_total.index(i),exon)
+							# ~ else:
+								# ~ exonSorted.insert(exon_total.index(i)+1,exon)
+				start = int(words[2])
+				end = int(words[3])
+				dicoTr[idTr] = {"Start" : start , "End" : end}
 	return dicoTr
 	
 def lengthTranscriptUsed(dicoTr) :
-	directory = "/home/anais/Documents/Data/Mouse/All/transcript_used.txt"
+	directory = "/home/anais/Documents/Data/Mouse/All/transcript_used_MM.txt"
 	totLengthTr = 0
 	with open(directory) as f: # file opening
 		content = f.read()

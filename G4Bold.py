@@ -25,7 +25,7 @@ def ExtractionG4InTranscript(directory, specie, chromosome, G4InTranscript):
 ########################################################################
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Unique')
-	parser.add_argument ('-p', '--path', default = '/home/local/USHERBROOKE/vana2406/Documents/Data/Human/All/non_stop_decay.txt')
+	parser.add_argument ('-p', '--path', default = '/home/anais/Documents/Data/Mouse/mouseEssai/out/MM_Uniq_G4InTranscript.txt')
 	parser.add_argument ('-sf', '--subfamily', default = 'non_stop_decay')
 	parser.add_argument ('-s', '--specie', default = 'MM')
 	return parser
