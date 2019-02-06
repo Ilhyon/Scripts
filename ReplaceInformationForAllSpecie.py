@@ -173,7 +173,7 @@ def ImportFasta(nameSpecie):
 	return dicoChromosome
 
 def Fasta(chromosome,start,end,strand,nameSpecie,dico):
-	sequence = dicoChromosome[chromosome][(int(start)-1):(int(end)-1+1)]
+	sequence = dico[chromosome][(int(start)-1):(int(end)-1+1)]
 	if strand == "-1" :
 		reverse = ""
 		for n in sequence:
@@ -239,9 +239,9 @@ def CreateSequence(directory, inputfilename, IntronPerGene, InfoPerGene, extensi
 					sequence_aval=Sequence(fasta_aval, strand)
 				sequence=sequence_amont+sequence_aval
 				#print sequence
-				if geneID == "Cj1325":
-					print value_intron
-					print fasta_amont
+				# ~ if geneID == "Cj1325":
+					# ~ print value_intron
+					# ~ print fasta_amont
 				output1.write(">"+geneID+"|"+"-".join(value_intron)+"\n"+str(sequence)+"\n")
 	output1.close()
 	print "\t\t Junction done."
