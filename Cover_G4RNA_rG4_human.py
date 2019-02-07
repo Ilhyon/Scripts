@@ -52,8 +52,8 @@ def importID():
 
 def Coverage(dicoG4RNA, dicoID):
 	# ~ directory = '/home/anais/Documents/Data/Human/G4Conserve-master/results/perChromosome/HS_All_G4InTranscript.txt' # only G4nn human
-	# ~ directory = '/home/anais/Documents/Data/Human/All/HS_All_G4InTranscript.txt' # all score human
-	directory = '/home/anais/Documents/Data/Mouse/mouseEssai/out/MM_All_G4InTranscript.txt' # only G4nn mouse
+	directory = '/home/anais/Documents/Data/Human/All/HS_All_G4InTranscript.txt' # all score human
+	# ~ directory = '/home/anais/Documents/Data/Mouse/mouseEssai/out/MM_All_G4InTranscript.txt' # only G4nn mouse
 	result = []
 	with open(directory) as f: # file opening
 		content = f.read()
@@ -79,6 +79,9 @@ def Coverage(dicoG4RNA, dicoID):
 							if chrm == chrmG4 :
 								if G4 not in result :
 									if (startG4 > start and startG4 < end) or (endG4 > start and endG4 < end):
+										result.append(G4)
+								if G4 not in result :
+									if (start > startG4 and start < endG4) or (end > startG4 and end < endG4):
 										result.append(G4)
 							if (re.search(G4seq, sequence) or re.search(sequence, G4seq))and G4 not in result:
 								result.append(G4)
