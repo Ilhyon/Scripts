@@ -6,19 +6,20 @@ import argparse
 import os
 from pprint import pprint
 
+# \file Parser_gtf.py
+# \author Anaïs Vannutelli 18129080
+# \brief This script parse a gtf file to only retrieve informations
+# will use later
+
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'Parser_gtf')
-	parser.add_argument ('-s', '--specie', default = 'MM')
+	parser.add_argument ('-sp', '--specie', default = 'MM')
 	return parser
-	
-def main () :
-	parser = build_arg_parser()
-	arg = parser.parse_args()
-	sp=arg.specie	# specie to analyse
+
+def importGTF(sp):
 	filename = "/home/anais/Documents/Data/Genomes/"+sp+"/"+sp+".gtf"
 	exists = os.path.isfile(filename)
 	if exists :	
-		print "GTF for "+sp
 		dicoFeature = {}
 		with open(filename) as f: # file opening
 			content = f.read()
@@ -26,186 +27,179 @@ def main () :
 			for l in lines: # browse all lines
 				if not l.startswith('#') and l:
 					words=l.split('\t')
-					attribute = words[8].split(';')
-					idGene = attribute[0].split('"')[1]
+					attributes = words[8].split(';')
+					idGene = attributes[0].split('"')[1]
 					feature = words[2]
 					chrm = words[0]
 					startFeature = words[3]
 					endFeature = words[4]
 					strand = words[6]
-					if strand == "+":
-						strand = 1
-					elif strand == "-":
-						strand = -1
-					biotype = ""
-					for i in range(0,len(attribute)):
-						if re.search("transcript_biotype", attribute[i]):
-							biotype = attribute[i].split('"')[1]
-					if idGene not in dicoFeature :
-						if feature == "gene" :
-							dicoFeature[idGene] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
-						elif feature == "transcript" :
-							for i in range(0,len(attribute)):
-								if re.search("transcript_id", attribute[i]):
-									idTr = attribute[i].split('"')[1]
-							dicoFeature[idGene] = {"Transcript" : idTr}
-							dicoFeature[idGene]["Transcript"][idTr] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
-						elif feature == "exon" :
-							rank = ""
-							idExon = 0
-							idTr = 0
-							for i in range(0,len(attribute)):
-								if re.search("exon_number", attribute[i]):
-									rank = attribute[i].split('"')[1]
-								elif re.search("exon_id", attribute[i]):
-									idExon = attribute[i].split('"')[1]
-								elif re.search("transcript_id", attribute[i]):
-									idTr = attribute[i].split('"')[1]
-							dicoFeature[idGene] = {"Transcript" : idTr}
-							dicoFeature[idGene]["Transcript"][idTr] = {"Exon" : idExon}
-							dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
-						elif feature == "five_prime_utr" :
-							idTr = 0
-							for i in range(0,len(attribute)):
-								if re.search("transcript_id", attribute[i]):
-									idTr = attribute[i].split('"')[1]
-							dicoFeature[idGene] = {"Transcript" : idTr}
-							dicoFeature[idGene]["Transcript"][idTr]={"5UTR" :{"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}
-						elif feature == "three_prime_utr" :
-							idTr = 0
-							for i in range(0,len(attribute)):
-								if re.search("transcript_id", attribute[i]):
-									idTr = attribute[i].split('"')[1]
-							dicoFeature[idGene] = {"Transcript" : idTr}
-							dicoFeature[idGene]["Transcript"][idTr]={"3UTR" :{"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}
-					else:
-						if feature == "gene" :
-							print "This gene already exist :"
-							pprint(dicoFeature[idGene])
-							print "Chromosome : "+chrm+" | Start : "+startFeature+" | End :"+endFeature+" | Biotype : "+biotype+" | Strand : "+strand
-						elif feature == "transcript" :
-							idTr = 0
-							for i in range(0,len(attribute)):
-								if re.search("transcript_id", attribute[i]):
-									idTr = attribute[i].split('"')[1]
-							if "Transcript" in dicoFeature[idGene]:
-								if idTr not in dicoFeature[idGene]["Transcript"] :
-									dicoFeature[idGene]["Transcript"][idTr] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
-								else :
-									print "This transcript already exist :"
-									print idTr
-									pprint(dicoFeature[idGene]["Transcript"][idTr])
-									print "Chromosome : "+chrm+" | Start : "+startFeature+" | End :"+endFeature+" | Biotype : "+biotype+" | Strand : "+strand
-							else : 
-								dicoFeature[idGene]["Transcript"] = {idTr:{}}
-								dicoFeature[idGene]["Transcript"][idTr] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
-						elif feature == "exon" :
-							rank = ""
-							idExon = 0
-							idTr = 0
-							for i in range(0,len(attribute)):
-								if re.search("exon_number", attribute[i]):
-									rank = attribute[i].split('"')[1]
-								elif re.search("exon_id", attribute[i]):
-									idExon = attribute[i].split('"')[1]
-								elif re.search("transcript_id", attribute[i]):
-									idTr = attribute[i].split('"')[1]
-							if "Transcript" in dicoFeature[idGene]:
-								if idTr not in dicoFeature[idGene]["Transcript"] :
-									dicoFeature[idGene]["Transcript"].update({idTr : {}})
-									dicoFeature[idGene]["Transcript"][idTr]["Exon"] = {idExon:{}}
-									dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
-								else :
-									if "Exon" in dicoFeature[idGene]["Transcript"][idTr]:
-										if idExon not in dicoFeature[idGene]["Transcript"][idTr]["Exon"]:
-											dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
-										else:
-											print "This exon already exist :"
-											pprint(dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon])
-											print "Chromosome : "+chrm+" | Start : "+startFeature+" | End :"+endFeature+" | Biotype : "+biotype+" | Strand : "+strand
-									else :
-										dicoFeature[idGene]["Transcript"][idTr]["Exon"] ={idExon : {}}
-										dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
-							else : 
-								dicoFeature[idGene].update({"Transcript" : idTr})
-								dicoFeature[idGene]["Transcript"][idTr] = {"Exon" : idExon}
-								dicoFeature[idGene]["Transcript"][idTr]["Exon"][idExon] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand, "Rank" : rank}
-						elif feature == "five_prime_utr" :
-							idTr = 0
-							for i in range(0,len(attribute)):
-								if re.search("transcript_id", attribute[i]):
-									idTr = attribute[i].split('"')[1]
-							if "Transcript" in dicoFeature[idGene]:
-								if idTr not in dicoFeature[idGene]["Transcript"] :
-									dicoFeature[idGene]["Transcript"].update({idTr : {"5UTR" :{"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}})
-								else :
-									if "5UTR" in dicoFeature[idGene]["Transcript"][idTr] :
-										if (strand == "1" and startFeature == dicoFeature[idGene]["Transcript"][idTr]["Start"]) or (strand == "-1" and endFeature == dicoFeature[idGene]["Transcript"][idTr]["End"]):
-											dicoFeature[idGene]["Transcript"][idTr]["5UTR"] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
-									else :
-										dicoFeature[idGene]["Transcript"][idTr]["5UTR"] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
-							else : 
-								dicoFeature[idGene].update({"Transcript" : idTr})
-								dicoFeature[idGene]["Transcript"][idTr] = {"5UTR" : {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}
-						elif feature == "three_prime_utr" :
-							idTr = 0
-							for i in range(0,len(attribute)):
-								if re.search("transcript_id", attribute[i]):
-									idTr = attribute[i].split('"')[1]
-							if "Transcript" in dicoFeature[idGene]:
-								if idTr not in dicoFeature[idGene]["Transcript"] :
-									dicoFeature[idGene]["Transcript"].update({idTr : {"3UTR" :{"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}})
-								else :
-									if "3UTR" in dicoFeature[idGene]["Transcript"][idTr]:
-										if (strand == "1" and endFeature == dicoFeature[idGene]["Transcript"][idTr]["End"]) or (strand == "-1" and startFeature == dicoFeature[idGene]["Transcript"][idTr]["Start"]):
-											dicoFeature[idGene]["Transcript"][idTr]["3UTR"] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
-									else :
-										dicoFeature[idGene]["Transcript"][idTr]["3UTR"] = {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}
-							else : 
-								dicoFeature[idGene].update({"Transcript" : idTr})
-								dicoFeature[idGene]["Transcript"][idTr] = {"3UTR" : {"Chromosome" : chrm, "Start" : startFeature, "End" :endFeature, "Biotype" : biotype, "Strand" : strand}}
-		
-		#~ pprint(dicoFeature)
-		words = sp.split("_")
-		letters = [word[0] for word in words]
-		ini = "".join(letters)
-		ini = ini.upper()
-		output = open("/home/anais/Documents/Data/Genomes/"+sp+"/"+ini+"_transcript_unspliced.txt","w") # file opening for reading
-		for gene in dicoFeature :
-			for transcript in dicoFeature[gene]["Transcript"] :
-				#~ print str(gene) +"\t"+ str(transcript)
-				for exon in dicoFeature[gene]["Transcript"][transcript]["Exon"]:
-					chromosome = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Chromosome"]
-					biotype = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Biotype"]
-					start = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Start"]
-					end = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["End"]
-					rank = dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Rank"]
-					strand = str(dicoFeature[gene]["Transcript"][transcript]["Exon"][exon]["Strand"])
-					output.write(gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t\t\t\t\t"+start+"\t"+end+"\t"+rank+"\t"+strand+"\n")
-				if "5UTR" in dicoFeature[gene]["Transcript"][transcript] :
-					chromosome = dicoFeature[gene]["Transcript"][transcript]["5UTR"]["Chromosome"]
-					biotype = dicoFeature[gene]["Transcript"][transcript]["5UTR"]["Biotype"]
-					start = dicoFeature[gene]["Transcript"][transcript]["5UTR"]["Start"]
-					end = dicoFeature[gene]["Transcript"][transcript]["5UTR"]["End"]
-					strand = str(dicoFeature[gene]["Transcript"][transcript]["5UTR"]["Strand"])
-					output.write(gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t"+start+"\t"+end+"\t\t\t\t\t\t"+strand+"\n")
-				if "3UTR" in dicoFeature[gene]["Transcript"][transcript] :
-					chromosome = dicoFeature[gene]["Transcript"][transcript]["3UTR"]["Chromosome"]
-					biotype = dicoFeature[gene]["Transcript"][transcript]["3UTR"]["Biotype"]
-					start = dicoFeature[gene]["Transcript"][transcript]["3UTR"]["Start"]
-					end = dicoFeature[gene]["Transcript"][transcript]["3UTR"]["End"]
-					strand = str(dicoFeature[gene]["Transcript"][transcript]["3UTR"]["Strand"])
-					output.write(gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t\t\t"+start+"\t"+end+"\t\t\t\t"+strand+"\n")
-				
-		output.close()
-		
-		#~ output = open("/home/anais/Documents/Data/"+sp+"/"+ini+"_gene_list.txt","w") # file opening for reading
-		output = open("/home/anais/Documents/Data/Genomes/"+sp+"/"+ini+"_GeneID.txt","w") # file opening for reading
-		for gene in dicoFeature :
-			output.write(gene+"\n")
-		output.close()
-		print "Done"
-	else :
-		print "Echec for : "+sp
+					strand = changeStrandFormat(strand)
+					biotype = retrieveBiotypeFronAttributes(attributes)
+					if feature == "exon" :
+						idTr = retrieveIdTrFronAttributes(attributes)
+						rank, idExon = retrieveInfoExonFronAttributes(attributes)
+						dicoFeature.update(createKeyTranscript(dicoFeature, idGene, idTr, "Exon"))
+						dicoFeature[idTr]["Exon"].update({idExon : {"Chromosome" : chrm,
+																	"Start" : startFeature,
+																	"End" :endFeature,
+																	"Biotype" : biotype,
+																	"Strand" : strand,
+																	"Rank" : rank}})
+					elif feature == "five_prime_utr" :
+						idTr = retrieveIdTrFronAttributes(attributes)
+						dicoFeature.update(createKeyTranscript(dicoFeature, idGene, idTr, "5UTR"))
+						dicoFeature[idTr]["5UTR"].update({"Chromosome" : chrm,
+															"Start" : startFeature,
+															"End" :endFeature,
+															"Biotype" : biotype,
+															"Strand" : strand})
+					elif feature == "three_prime_utr" :
+						idTr = retrieveIdTrFronAttributes(attributes)
+						dicoFeature.update(createKeyTranscript(dicoFeature, idGene, idTr, "3UTR"))
+						dicoFeature[idTr]["3UTR"].update({"Chromosome" : chrm,
+															"Start" : startFeature,
+															"End" :endFeature,
+															"Biotype" : biotype,
+															"Strand" : strand})
+	return dicoFeature
+
+def writeTranscriptFile(sp, dicoFeature) :
+	words = sp.split("_")
+	letters = [word[0] for word in words]
+	ini = "".join(letters)
+	ini = ini.upper()
+	output = open("/home/anais/Documents/Data/Genomes/"+sp+"/"+ini+"_transcript_unspliced.txt","w") # file opening for reading
+	for transcript in dicoFeature :
+		nbExon = len(dicoFeature[transcript]["Exon"])
+		gene = dicoFeature[transcript]["Gene"]
+		for exon in dicoFeature[transcript]["Exon"] :
+			chromosome = dicoFeature[transcript]["Exon"][exon]["Chromosome"]
+			biotype = dicoFeature[transcript]["Exon"][exon]["Biotype"]
+			start = dicoFeature[transcript]["Exon"][exon]["Start"]
+			end = dicoFeature[transcript]["Exon"][exon]["End"]
+			strand = str(dicoFeature[transcript]["Exon"][exon]["Strand"])
+			rank = dicoFeature[transcript]["Exon"][exon]["Rank"]
+			start5UTR, end5UTR, start3UTR, end3UTR = retrieveUTRFromDico(dicoFeature[transcript])
+			line = gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t" #start of the line
+			if int(rank) == 1 and int(rank) == nbExon : 
+				# if the transcript contain only one exon we put all the UTR
+				output.write(line
+							+start5UTR+"\t"
+							+end5UTR+"\t"
+							+start3UTR+"\t"
+							+end3UTR+"\t"
+							+start+"\t"
+							+end+"\t"
+							+rank+"\t"
+							+strand+"\n")
+			elif int(rank) == 1 :
+				# if it's not the only one exon but it's the first one,
+				# we add only the 5UTR
+				output.write(line
+							+start5UTR+"\t"
+							+end5UTR+"\t\t\t"
+							+start+"\t"
+							+end+"\t"
+							+rank+"\t"
+							+strand+"\n")
+			elif int(rank) == nbExon :
+				# if it's not the only one exon but it's the last one,
+				# we add only the 3UTR
+				output.write(line
+							+"\t\t"
+							+start3UTR+"\t"
+							+end3UTR+"\t"
+							+start+"\t"
+							+end+"\t"
+							+rank+"\t"
+							+strand+"\n")
+			else :
+				# it's only a "midle" exon so we add no UTR
+				output.write(line
+							+"\t\t\t\t"
+							+start+"\t"
+							+end+"\t"
+							+rank+"\t"
+							+strand+"\n")
+	output.close()
+
+def writeIDGene(sp, dicoFeature) :
+	"""
+		Create a file with all gene ID. I don't use this file anymore
+		but I let the function just in case.
+	"""
+	output = open("/home/anais/Documents/Data/Genomes/"+sp+"/"+ini+"_GeneID.txt","w") # file opening for reading
+	for gene in dicoFeature :
+		output.write(gene+"\n")
+	output.close()
+
+def changeStrandFormat(strand) :
+	if strand == "+":
+		strand = 1
+	elif strand == "-":
+		strand = -1
+	return strand
+
+def retrieveBiotypeFronAttributes(attributes) :
+	biotype = ""
+	for attribute in attributes:
+		if re.search("transcript_biotype", attribute):
+			biotype = attribute.split('"')[1]
+	return biotype
+
+def retrieveIdTrFronAttributes(attributes) :
+	idTr = ""
+	for attribute in attributes:
+		if re.search("transcript_id", attribute):
+			idTr = attribute.split('"')[1]
+	return idTr
+
+def retrieveInfoExonFronAttributes(attributes) :
+	rank = ""
+	idExon = 0
+	for attribute in attributes:
+		if re.search("exon_number", attribute):
+			rank = attribute.split('"')[1]
+		elif re.search("exon_id", attribute):
+			idExon = attribute.split('"')[1]
+	return rank, idExon
+
+def retrieveUTRFromDico(dico) :
+	"""
+		From the dictionary of feature, we retrieve the coordinates of
+		UTR if they exist
+	"""
+	start5UTR = ""
+	end5UTR = ""
+	start3UTR = ""
+	end3UTR = ""
+	if "5UTR" in dico :
+		start5UTR, end5UTR = retrieveCoordUTRFromDico(dico["5UTR"])
+	if "3UTR" in dico :
+		start3UTR, end3UTR = retrieveCoordUTRFromDico(dico["3UTR"])
+	return start5UTR, end5UTR, start3UTR, end3UTR
+
+def retrieveCoordUTRFromDico(dico) :
+	start = dico["Start"]
+	end = dico["End"]
+	return start, end
+
+def createKeyTranscript(dico, idGene, idTr, feature) :
+	if idTr not in dico :
+		dico[idTr] = {"Gene" : idGene,
+						feature : {}}
+	if feature not in dico[idTr] :
+		dico[idTr].update({feature : {}})
+	return dico
+
+def main () :
+	parser = build_arg_parser()
+	arg = parser.parse_args()
+	sp=arg.specie	# specie to parse
+	print "GTF for "+sp
+	dicoFeature = importGTF(sp)
+	writeTranscriptFile(sp, dicoFeature)
+	print "\tDone"
 
 main()

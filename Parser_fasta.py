@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-:v
 
+# This script is a parser. 
+# Inputs :
+#	- gtf -> information on genes
+#	- fasta -> entire fasta for a chromosome
+# Output :
+#	- fasta -> a fasta file containing all gene of one specie
+# If a gene is on the reverse strand, the sequence is also reversed like
+# in ensembl.
+
 import re
 import os
 import math
@@ -9,17 +18,39 @@ from pprint import pprint
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'Parser_Fasta')
-	parser.add_argument ('-s', '--specie', default = 'MM')
+	parser.add_argument ('-sp', '--specie', default = 'MM')
 	return parser
-	
-def main () :
-	parser = build_arg_parser()
-	arg = parser.parse_args()
-	sp=arg.specie	# specie to analyse
+
+def reverseSequence(Sequence) :
+	"""
+		Create the reverse complement of a DNA sequence
+	"""
+	reverse = ""
+	for n in Sequence:
+		if n == "A" :
+			tmp = "T"
+		elif n == "T" :
+			tmp = "A"
+		elif n == "G" :
+			tmp = "C"
+		elif n == "C" :
+			tmp = "G"
+		else :
+			tmp = n # in some sequences there is many N or other letter
+		reverse = reverse + tmp
+	Sequence = reverse[::-1]
+	return Sequence
+
+def importFastaChromosome(sp) :
+	"""
+		Import the fasta of a chromosome, they are downloaded from 
+		ensembl FTP for each specie. The assembly are those that are
+		present in pan-compara.
+		{chromosome : sequence}
+	"""
 	directory = "/home/anais/Documents/Data/Genomes/"+sp+"/Fasta/"
 	dicoChromosome = {}
 	listFile = os.listdir(directory)
-	print "Fasta for "+sp
 	for filename in listFile :
 		with open(directory+filename) as f: # file opening
 			content = f.read()
@@ -30,6 +61,18 @@ def main () :
 				sequence = "".join(l[1:])
 				dicoChromosome.update({chrm : sequence})
 	print "dico fasta done"
+	return dicoChromosome
+
+def importGTF(sp, dicoChromosome) :
+	"""
+		Import information from the gtf file. The sequence is also added
+		from the dictionary of chromosome.
+		{idGene : {	Chromosome,
+					Start,
+					End,
+					Strand,
+					Sequence}}
+	"""
 	filename = "/home/anais/Documents/Data/Genomes/"+sp+"/"+sp+".gtf"
 	exists = os.path.isfile(filename)
 	if exists :	
@@ -48,13 +91,23 @@ def main () :
 						endFeature = words[4]
 						strand = words[6]
 						if strand == "+":
-							strand = 1
+							strand = "1"
 						elif strand == "-":
-							strand = -1
+							strand = "-1"
 						if chrm in dicoChromosome :
+							# -1 for the indice in python : start at 0 and not 1
+							# +1 for the sequence :
+							# 1 2 3 4 5 6 7 8 9
+							# A T C G G G T A G
+							# 6-3 = 3 but there is 4 nucleotides so 6-3 +1 = 4
 							geneSequence = dicoChromosome[chrm][(int(startFeature)-1):(int(endFeature)-1+1)]
-							dicoGene.update({idGene : {"Chromosome" : chrm, "Start" : startFeature, "End" : endFeature, "Strand" : str(strand), "Sequence" : geneSequence}})
+							dicoGene.update({idGene : {"Chromosome" : chrm, "Start" : startFeature, "End" : endFeature, "Strand" : strand, "Sequence" : geneSequence}})
+	return dicoGene
 	
+def createFastaGene(sp, dicoGene):
+	"""
+		Create the output file, a fasta file with all gene of the specie.
+	"""
 	words = sp.split("_")
 	letters = [word[0] for word in words]
 	ini = "".join(letters)
@@ -71,29 +124,23 @@ def main () :
 		cpt1 = 0
 		cpt2 = 60
 		if nbLine < 0 :
-			print AH
+			print "Ah"
 		if strand == "-1" :
-			reverse = ""
-			for n in Sequence:
-				if n == "A" :
-					tmp = "T"
-				elif n == "T" :
-					tmp = "A"
-				elif n == "G" :
-					tmp = "C"
-				elif n == "C" :
-					tmp = "G"
-				else :
-					tmp = n
-				reverse = reverse + tmp
-			Sequence = reverse[::-1]
+			Sequence = reverseSequence(Sequence)
 		for i in range(0,int(nbLine)) :
-			output.write(Sequence[cpt1:cpt2]+"\n")
+			output.write(Sequence[cpt1:cpt2]+"\n") # to get the "real" fasta format
 			cpt1 += 60
 			cpt2 += 60
 	output.close()
-	print "Done"
 	
-# ~ pprint(dicoGene)
+def main () :
+	parser = build_arg_parser()
+	arg = parser.parse_args()
+	sp=arg.specie # specie to analyse
+	print "Fasta for "+sp
+	dicoChromosome = importFastaChromosome(sp)
+	dicoGene = importGTF(sp, dicoChromosome)
+	createFastaGene(sp, dicoGene)
+	print "\tDone"
 
 main()
