@@ -16,8 +16,6 @@ This software is a computer program whose annote the G4 region of one chromosome
 From a csv files which contain windows of G4 screener of a chromosome, this module annote
 the G4 region for each transcript. The program create differents files output:
 
-    * 
-    * 
 
 .. moduleauthor:: Sarah.Belhamiti
 
@@ -46,17 +44,6 @@ import numpy as np
 
 ######################################################################################################################################################
 def mean(liste): # give mean of a list
-	""" Give mean of a list
-	    Parameters
-	    ----------
-	    liste : list
-		list of values
-	    Returns
-	    -------
-	    sum(liste)/len(liste)
-		float
-		mean of a list
-	"""
    	return sum(liste)/len(liste)
 
 ######################################################################################################################################################
@@ -130,7 +117,7 @@ def CreateDictionaryBiotypeByTranscript (filename):
 		words=line.split('|')	# parsing by the separator, here '|'
 		transcript=words[1].rstrip()	#ID of transcript
 		biotypeTranscript=words[3].rstrip() # biotype of the transcript
-		if (dico.has_key(transcript) == False):	# if transcript not contain his biotype in the dico
+		if transcript not in dico :	# if transcript not contain his biotype in the dico
 			dico[transcript]=biotypeTranscript # create an entry (biotype) for this transcript
 	return dico	# return dico with all transcript of this chromosome
 ######################################################################################################################################################
@@ -154,7 +141,7 @@ def CreateDictionaryStrandByGene (filename):
 		words=line.split('|')	# parsing by the separator, here '|'
 		gene=words[1].rstrip()	# gene ID
 		strand=words[3].rstrip() # strand of this gene
-		if (dico.has_key(gene) == False):	# if gene not contain his strand in the dico
+		if gene not in dico:	# if gene not contain his strand in the dico
 			dico[gene]=strand # create an entry (strand) for this gene
 	return dico	# return dico with all gene of this chromosome
 
@@ -198,7 +185,7 @@ def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool, StrandByGene): #
 			numRow=words[0].rstrip() #numero of row for this for this window
 			description=words[1].rstrip() # description of the sequence ( geneId|startBorder|endBorder )
 			gene=words[1].rstrip().split("|")[0] # geneID
-			strand=StrandByGene.get(gene) # get strand for this gene from the dictionary StrandByGene
+			strand=StrandByGene[gene] # get strand for this gene from the dictionary StrandByGene
 			startBorder=int(words[1].rstrip().split("|")[1]) # start of the gene sequence
 			endBorder=int(words[1].rstrip().split("|")[2])  # end of the gene sequence
 			cGcC=float(words[2].rstrip()) #  score cGcC for this window
@@ -217,7 +204,7 @@ def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool, StrandByGene): #
 					gene_startG4=gene
 					sequenceG4=sequence
 					oldPassed=passed # assignation, we pass over the thresholds
-					if (strand == str(1)): # if gene positif
+					if (strand == "1"): # if gene positif
 						startG4=startWindow # startG4 same as startWindow of G4 screener
 						endG4=endWindow # endG4 same as endWindow of G4 screener
 					else:	# if gene negatif
@@ -249,17 +236,19 @@ def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool, StrandByGene): #
 					meanG4Hunter=mean(listeG4Hunter) # mean of the score G4Hunter will be the score for this region containing G4
 					meanG4NN=mean(listeG4NN) # mean of the score G4NN will be the score for this region containing G4
 					oldPassed=passed # assignation, we pass under the thresholds
-					if (strand == str(1)):
+					if (strand == "1"):
 						headerG4=gene+"|"+str(startG4)+"|"+str(endG4)+"|"+strand
-					elif (strand == str(-1)):
+					elif (strand == "-1"):
 						headerG4=gene+"|"+str(endG4)+"|"+str(startG4)+"|"+strand
-					else:
-						continue #strand == None, some gene doesnt have annotation
-					if (G4DetectedInGene.has_key(headerG4) == False and strand != None): 
+					if headerG4 not in G4DetectedInGene and strand : 
 						G4DetectedInGene[headerG4]=str(meanCGcC), str(meanG4Hunter),sequenceG4 , str(meanG4NN)	
 	return G4DetectedInGene
 ######################################################################################################################################################
 def G4IsOnJunction(startG4, endG4, startBorder, endBorder):
+	""" 
+		Return a boolean : if the G4 is on the junction it's true 
+		elswise it's false.
+	"""
 	onJunction=False
 	if ((startG4 <startBorder and endG4 >startBorder) or (startG4 >startBorder and endG4<startBorder)):
 		onJunction=True
@@ -293,7 +282,7 @@ def ReturnG4InJunction(G4DetectedInJunction, inputfile, parametersTool,EXTENSION
 		dictionary with informations of region G4 detected (score cgCc, scote G4Hunter, sequence and score G4NN) for each 
 		junctions of G4 discovered in the genes
 	"""
-	THRESHOLD_CGCC=parametersTool[0] #
+	THRESHOLD_CGCC=parametersTool[0]
 	THRESHOLD_G4H=parametersTool[1]
 	THRESHOLD_G4NN=parametersTool[2]
 	WINDOW=parametersTool[3]
@@ -362,22 +351,20 @@ def ReturnG4InJunction(G4DetectedInJunction, inputfile, parametersTool,EXTENSION
 					meanG4Hunter=mean(listeG4Hunter) # mean of the score G4Hunter will be the score for this region containing G4
 					meanG4NN=mean(listeG4NN) # mean of the score G4NN will be the score for this region containing G4
 					oldPassed=passed # assignation, we pass under the thresholds
-					if (strand == str(1)): # if gene positif
+					if (strand == "1"): # if gene positif
 						startG4=positionChromosomiqueGenePositif(startG4, EXTENSION, startFirstWindow, endFirstWindow)	
 						endG4=positionChromosomiqueGenePositif(endG4, EXTENSION, startFirstWindow, endFirstWindow)
 					else: # if gene negatif
 						startG4=positionChromosomiqueGeneNegatif(startG4, EXTENSION, startFirstWindow, endFirstWindow)	
 						endG4=positionChromosomiqueGeneNegatif(endG4, EXTENSION, startFirstWindow, endFirstWindow)
-					if (strand == str(1)):
+					if (strand == "1"):
 						headerG4=gene+"|"+str(startG4)+"|"+str(endG4)+"|"+strand
-					elif (strand == str(-1)):
+					elif (strand == "-1"):
 						headerG4=gene+"|"+str(endG4)+"|"+str(startG4)+"|"+strand
-					else:
-						continue #strand == None, some gene doesnt have annotation
 					onJonction=G4IsOnJunction(startG4, endG4, startBorder, endBorder)	
-					if (G4DetectedInJunction.has_key(headerG4) == False and onJonction==True):
+					if headerG4 not in G4DetectedInJunction and  onJonction :
 						G4DetectedInJunction[headerG4]=str(meanCGcC), str(meanG4Hunter),sequenceG4 , str(meanG4NN)
-					
+	inputfile.close()
 	return G4DetectedInJunction	
 
 ######################################################################################################################################################
@@ -411,18 +398,18 @@ def BorderOfTranscript(start5 , end5 , start3 , end3, exonList, intronList, stra
 		if (end3 == ""): # if transcript doesn't have 3'
 			# border will be given by exons and introns
 			for couple_exon in exonList:	# for each couple of exon of this transcript
-				if not (couple_exon==""):
+				if couple_exon :
 					startExon=couple_exon.split("-")[0] # start of this exon
 					endExon=couple_exon.split("-")[1] # start of this exon
 					listBorder.append(int(startExon))	# add information in list
 					listBorder.append(int(endExon))	# add information in list
 			for couple_Intron in intronList: # for each couple of intron of this transcript
-				if not (couple_Intron==""):
+				if couple_Intron :
 					startIntron=couple_Intron.split("-")[0]	# start of this intron
 					endIntron=couple_Intron.split("-")[1]	# end of this intron
 					listBorder.append(int(startIntron))	# add information in list
 					listBorder.append(int(endIntron))	# add information in list
-			if (strand == str(1)):	#if gene positif, 5'< 3'
+			if (strand == "1"):	#if gene positif, 5'< 3'
 				borderInferior=min(listBorder)
 				borderSuperior=max(listBorder)
 			else: 	#if gene negatif, 5'> 3'
@@ -431,28 +418,28 @@ def BorderOfTranscript(start5 , end5 , start3 , end3, exonList, intronList, stra
 		else: # if transcript doesn't have 5'
 			# border will be given by exons and introns, and 3'
 			for couple_exon in exonList:	# for each couple of exon of this transcript
-				if not (couple_exon==""):
+				if couple_exon :
 					startExon=couple_exon.split("-")[0] # start of this exon
 					endExon=couple_exon.split("-")[1] # start of this exon
 					listBorder.append(int(startExon))	# add information in list
 					listBorder.append(int(endExon))	# add information in list
 			for couple_Intron in intronList: # for each couple of intron of this transcript
-				if not (couple_Intron==""):
+				if couple_Intron :
 					startIntron=couple_Intron.split("-")[0]	# start of this intron
 					endIntron=couple_Intron.split("-")[1]	# end of this intron
 					listBorder.append(int(startIntron))	# add information in list
 					listBorder.append(int(endIntron))	# add information in list
-			if (strand == str(1)): # if gene positif
+			if (strand == "1"): # if gene positif
 				borderInferior=min(listBorder)
 			else:	# if gene negatif
 				borderInferior=max(listBorder)
 			borderSuperior=int(end3)
-	elif (start3 == ""): ##  if transcript doesn't have 3'
+	elif start3 : ##  if transcript doesn't have 3'
 		# border will be given by exons and introns and 5'
 		listBorder.append(start5)
 		listBorder.append(end5)
 		for couple_exon in exonList:
-			if not (couple_exon==""):
+			if couple_exon :
 				startExon=couple_exon.split("-")[0]
 				endExon=couple_exon.split("-")[1]
 				listBorder.append(int(startExon))
@@ -463,7 +450,7 @@ def BorderOfTranscript(start5 , end5 , start3 , end3, exonList, intronList, stra
 				endIntron=couple_Intron.split("-")[1]
 				listBorder.append(int(startIntron))
 				listBorder.append(int(endIntron))
-		if (strand == str(1)):
+		if (strand == "1"):
 			borderSuperior=max(listBorder)
 		else:
 			borderSuperior=min(listBorder)
@@ -496,7 +483,7 @@ def G4IsInTranscript(strand, coordG4, borderTranscript):
 	borderSuperior=int(borderTranscript[1])
 	inTranscript=False
 	#~ print borderInferior, borderSuperior, coordG4
-	if (strand == str(1)): ## gene positif
+	if (strand == "1"): ## gene positif
 		if (int(startG4) >= int(borderInferior) and int(startG4) <= int(borderSuperior) and int(endG4) >= int(borderInferior) and int(endG4) <= int(borderSuperior)):
 			inTranscript=True
 	else:## gene negatif
@@ -542,21 +529,20 @@ def GetLocalisationPositif(BiotypeByTranscript,ProteinCoding,transcriptId,border
 	if (biotypeTranscript in ProteinCoding):
 		codant='CDS'
 	else:
-
 		codant='ExonNC'
-	if (end5 != "" and startG4 <= int(end5)):	# if G4 is positioned in the 5' region
+	if end5 and startG4 <= int(end5):	# if G4 is positioned in the 5' region
 		if (endG4 <= int(end5)): # if G4 is positioned totally in the 5' region
 			localisation="5"
 		else:	# if G4 is positioned in the 5' region with overlapping
 			localisation="junction_5_"+codant
-	elif (start3 != "" and endG4 >= int(start3)):	# if G4 is positioned in the 3' region
+	elif start3 and endG4 >= int(start3) :	# if G4 is positioned in the 3' region
 		if (startG4 >= int(start3)):	 # if G4 is positioned totally in the 3' region
 			localisation="3"
 		else:	# if G4 is positioned in the 3' region with overlapping
 			localisation="junction_"+codant+"_3" 
 	else:
 		for couple_exon in exonList: # if G4 is positioned in the exonic region, for each exon
-			if not (couple_exon==""): # if transcript contain exon
+			if couple_exon : # if transcript contain exon
 				startExon=int(couple_exon.split("-")[0])
 				endExon=int(couple_exon.split("-")[1])
 				if (startG4 >= startExon and startG4 <= endExon):
@@ -568,7 +554,7 @@ def GetLocalisationPositif(BiotypeByTranscript,ProteinCoding,transcriptId,border
 						else:
 							localisation="junction_"+codant+"_IntronNC"
 		for couple_Intron in intronList:	# if G4 is positioned in the intronic region, for each intron
-			if not (couple_Intron==""):	# if transcript contain intron
+			if couple_Intron :	# if transcript contain intron
 				startIntron=int(couple_Intron.split("-")[0])
 				endIntron=int(couple_Intron.split("-")[1])
 				if (startG4 >= startIntron and startG4 <= endIntron):
@@ -582,7 +568,7 @@ def GetLocalisationPositif(BiotypeByTranscript,ProteinCoding,transcriptId,border
 							localisation="junction_Intron_"+codant
 						else:
 							localisation="junction_IntronNC_"+codant
-	if ((localisation is not None) or (localisation != 'NA')):
+	if localisation or localisation != 'NA' :
 		return localisation
 
 ######################################################################################################################################################
@@ -624,7 +610,6 @@ def GetLocalisationNegatif(BiotypeByTranscript,ProteinCoding,transcriptId,border
 	if (biotypeTranscript in ProteinCoding):
 		codant='CDS'
 	else:
-
 		codant='ExonNC'
 	if (end5 != "" and endG4 >= int(end5)):	# if G4 is positioned in the 5' region
 		if (startG4 >= int(end5)): # if G4 is positioned totally in the 5' region
@@ -698,6 +683,7 @@ def GetAnnotationTranscript(filename,ProteinCoding,BiotypeByTranscript):
 			if (start5!='' or end5!='' or start3!='' or end3!='' ): # but if transcript has a 5'UTR or an 3' UTR
 				answer=False # has not a good annotation in Ensembl
 		AnnotationTranscript[transcriptId]=answer
+	inputfile.close()
 	return AnnotationTranscript
 ######################################################################################################################################################
 def GetLocalisationG4InJunction(BiotypeByTranscript,ProteinCoding,transcriptId):
@@ -706,7 +692,6 @@ def GetLocalisationG4InJunction(BiotypeByTranscript,ProteinCoding,transcriptId):
 	if (biotypeTranscript in ProteinCoding):
 		codant='CDS'
 	else:
-
 		codant='ExonNC'
 	return "junction_"+codant+"_"+codant
 	
@@ -931,11 +916,6 @@ def main () :
 	AnnotationTranscript={}
 	AnnotationTranscript=GetAnnotationTranscript(index,ProteinCoding,BiotypeByTranscript) # annotation transcript
 	
-	
-
-	
-	
-	
 	#####Creation dictionary G4_detected_gene and G4_detected_junction , for G4 found in gene and junction with scores > thresolds
 	for path, dirs, files in os.walk(directory): # for each element of the directory to passed
 		for filename in files: # for each files
@@ -947,109 +927,102 @@ def main () :
 			elif ('transcript_unspliced' in filename and '.csv' in filename): ## for G4 in junction CDS-CDS --> from splicing
 				G4DetectedInJunction=ReturnG4InJunction(G4DetectedInJunction, inputfile, parametersTool, EXTENSION, StrandByGene)
 
-
-	
 	listeG4InGeneEntire=GetlisteG4InGene(G4DetectedInGene, listeG4InGeneEntire)
 	listeG4InGeneJunction=GetlisteG4InGene(G4DetectedInJunction, listeG4InGeneJunction)
 	
-
-
 	G4InTranscript={}
 	G4InGenome={}
 	TranscriptPerG4={}
 	
-	
 	############################################################################## g4 entire
 	inputfile= open(index,"r") # file opening for reading
 	for line in inputfile: # for each transcript
-			words=line.split('|')
-			transcriptId=words[0].rstrip() 
-			geneId=words[1].rstrip() 
-			chromosome=words[2].rstrip() 
-			strand=words[3].rstrip() 
-			biotypeGene=words[4].rstrip() 
-			exonList=words[5].rstrip().split(";") ## transform in array
-			intronList=words[6].rstrip().split(";") ## transform in array
-			### resolution probleme start5 and end5 for gene negatif
-			if (strand == str(1)):
-				start5=words[7].rstrip()
-				end5=words[8].rstrip()
-				start3=words[9].rstrip()
-				end3=words[10].rstrip()
-			else:
-
-				end5=words[7].rstrip()
-				start5=words[8].rstrip() 
-				end3=words[9].rstrip()
-				start3=words[10].rstrip()
-			
-			biotypeTranscript=BiotypeByTranscript.get(transcriptId) # get biotype of this transcript
-			borderTranscript=BorderOfTranscript(start5 , end5 , start3 , end3, exonList, intronList, strand)
-			if (listeG4InGeneEntire.has_key(geneId) == False): # if gene not contain G4 detected
-				continue
-			else: # if gene contain G4 detected
-				listeG4InGene=listeG4InGeneEntire.get(geneId)
-				for G4InGene in listeG4InGene:
-					startG4=int(G4InGene.split('|')[1])
-					endG4=int(G4InGene.split('|')[2])
-					coordG4=[startG4,endG4]
-					g4inTranscript=G4IsInTranscript(strand, coordG4, borderTranscript)
-					annotationTranscript=AnnotationTranscript.get(transcriptId)
-					
-					if (g4inTranscript == True and annotationTranscript ==True):
-						informationsOfG4=list(G4DetectedInGene.get(G4InGene))
-						localisationInTranscript=GetLocalisationG4InTranscript(BiotypeByTranscript,ProteinCoding,transcriptId,borderTranscript,coordG4, end5, start3, exonList, intronList, strand)	
-						descriptionG4=chromosome+':'+str(startG4)+'-'+str(endG4)+'|'+strand
-						G4InTranscript=AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informationsOfG4,localisationInTranscript, biotypeTranscript)
-						G4InGenome=AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript)
-						TranscriptPerG4=AddTranscriptPerG4(TranscriptPerG4, descriptionG4,transcriptId)
-					#	if (localisationInTranscript=='NAP' or localisationInTranscript=='NAN' ):
-						#~ print localisationInTranscript
-							#~ print  localisationInTranscript, descriptionG4, exonList, start5, end5, start3, end3, strand
-							#~ print '-------------------------------'
+		words=line.split('|')
+		transcriptId=words[0].rstrip() 
+		geneId=words[1].rstrip() 
+		chromosome=words[2].rstrip() 
+		strand=words[3].rstrip() 
+		biotypeGene=words[4].rstrip() 
+		exonList=words[5].rstrip().split(";") ## transform in array
+		intronList=words[6].rstrip().split(";") ## transform in array
+		### resolution probleme start5 and end5 for gene negatif
+		if (strand == str(1)):
+			start5=words[7].rstrip()
+			end5=words[8].rstrip()
+			start3=words[9].rstrip()
+			end3=words[10].rstrip()
+		else:
+			end5=words[7].rstrip()
+			start5=words[8].rstrip() 
+			end3=words[9].rstrip()
+			start3=words[10].rstrip()
+		
+		biotypeTranscript=BiotypeByTranscript.get(transcriptId) # get biotype of this transcript
+		borderTranscript=BorderOfTranscript(start5 , end5 , start3 , end3, exonList, intronList, strand)
+		if (listeG4InGeneEntire.has_key(geneId) == False): # if gene not contain G4 detected
+			continue
+		else: # if gene contain G4 detected
+			listeG4InGene=listeG4InGeneEntire.get(geneId)
+			for G4InGene in listeG4InGene:
+				startG4=int(G4InGene.split('|')[1])
+				endG4=int(G4InGene.split('|')[2])
+				coordG4=[startG4,endG4]
+				g4inTranscript=G4IsInTranscript(strand, coordG4, borderTranscript)
+				annotationTranscript=AnnotationTranscript.get(transcriptId)
+				if (g4inTranscript == True and annotationTranscript ==True):
+					informationsOfG4=list(G4DetectedInGene.get(G4InGene))
+					localisationInTranscript=GetLocalisationG4InTranscript(BiotypeByTranscript,ProteinCoding,transcriptId,borderTranscript,coordG4, end5, start3, exonList, intronList, strand)	
+					descriptionG4=chromosome+':'+str(startG4)+'-'+str(endG4)+'|'+strand
+					G4InTranscript=AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informationsOfG4,localisationInTranscript, biotypeTranscript)
+					G4InGenome=AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript)
+					TranscriptPerG4=AddTranscriptPerG4(TranscriptPerG4, descriptionG4,transcriptId)
+				#	if (localisationInTranscript=='NAP' or localisationInTranscript=='NAN' ):
+					#~ print localisationInTranscript
+						#~ print  localisationInTranscript, descriptionG4, exonList, start5, end5, start3, end3, strand
+						#~ print '-------------------------------'
 
 	############################################################################## g4 junction
 	inputfile= open(index,"r") # file opening for reading
 	for line in inputfile: # for each transcript
-			words=line.split('|')
-			transcriptId=words[0].rstrip() 
-			geneId=words[1].rstrip() 
-			chromosome=words[2].rstrip() 
-			strand=words[3].rstrip() 
-			biotypeGene=words[4].rstrip() 
-			exonList=words[5].rstrip().split(";") ## transform in array
-			intronList=words[6].rstrip().split(";") ## transform in array
-			### resolution probleme start5 and end5 for gene negatif
-			if (strand == str(1)):
-				start5=words[7].rstrip()
-				end5=words[8].rstrip()
-				start3=words[9].rstrip()
-				end3=words[10].rstrip()
-			else:
+		words=line.split('|')
+		transcriptId=words[0].rstrip() 
+		geneId=words[1].rstrip() 
+		chromosome=words[2].rstrip() 
+		strand=words[3].rstrip() 
+		biotypeGene=words[4].rstrip() 
+		exonList=words[5].rstrip().split(";") ## transform in array
+		intronList=words[6].rstrip().split(";") ## transform in array
+		### resolution probleme start5 and end5 for gene negatif
+		if (strand == str(1)):
+			start5=words[7].rstrip()
+			end5=words[8].rstrip()
+			start3=words[9].rstrip()
+			end3=words[10].rstrip()
+		else:
 
-				end5=words[7].rstrip()
-				start5=words[8].rstrip() 
-				end3=words[9].rstrip()
-				start3=words[10].rstrip()
-			biotypeTranscript=BiotypeByTranscript.get(transcriptId) # get biotype of this transcript
-			if (listeG4InGeneJunction.has_key(geneId) == False): # if gene not contain G4 detected
-				continue
-			else:	# if gene contain G4 detected
-				listeG4InGene=listeG4InGeneJunction.get(geneId)
-				for G4InGene in listeG4InGene:
-					startG4=int(G4InGene.split("|")[1])
-					endG4=int(G4InGene.split("|")[2])
-					coordG4=[startG4,endG4]
-					junctionInTranscript=JuncionIsInTranscript(coordG4,intronList)
-					annotationTranscript=AnnotationTranscript.get(transcriptId)
-					if (junctionInTranscript == True and annotationTranscript ==True):
-						informationsOfG4=list(G4DetectedInJunction.get(G4InGene))
-						localisationInTranscript=GetLocalisationG4InJunction(BiotypeByTranscript,ProteinCoding,transcriptId)
-					
-						descriptionG4=chromosome+':'+str(startG4)+'-'+str(endG4)+'|'+strand
-						G4InTranscript=AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informationsOfG4,localisationInTranscript, biotypeTranscript)
-						G4InGenome=AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript)
-						TranscriptPerG4=AddTranscriptPerG4(TranscriptPerG4, descriptionG4,transcriptId)
+			end5=words[7].rstrip()
+			start5=words[8].rstrip() 
+			end3=words[9].rstrip()
+			start3=words[10].rstrip()
+		biotypeTranscript=BiotypeByTranscript.get(transcriptId) # get biotype of this transcript
+		if (listeG4InGeneJunction.has_key(geneId) == False): # if gene not contain G4 detected
+			continue
+		else:	# if gene contain G4 detected
+			listeG4InGene=listeG4InGeneJunction.get(geneId)
+			for G4InGene in listeG4InGene:
+				startG4=int(G4InGene.split("|")[1])
+				endG4=int(G4InGene.split("|")[2])
+				coordG4=[startG4,endG4]
+				junctionInTranscript=JuncionIsInTranscript(coordG4,intronList)
+				annotationTranscript=AnnotationTranscript.get(transcriptId)
+				if (junctionInTranscript == True and annotationTranscript ==True):
+					informationsOfG4=list(G4DetectedInJunction.get(G4InGene))
+					localisationInTranscript=GetLocalisationG4InJunction(BiotypeByTranscript,ProteinCoding,transcriptId)
+				
+					descriptionG4=chromosome+':'+str(startG4)+'-'+str(endG4)+'|'+strand
+					G4InTranscript=AddG4InTranscriptome(G4InTranscript,transcriptId, descriptionG4,informationsOfG4,localisationInTranscript, biotypeTranscript)
+					G4InGenome=AddG4InGenome(G4InGenome, geneId, descriptionG4, localisationInTranscript)
+					TranscriptPerG4=AddTranscriptPerG4(TranscriptPerG4, descriptionG4,transcriptId)
 				
 	
 	

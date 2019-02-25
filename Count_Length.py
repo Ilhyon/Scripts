@@ -89,7 +89,6 @@ def main () :
 	parser = build_arg_parser()
 	arg = parser.parse_args()
 	sp=arg.specie	# specie to analyse
-	# ~ directory = "/home/anais/Documents/Data/Genomes/"+sp+"/Fasta/"
 	print "Length of rG4 : "+str(lengthG4())
 	dicoTr = importInfoTr()
 	print "Lenght of transcript used : "+str(lengthTranscriptUsed(dicoTr))
