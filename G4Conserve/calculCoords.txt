@@ -1,0 +1,58 @@
+Example :
+
+Window length = 10
+Step = 5
+S -> start of the gene
+E -> end of the gene
+windows 2, 3 and 4 over the thresholds
+
+E                                                                                      S
+----------------------------------------------------------------------------------------
+A  T  G  G  G  G  C  T  A  T  G  G  G  C  A  A  T  C  G  G  G  C  C  T  G  G  G  T  T  A 
+1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+
+----------------------------
+A  T  G  G  G  G  C  T  A  T
+1  2  3  4  5  6  7  8  9 10
+               ----------------------------
+               G  C  T  A  T  G  G  G  C  A
+               6  7  8  9 10 11 12 13 14 15
+			 			      ----------------------------
+			                  G  G  G  C  A  A  T  C  G  G
+			                 11 12 13 14 15 16 17 18 19 20
+                              				 ----------------------------
+			                  				 A  T  C  G  G  G  C  C  T  G
+			                 				16 17 18 19 20 21 22 23 24 25
+														    ----------------------------
+						                  				    G  C  C  T  G  G  G  T  T  A 
+						                 				   21 22 23 24 25 26 27 28 29 30
+
+Calcul 1 : comput first start and end of a pG4 on a reverse strand
+
+In the fasta file given to G4RNA Screener, the header is : geneId|coordInf|coordSup. Because of that, for gene on reverse strand the coord of the windows are misscalculated. That's why we are computing them again.
+
+Formula :
+startG4 = endGene - (WindowStart - GeneStart) 
+endG4 = startG4 - len(WindowSeq) + 1
+
+So we have : 
+starG4 =  1 - (6 - 30) = 25
+endG4 = 25 - 10 + 1 = 16
+
+Then, for each window the end will be update.
+
+Calcul 2 : update of the end of a pG4 in reverse strand
+
+Formula :
+endG4 = endG4 - step
+
+For the 2sc window have :
+endG4 = 16 - 5 = 11
+And then for the 3th window :
+endG4 = 11 -5 = 6
+
+Finally we have the coordinate : 25 - 6 for this G4
+
+
+
+
