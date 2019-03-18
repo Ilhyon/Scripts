@@ -6,11 +6,13 @@ S -> start of the gene
 E -> end of the gene
 windows 2, 3 and 4 over the thresholds
 
+Gene with chromosomal postion:
 E                                                                                      S
 ----------------------------------------------------------------------------------------
 A  T  G  G  G  G  C  T  A  T  G  G  G  C  A  A  T  C  G  G  G  C  C  T  G  G  G  T  T  A 
 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
 
+G4RNA Screener output :
 ----------------------------
 A  T  G  G  G  G  C  T  A  T
 1  2  3  4  5  6  7  8  9 10
@@ -26,6 +28,11 @@ A  T  G  G  G  G  C  T  A  T
 														    ----------------------------
 						                  				    G  C  C  T  G  G  G  T  T  A 
 						                 				   21 22 23 24 25 26 27 28 29 30
+
+What would be the pG4 if windows 2, 3 and 4 over the thresholds :
+----------------------------------------------------------
+G  C  T  A  T  G  G  G  C  A  A  T  C  G  G  G  C  C  T  G
+6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
 
 Calcul 1 : comput first start and end of a pG4 on a reverse strand
 

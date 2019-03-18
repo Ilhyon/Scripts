@@ -8,7 +8,6 @@ contact: sarah.belhamiti@usherbrooke.ca
 
 This software is a computer program whose calcul the statistic value of PG4r (density and percent)
 
-
 ---------------------------------------------------
 
 ``G4Calcul`` **module description**:
@@ -19,50 +18,30 @@ From a tabulate files which contain G4 regions detected in one chromosome (or al
 
 """
 
-import csv, math, numpy
-import string
-import subprocess
-import Bio.Align.Applications
 import sys
-import Bio
-import os, shutil
-import pylab
-import scipy.sparse as sparse
+import os
 import re
-import random
-import matplotlib as mpl 
-import matplotlib.pyplot as plt
-import numpy as np
 import argparse
-import numpy as np 
-import math 
-from Bio import SeqIO
-from scipy import stats
-from pylab import *
-import __future__
-from math import sqrt
-from numpy import mean, std
-import pandas as pd
-import matplotlib.gridspec as gridspec
-######################################################################################################################################################
-def GetLengthFraction(positionA,positionB):
-	""" This fonction is to define the lenght between two positions (positionA and positionB).Doesn't matter the order of position (positionA can be > positionB)
+from pprint import pprint
+import recurentFunction as rF
+
+def GetLengthFraction(positionA, positionB):
+	""" This fonction is to define the lenght between two positions 
+	(positionA and positionB). It Doesn't matter the order of position 
+	(positionA can be > positionB)
 	    Parameters
 	    ----------
 	    positionA : string
-		position start for the position for exemple
 	    positionB : string
-		position end for the position for exemple
 	    Returns
 	    -------
 	    length: integer
-		lenght between two positions
 	"""
-	length=0
+	length = 0
 	if ((positionA and positionB) != ""): # because some transcript doesn't have 5' for exemple (and start5 and end5 will be == '')
-		length=(abs(int(positionA)-int(positionB)))+1
+		length = (abs(int(positionA)-int(positionB)))+1
 	return int(length)
-######################################################################################################################################################
+
 def GetLengthCodant(exonList):
 	""" This fonction is to define the lenght of exonique part.Can be use for the intronique part.
 	    Parameters
@@ -74,14 +53,14 @@ def GetLengthCodant(exonList):
 	    lengthCodant: integer
 		lenght of exonique part
 	"""
-	lengthCodant=0
+	lengthCodant = 0
 	if ('' not in exonList): # if transcript contain exon
 		for coupleExon in exonList: # for each exon
-			startExon=coupleExon.split('-')[0] 
-			endExon=coupleExon.split('-')[1]
-			lengthCodant+=(GetLengthFraction(startExon,endExon))# add the lenght of this exon to the total (lengthCodant)
+			startExon = coupleExon.split('-')[0] 
+			endExon = coupleExon.split('-')[1]
+			lengthCodant += (GetLengthFraction(startExon,endExon))# add the lenght of this exon to the total (lengthCodant)
 	return lengthCodant 
-######################################################################################################################################################
+
 def GetLengthTotal(exonList):
 	""" This fonction is to define the lenght total of a transcript based on the list of exon
 	    Parameters
@@ -93,135 +72,31 @@ def GetLengthTotal(exonList):
 	    lengthCodant: integer
 		lenght of exonique part
 	"""
-	lengthTotal=0
-	allExonsBorder=[] # all borders of exons contained in a transcript
+	lengthTotal = 0
+	allExonsBorder = [] # all borders of exons contained in a transcript
 	for coupleExon in exonList:
 		allExonsBorder.append(int(coupleExon.split('-')[0]))
 		allExonsBorder.append(int(coupleExon.split('-')[1]))
 	lengthTotal=GetLengthFraction(min(allExonsBorder),max(allExonsBorder))
 	return lengthTotal
-######################################################################################################################################################
-def GetPositionForLocalisation(localisation, typeFamily):
-	""" This fonction is to give the number of position for the localisation depending to the type of trasnscript (coding or not)
-	    Parameters
-	    ----------
-	    localisation : string
-		localisation of the G4 on the transcript
-	    typeFamily : string
-		transcript biotype
-	    Returns
-	    -------
-	    position: integer
-		position of G4 depending to the localisation
-	"""
-	if (typeFamily =='Coding'):
-		if(localisation == '5'):
-			position=0
-		elif(localisation == 'CDS'):
-			position=1
-		elif(localisation == '3'):
-			position=2
-		elif(localisation == 'Exon'):
-			position=3
-		elif(localisation == 'Intron'):
-			position=4
-		elif(localisation == 'junction_5_CDS'):
-			position=5
-		elif(localisation == 'junction_CDS_Intron'): 
-			position=6
-		elif(localisation == 'junction_Intron_CDS'):
-			position=7
-		elif(localisation == 'junction_CDS_3'):
-			position=8
-		elif(localisation == 'Total'):
-			position=9
-		elif(localisation == 'junction_CDS_CDS'):
-			position=10
-		elif(localisation == 'Splicing'):
-			position=11
-		#### position 3 for total exon (5, CDS, 3)
-		#### position 9 for total in transcript entire (all except junction_CDS_CDS)
-	else: # number G4 in exon, intron, junction CDS, junction i, total, junction cds_cds
-		if(localisation == 'ExonNC'):
-			position=0
-		elif(localisation == 'IntronNC'):
-			position=1
-		elif(localisation == 'junction_ExonNC_IntronNC'): 
-			position=2
-		elif(localisation == 'junction_IntronNC_ExonNC'):
-			position=3
-		elif(localisation == 'Total'):
-			position=4
-		elif(localisation == 'junction_ExonNC_ExonNC'):
-			position=5
-		elif(localisation == 'Splicing'):
-			position=6
-		#### position 4 for total in transcript entire (all except junction_CDS_CDS))
-	return position
-		
-	
-######################################################################################################################################################
-def GetAnnotationTranscript(filename,Coding,BiotypeByTranscript):
-	""" This fonction is to define which transcript contain a good annotation or not from Ensembl
-	    Creation of a dico, where key = id of the transcript and value= bolean value (False if the annotation isn't good)
-	    Parameters
-	    ----------
-	    filename : string
-		name of the file which contain informatiob fr each transcript (except the transcript's biotype)
-	    Coding : ensemble of string, in list
-		name of biotype which form the suprafamily protein coding
-	    BiotypeByTranscript : dico
-		dictionary, where key =id of transcript and value = biotype of this transcript
-	    Returns
-	    -------
-	    AnnotationTranscript: dico
-		dictionary with information of annotation for the transcripts By Ensembl (True if good anotation, else False)
-	"""
-	AnnotationTranscript={} # creation dico empty
-	inputfile= open(filename,"r") ## file opening with informations of transcipts
-	for line in inputfile: # for each transcript 
-		words=line.split('|')
-		transcriptId=words[0].rstrip() 
-		start5=words[7].rstrip()
-		end5=words[8].rstrip() 
-		start3=words[9].rstrip() 
-		end3=words[10].rstrip() 
-		answer=True # variable answer by defaul True
-		transcriptBiotype= ''
-		transcriptBiotype=BiotypeByTranscript.get(transcriptId)	## get transcriptBiotype of this TRanscriptId
-		if (transcriptBiotype not in Coding): # if transcript not a protein coding
-			if (start5!='' or end5!='' or start3!='' or end3!='' ): # but if transcript has a 5'UTR or an 3' UTR
-				answer=False # has not a good annotation in Ensembl	
-		AnnotationTranscript[transcriptId]=answer
-	inputfile.close()
-	return AnnotationTranscript
-######################################################################################################################################################
-def CreateDictionaryBiotypeByTranscript (filename):
-	""" Create dictionary with as value the biotype of the transcript for all transcripts of the chromosome
 
-	    Parameters
-	    ----------
-	    filename : string
-		name of file which contain the liste of biotype for each transcript of this chromosome
+def readLineIndex(line):
+	words = line.split('|')
+	dicoLine = {'idTr' : words[0],
+				'idGene' : words[1],
+				'Chromosome' : words[2],
+				'Strand' : words[3],
+				'geneBiotype' : words[4],
+				'exonList' : words[5].split(';'),
+				'intronList' : words[6].split(';'),
+				'start5' : words[7],
+				'end5' : words[8],
+				'start3' : words[9],
+				'end3' : words[10].rstrip()}
+	return dicoLine
 
-	    Returns
-	    -------
-	    dico
-		dictionary
-		where key = ID of transcript, value = biotype of this transcript
-	"""
-	dico={}	#Creation dictionary empty, where will be : key = transcript, value = biotype of transcript
-	inputfile= open(filename,"r")	# file opening for reading
-	for line in inputfile:	# for each line in the file (for each transcript)
-		words=line.split('|')	# parsing by the separator, here '|'
-		transcript=words[1].rstrip()	#I D of transcript
-		transcriptBiotype=words[3].rstrip() # biotype of the transcript
-		#if (dico.has_key(transcript) == False):	# if transcript not contain his biotype in the dico
-		dico[transcript]=transcriptBiotype # create an entry (biotype) for this transcript
-	inputfile.close()
-	return dico	# return dico with all transcript of this chromosome
-######################################################################################################################################################
-def GetLenghtByTranscript(filename, BiotypeByTranscript,AnnotationTranscript,Coding ):
+
+def GetLenghtByTranscript(filename, BiotypeByTranscript, AnnotationTranscript,Coding ):
 	""" Create dictionary of lenght for each transcript
 	if transcript is coding ,format =  [length 5,length cds,length 3,lenght exon,lenght intron,number junction 5_codant,number junction codant_Intron,number junction Intron_codant,number junction codant_3,length total, number junction CDS_CDS ]
 	else format = [lenght exon,lenght intron,number junction codant_Intron,number junction Intron_codant,length total, number junction CDS_CDS ]
@@ -240,58 +115,89 @@ def GetLenghtByTranscript(filename, BiotypeByTranscript,AnnotationTranscript,Cod
 	    LenghtByTranscript : dictionary
 		dictionary of lenght for each transcript
 	"""
-	LenghtByTranscript={}
-	inputfile= open(filename,"r") # file opening for reading
+	LenghtByTranscript = {}
+	inputfile = open(filename,"r") # file opening for reading
 	for line in inputfile: # for each transcript
-			words=line.split('|')
-			transcriptId=words[0].rstrip() 
-			geneId=words[1].rstrip() 
-			chromosome=words[2].rstrip() 
-			strand=words[3].rstrip() 
-			biotypeGene=words[4].rstrip() 
-			exonList=words[5].rstrip().split(";") ## transform in array
-			intronList=words[6].rstrip().split(";") ## transform in array
-			start5=words[7].rstrip()
-			end5=words[8].rstrip()
-			start3=words[9].rstrip()
-			end3=words[10].rstrip()
-			annotationTranscript=AnnotationTranscript.get(transcriptId)
-			transcriptBiotype=BiotypeByTranscript.get(transcriptId) # get biotype of this transcript
-			if (annotationTranscript == True and transcriptBiotype is not None): # if annotation of this transcript is correct
-				if (transcriptBiotype in Coding):
-					infoTranscript=[0,0,0,0,0,0,0,0,0,0,0,0] #format [length 5,length cds,length 3,lenght exon,lenght intron,number junction 5_codant,number junction codant_Intron,number junction Intron_codant,number junction codant_3,length total, number junction CDS_CDS ]
-					infoTranscript[0]=GetLengthFraction(start5,end5) #length 5
-					infoTranscript[1]=GetLengthCodant(exonList)-GetLengthFraction(start5,end5)-GetLengthFraction(start3,end3) #length cds
-					infoTranscript[2]=GetLengthFraction(start3,end3) #length 3
-					infoTranscript[3]=GetLengthCodant(exonList) #lenght exon
-					if (intronList[0] != ''):
-						infoTranscript[4]=GetLengthCodant(intronList) #lenght intron
-					infoTranscript[5]=1 # number junction 5_codant
-					infoTranscript[6]=len(exonList)-1 #  number junction codant_Intron
-					infoTranscript[7]=len(exonList)-1 #number junction Intron_codant
-					infoTranscript[8]=1 # number junction codant_3
-					infoTranscript[9]=GetLengthTotal(exonList) #length total
-					infoTranscript[10]=len(exonList)-1#number junction CDS_CDS
-					infoTranscript[11]=infoTranscript[6]+infoTranscript[7]+infoTranscript[10] #(number junction on splicing events = CDS_Intron + INtronCDS+CDS_CDS)
-					LenghtByTranscript[transcriptId+'-'+transcriptBiotype]=infoTranscript
-					
-				else:
-					infoTranscript=[0,0,0,0,0,0,0] #format [lenght exon,lenght intron,number junction codant_Intron,number junction Intron_codant,length total, number junction CDS_CDS ]
-					infoTranscript[0]=GetLengthCodant(exonList) #lenght exon
-					if (intronList[0] != ''):
-						infoTranscript[1]=GetLengthCodant(intronList) #lenght intron
-					infoTranscript[2]=len(exonList)-1 #  number junction codant_Intron
-					infoTranscript[3]=len(exonList)-1 #number junction Intron_codant
-					infoTranscript[4]=GetLengthTotal(exonList) #length total
-					infoTranscript[5]=len(exonList)-1#number junction CDS_CDS
-					infoTranscript[6]=infoTranscript[2]+infoTranscript[3]+infoTranscript[5] #(number junction on splicing events = ExonNC_IntronNC + INtronNC_ExonNC +ExonNC_ExonNC)
-					LenghtByTranscript[transcriptId+'-'+transcriptBiotype]=infoTranscript
-			#if (len(exonList)==2):
-				#print transcriptId,infoTranscript
-			
+		dicoLine = readLineIndex(line)
+		annotationTranscript = AnnotationTranscript.get(dicoLine["idTr"])
+		transcriptBiotype = BiotypeByTranscript.get(dicoLine["idTr"])
+		if annotationTranscript and transcriptBiotype :
+			dicoTr = {"Biotype" : transcriptBiotype}
+			if transcriptBiotype in Coding:
+				dicoTr["Length 5UTR"] = GetLengthFraction(dicoLine["start5"],
+														dicoLine["end5"])
+				dicoTr["Length exons"] = GetLengthCodant(dicoLine["exonList"])
+				dicoTr["Length 3UTR"] = GetLengthFraction(dicoLine["start3"],
+														dicoLine["end3"])
+				dicoTr["Length CDS"] = dicoTr["Length exons"] - \
+										dicoTr["Length 5UTR"] - \
+										dicoTr["Length 3UTR"]
+				if dicoLine["intronList"][0] != '':
+					dicoTr["Length introns"] = GetLengthCodant(dicoLine["intronList"])
+				dicoTr["Number overlap 5UTR-coding"] = 1
+				dicoTr["Number overlap coding-intron"] = len(dicoLine["exonList"]) - 1
+				dicoTr["Number overlap intron-coding"] = len(dicoLine["exonList"]) - 1
+				dicoTr["Number overlap coding-UTR3"] = 1
+				dicoTr["Total length"] = GetLengthTotal(dicoLine["exonList"])
+				dicoTr["Number junction"] = len(dicoLine["exonList"]) - 1
+				dicoTr["Number of splicingSites"] = dicoTr["Number overlap coding-intron"] + \
+													dicoTr["Number overlap intron-coding"] + \
+													dicoTr["Number junction"]
+				#(number junction on splicing events = CDS_Intron + INtronCDS+CDS_CDS)
+			else:
+				dicoTr["Length exons"] = GetLengthCodant(dicoLine["exonList"])
+				if dicoTr["Length exons"] != '':
+					dicoTr["Length introns"] = GetLengthCodant(dicoLine["intronList"])
+				dicoTr["Number overlap coding-intron"] = len(dicoLine["exonList"]) - 1
+				dicoTr["Number overlap intron-coding"] = len(dicoLine["exonList"]) - 1
+				dicoTr["Total length"] = GetLengthTotal(dicoLine["exonList"])
+				dicoTr["Number junction"] = len(dicoLine["exonList"]) - 1
+				dicoTr["Number of splicingSites"] = dicoTr["Number overlap coding-intron"] + \
+													dicoTr["Number overlap intron-coding"] + \
+													dicoTr["Number junction"]
+			LenghtByTranscript[ dicoLine["idTr"] ] = dicoTr
 	inputfile.close()
 	return LenghtByTranscript
-######################################################################################################################################################
+
+def iniDicoNumberG4Coding(biotype):
+	dico = {"5" : 0,
+			"CDS" : 0,
+			"3" : 0,
+			"Exon" : 0,
+			"Intron" : 0,
+			"junction_5_CDS": 0,
+			"junction_CDS_Intron" : 0,
+			"junction_Intron_CDS" : 0,
+			"junction_CDS_3" : 0,
+			"Total" : 0,
+			"junction_CDS_CDS" : 0,
+			"Splicing" : 0,
+			"Biotype" : biotype}
+	return dico
+
+def iniDicoNumberG4NonCoding(biotype):
+	dico = {"ExonNC" : 0,
+			"IntronNC" : 0,
+			"junction_ExonNC_IntronNC" : 0,
+			"junction_IntronNC_ExonNC" : 0,
+			"junction_ExonNC_ExonNC" : 0,
+			"Total" : 0,
+			"Splicing" : 0,
+			"Biotype" : biotype}
+	return dico
+
+def readLineG4InTr(line):
+	words = line.split('\t')
+	dicoLine = {"InfoG4ByTr" : words[0],
+				"idTr" : words[0].split('|')[0],
+				"Chromosome" : words[0].split('|')[1].split(':')[0],
+				"g4Start" : int(words[0].split('|')[1].split(':')[1].split('-')[0]),
+				"g4End" : int(words[0].split('|')[1].split(':')[1].split('-')[1]),
+				"Strand" : words[0].split('|')[2],
+				"Location" : words[5],
+				"Biotype" : words[6].rstrip()}
+	return dicoLine
+
 def GetNumbersG4Transcript(filename, Coding):
 	""" Create dictionary of number of G4 for each transcript depending the localisation
 	if transcript is coding ,format =  [number G4 in section 5, cds, 3,exon, intron,junction 5, junction CDS, junction i, junction 3, total, junction cds_cds ]
@@ -310,58 +216,53 @@ def GetNumbersG4Transcript(filename, Coding):
 	NumbersG4Transcript={}
 	inputfile= open(filename,"r") # file opening for reading
 	for line in inputfile: # for each transcript
-		if ('InfoG4ByTranscript' not in line):
-			words=line.split('\t')
-			InfoG4ByTranscript=words[0].rstrip() 
-			transcriptId=InfoG4ByTranscript.split('|')[0]
-			chromosome=InfoG4ByTranscript.split('|')[1].split(':')[0]
-			startG4=int(InfoG4ByTranscript.split('|')[1].split(':')[1].split('-')[0])
-			endG4=int(InfoG4ByTranscript.split('|')[1].split(':')[1].split('-')[1])
-			strand=InfoG4ByTranscript.split('|')[2]
-			cGcC=words[1].rstrip() 
-			G4Hunter=words[2].rstrip() 
-			sequenceG4=words[3].rstrip() 
-			G4NN=words[4].rstrip() 
-			localisation=words[5].rstrip() 
-			transcriptBiotype=words[6].rstrip() 
-			key=transcriptId+'-'+transcriptBiotype
-			if transcriptBiotype in Coding: # if the trancript is a protein coding 
-				if (NumbersG4Transcript.has_key(key) == False): # if gene not contain G4 detected
-						numberG4=[0,0,0,0,0,0,0,0,0,0,0,0] # number G4 in section 5, cds, 3,exon, intron,junction 5, junction CDS, junction i, junction 3, total, junction cds_cds, spicing
+		if ('InfoG4ByTranscript' not in line and line != '\n'):
+			dicoL = readLineG4InTr(line)
+			if dicoL["Biotype"] in Coding:
+				if NumbersG4Transcript.has_key(dicoL["idTr"]) == False:
+					numberG4 = iniDicoNumberG4Coding(dicoL["Biotype"])
 				else: # if gene contain G4 detected 
-						numberG4=NumbersG4Transcript.get(key)
-				
-				position=GetPositionForLocalisation(localisation, 'Coding')
-				numberG4[position]=numberG4[position]+1
-				NumbersG4Transcript[key]=numberG4
-				# for total in transcript entire (all) 
-				numberG4[9]=numberG4[9]+1
-				NumbersG4Transcript[key]=numberG4
-				if (localisation == '5' or localisation == 'CDS' or localisation == '3' or localisation == 'junction_5_CDS' or localisation == 'junction_CDS_3'): #for total exon (5, CDS, 3, junction 5_CDS or  junction CDS_3)
-					numberG4[3]=numberG4[3]+1
-					NumbersG4Transcript[key]=numberG4
-				if (localisation == 'junction_CDS_CDS' or localisation == 'junction_Intron_CDS' or localisation == 'junction_CDS_Intron'): #for total exon (5, CDS, 3, junction 5_CDS or  junction CDS_3)
-					numberG4[11]=numberG4[11]+1
-					NumbersG4Transcript[key]=numberG4
+					numberG4 = NumbersG4Transcript.get(dicoL["idTr"])
+				numberG4[ dicoL["Location"] ] += 1
+				numberG4["Total"] += 1
+				if (dicoL["Location"] == '5' or dicoL["Location"] == 'CDS' or 
+					dicoL["Location"] == '3' or dicoL["Location"] == 'junction_5_CDS'
+					or dicoL["Location"] == 'junction_CDS_3'):
+					numberG4["Exon"] += 1
+				if (dicoL["Location"] == 'junction_CDS_CDS' or
+					dicoL["Location"] == 'junction_Intron_CDS' or
+					dicoL["Location"] == 'junction_CDS_Intron'):
+					numberG4["Splicing"] += 1
+				NumbersG4Transcript[ dicoL["idTr"] ] = numberG4
 			else:
-				if (NumbersG4Transcript.has_key(key) == False): # if gene not contain G4 detected
-						numberG4=[0,0,0,0,0,0,0] # number G4 in exon, intron, junction CDS, junction i, total, junction cds_cds, splicing
-				else: # if gene contain G4 detected 
-						numberG4=NumbersG4Transcript.get(key)
-				position=GetPositionForLocalisation(localisation,'LongNC' )
-				numberG4[position]=numberG4[position]+1
-				NumbersG4Transcript[key]=numberG4
-				 # for total in transcript entire (all) 
-				numberG4[4]=numberG4[4]+1
-				NumbersG4Transcript[key]=numberG4
-				if (localisation == 'junction_ExonNC_ExonNC' or localisation == 'junction_IntronNC_ExonNC' or localisation == 'junction_ExonNC_IntronNC'): #for total exon (5, CDS, 3, junction 5_CDS or  junction CDS_3)
-					numberG4[6]=numberG4[6]+1
-					NumbersG4Transcript[key]=numberG4
+				if (NumbersG4Transcript.has_key(dicoL["idTr"]) == False):
+					numberG4 = iniDicoNumberG4NonCoding(dicoL["Biotype"])
+				else:
+					numberG4 = NumbersG4Transcript.get(dicoL["idTr"])
+				numberG4[ dicoL["Location"] ] += 1
+				NumbersG4Transcript[ dicoL["idTr"] ] = numberG4
+				numberG4["Total"] += 1
+				if (dicoL["Location"] == 'junction_ExonNC_ExonNC' or 
+					dicoL["Location"] == 'junction_IntronNC_ExonNC' or
+					dicoL["Location"] == 'junction_ExonNC_IntronNC'):
+					numberG4["Splicing"] += 1
+				NumbersG4Transcript[dicoL["idTr"]] = numberG4
 	inputfile.close()
 	return NumbersG4Transcript
-######################################################################################################################################################
 
-def GetNumberTranscriptByCat (LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat,Coding):
+def iniListLoca(biotype, coding):
+	if biotype in coding:
+		localisationName = ['5', 'CDS', '3', 'Exon', 'Intron',
+							'junction_5_CDS', 'junction_CDS_3',
+							'junction_CDS_Intron', 'junction_Intron_CDS',
+							'Total', 'junction_CDS_CDS','Splicing']
+	else:
+		localisationName = ['ExonNC', 'IntronNC', 'junction_ExonNC_IntronNC',
+							'junction_IntronNC_ExonNC', 'Total', 'junction_ExonNC_ExonNC',
+							'Splicing']
+	return localisationName
+
+def GetNumberTranscriptByCat(dicoLength, NumbersG4Transcript, coding):
 	""" Create dictionary of number of transcript in each categorie 
 	    Parameters
 	    ----------
@@ -378,30 +279,31 @@ def GetNumberTranscriptByCat (LenghtByTranscript,NumbersG4Transcript,NumberTrans
 	     NumbersG4Transcript : dictionary
 		dictionary of number of G4 for each transcript depending the localisation
 	"""
-	for key, values in LenghtByTranscript.items():
-		transcriptId=key.split('-')[0]
-		transcriptBiotype=key.split('-')[1]
-		if (NumberTranscriptByCat.has_key(transcriptBiotype) == False): # if biotype not contain in the dico
-			if (transcriptBiotype in Coding):
-				localisationName=['5','CDS','3','Exon','Intron','junction_5_CDS','junction_CDS_3','junction_CDS_Intron','junction_Intron_CDS','Total','junction_CDS_CDS','Splicing']
-			else:
-				localisationName=['ExonNC','IntronNC','junction_ExonNC_IntronNC','junction_IntronNC_ExonNC','Total','junction_ExonNC_ExonNC','Splicing']
-			listeTranscript=[0]*(len(localisationName)+1)
+	NumberTrByCat = {}
+	for idTr in dicoLength:
+		pprint(dicoLength[idTr])
+		if (NumberTrByCat.has_key(dicoLength[idTr]["Biotype"]) == False):
+			# if biotype not contain in the dico
+			localisationName = iniListLoca(dicoLength[idTr]["Biotype"], coding)
+			if len(localisationName) == 12: # coding
+				dicoTr = iniDicoNumberG4Coding(dicoLength[idTr]["Biotype"])
+			elif len(localisationName) == 7: # non coding
+				dicoTranscript = iniDicoNumberG4Coding(dicoLength[idTr]["Biotype"])
+			dicoTr["# tr in biotype"] = 0
 		else: # if biotype already contained in the dico
-			listeTranscript=NumberTranscriptByCat.get(transcriptBiotype)
-		listeTranscript[0]=listeTranscript[0]+1 # add this transcipt in the number total of the biotype group
-		if (NumbersG4Transcript.has_key(key) == True): # if this transcipt contain a G4 at an position
-			numberG4=NumbersG4Transcript.get(key) # recup list of count G4 by position in the transcript
-			for position in range(len(numberG4)): # for each position 
-				if (numberG4[position] != 0): # if the transcript contain G4 at this precise position
-					listeTranscript[position+1]= listeTranscript[position+1]+1 # add it at position +1
-		NumberTranscriptByCat[transcriptBiotype]=listeTranscript
-		
-	return NumberTranscriptByCat
-		
-######################################################################################################################################################
+			dicoTr = NumberTrByCat.get(dicoLength[idTr]["Biotype"])
+		dicoTr["# tr in biotype"] += 1
+		if NumbersG4Transcript.has_key(idTr) == True:
+			numberG4 = NumbersG4Transcript.get(idTr)
+			pprint(numberG4)
+			for position in numberG4:
+				if position != "Biotype" and numberG4[position] != 0:
+					# if the transcript contain G4 at this position
+					dicoTr[position] += dicoTr[position]
+		NumberTrByCat[ dicoLength[idTr]["Biotype"] ] = dicoTr
+	return NumberTrByCat
 
-def CreateRnaTypeDetected (LenghtByTranscript,rnaTypeDetected):
+def CreateRnaTypeDetected(LenghtByTranscript, rnaTypeDetected):
 	""" Create list of RNA type where PG4r were detected 
 	    Parameters
 	    ----------
@@ -421,8 +323,9 @@ def CreateRnaTypeDetected (LenghtByTranscript,rnaTypeDetected):
 			rnaTypeDetected.append(biotypeTranscript)
 	return rnaTypeDetected
 
-######################################################################################################################################################
-def EnrichssmentByFamily (familyName, family,state,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat):
+def EnrichssmentByFamily(familyName, family, state, 
+						LenghtByTranscript, NumbersG4Transcript,
+						NumberTranscriptByCat):
 	""" Create list of calcul for a complete RNA family
 	    Parameters
 	    ----------
@@ -472,9 +375,10 @@ def EnrichssmentByFamily (familyName, family,state,LenghtByTranscript,NumbersG4T
 		return [familyName,length, num, round(num/float(length),4),numTrAll,numTrWithG4,percent]
 	else:
 		return [familyName,length, num, round(num/float(length)*1000,4),numTrAll,numTrWithG4,percent]
-######################################################################################################################################################
 
-def EnrichssmentByRnaType (familyName, family,state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat):
+def EnrichssmentByRnaType(familyName, family, state,
+						LenghtByTranscript, NumbersG4Transcript,
+						rnaTypeDetected, NumberTranscriptByCat):
 	""" Create list of calcul for a RNA type  
 	    Parameters
 	    ----------
@@ -531,9 +435,6 @@ def EnrichssmentByRnaType (familyName, family,state,LenghtByTranscript,NumbersG4
 			
 	return liste
 
-######################################################################################################################################################
-
-
 def EnrichssmentByRnaTypeLocalisation (familyName, family,state,LenghtByTranscript,NumbersG4Transcript, rnaType,NumberTranscriptByCat):	
 	""" Create list of calcul for a RNA type  at a specific position 
 	    Parameters
@@ -583,7 +484,6 @@ def EnrichssmentByRnaTypeLocalisation (familyName, family,state,LenghtByTranscri
 			return [rnaType,length, num, round(num/float(length)*1000,4),numTrAll,numTrWithG4,percent]
 	else:
 		return [rnaType,length, num, 0,numTrAll,numTrWithG4,percent]
-######################################################################################################################################################
 
 def EnrichssmentByFamilyLocalisation(familyName, family,state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat):
 	""" Create ensembl of list of calcul for all RNA type  at a specific position for a category
@@ -618,7 +518,7 @@ def EnrichssmentByFamilyLocalisation(familyName, family,state,LenghtByTranscript
 	else:
 		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste])),4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)]) # *100 because percent
 	return liste
-######################################################################################################################################################
+
 def PrintInFile (outfilename,header,column,liste):
 	""" print line for each element in a liste
 	    Parameters
@@ -642,41 +542,77 @@ def PrintInFile (outfilename,header,column,liste):
 		s=[str(item) for item in element]
 		outfilename.write('\t'.join(s)+'\n')
 	outfilename.write('\n')
-				
-######################################################################################################################################################
+
+def createDicoFamily():
+	dicoFam = {"Coding" : ['IG_C_gene', 'IG_D_gene', 'IG_J_gene',
+							'IG_LV_gene', 'IG_M_gene', 'IG_V_gene',
+							'IG_Z_gene', 'nonsense_mediated_decay',
+							'nontranslating_CDS', 'non_stop_decay',
+							'protein_coding', 'TR_C_gene', 'TR_D_gene',
+							'TR_gene', 'TR_J_gene', 'TR_V_gene'],
+				"Pseudogene" : ['transcribed_unitary_pseudogene',
+								'disrupted_domain', 'IG_C_pseudogene',
+								'IG_J_pseudogene', 'IG_pseudogene',
+								'IG_V_pseudogene', 'processed_pseudogene',
+								'pseudogene', 'transcribed_processed_pseudogene',
+								'transcribed_unprocessed_pseudogene',
+								'translated_processed_pseudogene',
+								'translated_unprocessed_pseudogene',
+								'TR_J_pseudogene', 'TR_V_pseudogene',
+								'unitary_pseudogene', 'unprocessed_pseudogene',
+								'polymorphic_pseudogene'],
+				"Long non codint" : ['macro_lncRNA', 'bidirectional_promoter_lncRNA',
+									'sense_intronic', '3prime_overlapping_ncRNA',
+									'ambiguous_orf', 'antisense',
+									'lincRNA', 'ncrna_host','non_coding',
+									'processed_transcript', 'retained_intron',
+									'sense_overlapping'],
+				"Short non coding" : ['vaultRNA', 'scaRNA', 'miRNA',
+										'miRNA_pseudogene', 'misc_RNA', 
+										'misc_RNA_pseudogene', 'Mt_rRNA',
+										'Mt_tRNA', 'Mt_tRNA_pseudogene',
+										'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA',
+										'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene', 
+										'scRNA', 'scRNA_pseudogene', 'snlRNA',
+										'snoRNA', 'snoRNA_pseudogene', 'snRNA',
+										'snRNA_pseudogene', 'SRP_RNA', 'tmRNA',
+										'tRNA', 'tRNA_pseudogene','ribozyme'],
+				"Predicted" : ['TEC'],
+				'Non coding' : ['vaultRNA', 'macro_lncRNA',
+								'bidirectional_promoter_lncRNA',
+								'sense_intronic', '3prime_overlapping_ncRNA',
+								'ambiguous_orf', 'antisense', 'lincRNA',
+								'ncrna_host', 'non_coding', 
+								'processed_transcript', 'retained_intron',
+								'sense_overlapping', '3prime_overlapping_ncRNA',
+								'scaRNA', 'miRNA', 'miRNA_pseudogene', 'misc_RNA',
+								'misc_RNA_pseudogene', 'Mt_rRNA', 'Mt_tRNA',
+								'Mt_tRNA_pseudogene', 'ncRNA', 'pre_miRNA',
+								'RNase_MRP_RNA', 'RNase_P_RNA', 'rRNA',
+								'rRNA_pseudogene', 'scRNA', 'scRNA_pseudogene',
+								'snlRNA', 'snoRNA', 'snoRNA_pseudogene',
+								'snRNA', 'snRNA_pseudogene', 'SRP_RNA',
+								'tmRNA', 'tRNA', 'tRNA_pseudogene', 'ribozyme']}
+	return dicoFam
+
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
-	GITDIR=os.getcwd()+'/../'
+	GITDIR=os.getcwd()+'/'
 	parser.add_argument ('-p', '--path', default = GITDIR+'results/')
-	parser.add_argument ('-CHR', '--chromosome', default = 'all')
+	parser.add_argument ('-chr', '--chromosome', default = 'all')
 	parser.add_argument ('-specie', '--specie', default = 'HS')
-	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
-	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 4.5)
-	parser.add_argument ('-G4NN', '--THRESHOLD_G4NN', default = 0.5)
-	parser.add_argument ('-E', '--EXTENSION', default = 100)
-	parser.add_argument ('-W', '--WINDOW', default = 60)
-	parser.add_argument ('-S', '--STEP', default = 10)
 	parser.add_argument ('-c', '--choice', default = 'Coding')
 	return parser
-######################################################################################################################################################
+
 def main () :
 	parser = build_arg_parser()
 	arg = parser.parse_args()
-	path=arg.path	# directory which contain all the directory chromosome
-	chromosome=arg.chromosome	# chromosome to analyze
-	specie=arg.specie	# specie to analyse
-	THRESHOLD_G4H=arg.THRESHOLD_G4H	# threshold use to discriminate the score G4H (litterature = 0.9)
-	THRESHOLD_CGCC=arg.THRESHOLD_CGCC	# threshold use to discriminate the score G4H (litterature = 4.5)
-	THRESHOLD_G4NN=arg.THRESHOLD_G4NN	# threshold use to discriminate the score G4NN (litterature = 0.5)
-	EXTENSION=arg.EXTENSION	# EXTENSION use for create the junction exon_exon previously
-	WINDOW=arg.WINDOW	# size of window use in G4 screener
-	STEP=arg.STEP	# size of step use in G4 screener
-	choice=arg.choice
+	path = arg.path # directory which contain all the directory chromosome
+	chromosome = arg.chromosome
+	specie = arg.specie
+	choice = arg.choice
+	GITDIR=os.getcwd()+'/'
 
-
-	GITDIR=os.getcwd()+'/../'
-
-	#### variable for each family or ensembl
 	Coding=['IG_C_gene', 'IG_D_gene', 'IG_J_gene', 'IG_LV_gene', 'IG_M_gene', 'IG_V_gene', 'IG_Z_gene', 'nonsense_mediated_decay', 'nontranslating_CDS', 'non_stop_decay', 'protein_coding', 'TR_C_gene', 'TR_D_gene', 'TR_gene', 'TR_J_gene', 'TR_V_gene']
 	Pseudogene=['transcribed_unitary_pseudogene','disrupted_domain', 'IG_C_pseudogene', 'IG_J_pseudogene', 'IG_pseudogene', 'IG_V_pseudogene', 'processed_pseudogene', 'pseudogene', 'transcribed_processed_pseudogene', 'transcribed_unprocessed_pseudogene', 'translated_processed_pseudogene', 'translated_unprocessed_pseudogene', 'TR_J_pseudogene', 'TR_V_pseudogene', 'unitary_pseudogene', 'unprocessed_pseudogene','polymorphic_pseudogene']
 	LongNC=['macro_lncRNA','bidirectional_promoter_lncRNA','sense_intronic','3prime_overlapping_ncRNA','ambiguous_orf','antisense','lincRNA','ncrna_host','non_coding','processed_transcript','retained_intron','sense_overlapping']
@@ -685,44 +621,38 @@ def main () :
 	NonCoding=['vaultRNA','macro_lncRNA','bidirectional_promoter_lncRNA','sense_intronic','3prime_overlapping_ncRNA','ambiguous_orf','antisense','lincRNA','ncrna_host','non_coding','processed_transcript','retained_intron','sense_overlapping','3prime_overlapping_ncRNA','scaRNA','miRNA', 'miRNA_pseudogene', 'misc_RNA', 'misc_RNA_pseudogene', 'Mt_rRNA' ,'Mt_tRNA', 'Mt_tRNA_pseudogene', 'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA', 'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene','scRNA','scRNA_pseudogene', 'snlRNA', 'snoRNA', 'snoRNA_pseudogene', 'snRNA', 'snRNA_pseudogene', 'SRP_RNA', 'tmRNA', 'tRNA', 'tRNA_pseudogene','ribozyme']
 	SupraFamily=[Coding, NonCoding, Pseudogene, Predictif]
 	SupraFamilyName=['Coding', 'NonCoding', 'Pseudogene', 'Predictif']
-
+	dicoFam = createDicoFamily()
 	
-	
-	#### path for files depending of chromosome or for all
-	if (chromosome == 'all'):	## if for all
-		directory=path+'/all'
-		index=directory+'/'+specie+'_transcript_unspliced_All_Index.txt'	
-		indextranscriptBiotype=directory+'/transcriptType_All'
-		fileG4InTranscriptome=directory+'/HS_All_G4InTranscript.txt'
-	else:	## if by chromosome
-		directory=path+'/chr'+chromosome
-		index=directory+'/'+specie+'_transcript_unspliced_chr'+chromosome+'_Index.txt'# file which contain info by transcript for this chromosome
-		indextranscriptBiotype=path+'/transcriptType/transcriptType_chr'+chromosome	# file which contain biotype of transcript for this chromosome
-		fileG4InTranscriptome='/home/local/USHERBROOKE/bels2814/Documents/These/HUMAN/HS_chr'+chromosome+'_G4InTranscript.txt'
+	if (chromosome == 'all'):
+		directory = path+'/all'
+		index = directory+'/'+specie+'_transcript_unspliced_All_Index.txt'	
+		indextranscriptBiotype = directory+'/transcriptType_All'
+		fileG4InTranscriptome = directory+'/HS_All_G4InTranscript.txt'
+	else:
+		directory = path+'/chr'+chromosome
+		index = directory+'/'+specie+'_transcript_unspliced_chr'+chromosome+'_Index.txt'
+		indextranscriptBiotype = path+'/transcriptType/transcriptType_chr'+chromosome
+		fileG4InTranscriptome = '/home/local/USHERBROOKE/bels2814/Documents/These/HUMAN/HS_chr'+chromosome+'_G4InTranscript.txt'
 
-
-
-	#### Assignation of variable for the start
-	BiotypeByTranscript={}	# dictionary of biotype for each transcript
-	AnnotationTranscript={} # dictionary of annotation (True or False) for each transcript
-	LenghtByTranscript={} # dictionary of lenght for each transcript
-	NumbersG4Transcript={} 	 # dictionary of number of G4 for each transcript by position
-	NumberTranscriptByCat={}# dictionary of list of number of each for each rna type (position 0 = all gene, position 1 = gene with G4)
+	# Assignation of variable for the start
+	NumberTranscriptByCat={} # dictionary of list of number of each for each rna type (position 0 = all gene, position 1 = gene with G4)
 	rnaTypeDetected=[] # list of rnaType detected in this species
 	
-
-	#### Filling dictionary
-	BiotypeByTranscript=CreateDictionaryBiotypeByTranscript (indextranscriptBiotype) # Filling the dictionary of biotype for each transcript
-	AnnotationTranscript=GetAnnotationTranscript(index,Coding,BiotypeByTranscript) # Filling the dictionary of annotation (True or False) for each transcript
-	LenghtByTranscript=GetLenghtByTranscript(index, BiotypeByTranscript,AnnotationTranscript, Coding) # Filling the dictionary of lenght for each transcript
-	NumbersG4Transcript=GetNumbersG4Transcript(fileG4InTranscriptome,Coding) # Filing the dictionary of number of G4 for each transcript by position
-	NumberTranscriptByCat=GetNumberTranscriptByCat(LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat,Coding)
+	# Filling dictionary
+	BiotypeByTranscript = rF.createDictionaryBiotypeByTranscript(indextranscriptBiotype)
+	AnnotationTranscript = rF.GetAnnotationTranscript(index, dicoFam["Coding"],
+													BiotypeByTranscript)
+	LenghtByTranscript = GetLenghtByTranscript(index,
+												BiotypeByTranscript,
+												AnnotationTranscript,
+												dicoFam["Coding"])
+	NumbersG4Transcript = GetNumbersG4Transcript(fileG4InTranscriptome,
+												dicoFam["Coding"])
+	NumberTranscriptByCat = GetNumberTranscriptByCat(LenghtByTranscript,
+													NumbersG4Transcript,
+													dicoFam["Coding"])
 	
-
-
-
-	
-	rnaTypeDetected=CreateRnaTypeDetected (LenghtByTranscript,rnaTypeDetected)
+	rnaTypeDetected = CreateRnaTypeDetected(LenghtByTranscript,rnaTypeDetected)
 	
 	column='RNA Type\tTotal Length\t#PG4r\tDensity\t#Tr\t#TrWithPG4r\t%Tr'
 	outfilename= open(GITDIR+'resultsTable/'+choice+'.csv',"w")
@@ -803,7 +733,7 @@ def main () :
 		header='Whole transcriptome'
 		PrintInFile (outfilename,header,column,liste)
 		
-			
+		
 		#print '-----------------------------------------------------'
 
 
@@ -825,9 +755,6 @@ def main () :
 				liste=EnrichssmentByFamilyLocalisation('Pseudogene', Pseudogene,state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
 				header=headers[conditions.index(condition)][condition.index(state)]
 				PrintInFile (outfilename,header,column,liste)
-				
-		
-	
 	
 
 
