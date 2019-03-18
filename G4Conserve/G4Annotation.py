@@ -24,6 +24,7 @@ December 2017
 import sys
 import os
 import re
+import recurentFunction as rF
 from pprint import pprint
 import argparse
 
@@ -33,6 +34,10 @@ def mean(liste):
 def getChromosomalPositionForJunction(coord, strand, junLength,
 									startFirstWindow,
 									endFirstWindow):
+	'''
+		For more explanation abour those calculs go see 
+		calculCoordsJunction.txt
+	'''
 	if strand == '1':
 		coord = getChromosomalPositionForwardStrand(coord,
 				junLength, startFirstWindow, endFirstWindow)
@@ -72,7 +77,7 @@ def getChromosomalPositionReverseStrand(position, EXTENSION,
 		around a junction. This function are for intron in the 
 		reverse strand.
 	'''
-	if position <= EXTENSION + 1:
+	if position <= EXTENSION:
 		# upstream squence (before the junction)
 		position = startIntron + 1 + EXTENSION + 1 - position
 	else:
@@ -82,20 +87,9 @@ def getChromosomalPositionReverseStrand(position, EXTENSION,
 
 def createIdG4(gene, startG4, endG4, strand):
 	if strand == '1':
-		idG4 = gene + '|' + str(startG4) + '|' + str(endG4) + '|' + strand
+		return gene + '|' + str(startG4) + '|' + str(endG4) + '|' + strand
 	elif strand == '-1':
-		idG4 = gene + '|' + str(endG4) + '|' + str(startG4) + '|' + strand
-	return idG4
-
-def updateEndG4(strand, windowEnd, windowSseq, startG4):
-	'''
-		when a new window is add to a pG4
-	'''
-	if strand == '1':
-		endG4 = windowEnd
-	else:
-		endG4 = startG4 - len(windowSseq) + 1
-	return endG4
+		return gene + '|' + str(endG4) + '|' + str(startG4) + '|' + strand
 	
 def addWindowToG4Seq(g4Seq, windowSeq, step, windowLength):
 	if len(windowSeq) < windowLength: 
@@ -127,7 +121,7 @@ def readLineG4Screener(line, StrandByGene, feature):
 	words = line.split('\t') # get all element in a list
 	dicoLine = {'Description' : words[1],
 				'GeneID' : words[1].split('|')[0],
-				'Strand' : StrandByGene[words[1].split('|')[0]],
+				'Strand' : StrandByGene.get(words[1].split('|')[0]),
 				'cGcC' : float(words[2]),
 				'g4H' : float(words[3]),
 				'WindowSeq' : words[4],
@@ -220,11 +214,6 @@ def isG4InTranscript(strand, coordG4, coordsTranscript):
 			endG4 <= superiorCoord):
 			inTranscript = True
 	else: # reverse strand
-		print inferiorCoord
-		print superiorCoord
-		print startG4
-		print endG4
-		print "------"
 		if (startG4 <= inferiorCoord and
 			startG4 >= superiorCoord and
 			endG4 <= inferiorCoord and
@@ -611,10 +600,9 @@ def returnG4InGene(G4DetectedInGene,
 						startG4 = dicoLine['WindowStart']
 						endG4 = dicoLine['WindowEnd']
 					else: 
-						# if reverse strand, we compute the coords 
-						# because G4RNA Screener do it for forward strand
-						startG4 = dicoLine['GeneEnd'] - (dicoLine['WindowStart'] - dicoLine['GeneStart']) # calcul of startG4
-						endG4 = startG4 - len(dicoLine['WindowSeq']) + 1 # calcul of endG4
+						# cf calcul 1 from calculCoords
+						startG4 = dicoLine['WindowEnd']
+						endG4 = dicoLine['WindowStart']
 					# initialization of a list for eahc score
 					listeCGcC = [ dicoLine['cGcC'] ]
 					listeG4Hunter = [ dicoLine['g4H'] ]
@@ -624,11 +612,10 @@ def returnG4InGene(G4DetectedInGene,
 					sequenceG4 = addWindowToG4Seq(sequenceG4,
 								dicoLine['WindowSeq'],
 								dicoParam['Step'], dicoParam['Window'])
-					endG4 = updateEndG4(dicoLine['Strand'],
-										dicoLine['WindowEnd'],
-										dicoLine['WindowSeq'], startG4)
-					# ~ updateEndG4(dicoLine['Strand'],
-							# ~ dicoLine['WindowEnd'], dicoLine['WindowStart'])
+					if dicoLine['Strand'] == '1' :
+						endG4 = dicoLine['WindowEnd']
+					else :
+						startG4 = dicoLine['WindowEnd']
 					listeCGcC.append(dicoLine['cGcC'])
 					listeG4Hunter.append(dicoLine['g4H'])
 					listeG4NN.append(dicoLine['g4NN'])
@@ -737,30 +724,6 @@ def returnG4InJunction(G4DetectedInJunction,
 	inputfile.close()
 	return G4DetectedInJunction
 
-def getAnnotationTranscript(filename,ProteinCoding,BiotypeByTranscript):
-	''' 
-		Return a dictionnary which define if the annotation of a
-		 transcript is good.
-	'''
-	AnnotationTranscript = {}
-	inputfile = open(filename,'r')
-	for line in inputfile:
-		words = line.split('|')
-		transcriptId = words[0]
-		start5 = words[7]
-		end5 = words[8]
-		start3 = words[9]
-		end3 = words[10].rstrip() 
-		answer = True # variable answer by defaul True
-		biotypeTranscript = BiotypeByTranscript.get(transcriptId)
-		if biotypeTranscript not in ProteinCoding:
-			# if transcript not a protein coding
-			if start5 or end5 or start3 or end3:
-				# but if transcript has a 5'UTR or an 3' UTR
-				answer = False # has not a good annotation in Ensembl
-		AnnotationTranscript[transcriptId] = answer
-	return AnnotationTranscript
-
 def createDictionaryStrandByGene(filename): 
 	''' 
 		Create dictionary with the strand of all gene.
@@ -774,23 +737,6 @@ def createDictionaryStrandByGene(filename):
 		strand = words[3]
 		if gene not in dico:
 			dico[gene]=strand
-	inputfile.close()
-	return dico
-
-def createDictionaryBiotypeByTranscript(filename):
-	''' 
-		Create dictionary with as value the biotype of the transcript 
-		for all transcripts of a chromosome.
-		Dico : {transcript's id : transcript's biotype}
-	'''
-	dico = {}
-	inputfile = open(filename,'r')
-	for line in inputfile:
-		words = line.split('|')
-		idTr = words[1]
-		biotypeTranscript = words[3].rstrip()
-		if idTr not in dico:
-			dico[idTr] = biotypeTranscript
 	inputfile.close()
 	return dico
 
@@ -816,7 +762,7 @@ def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
 	GITDIR=os.getcwd()+'/'
 	parser.add_argument ('-p', '--path', default = GITDIR+'data')
-	parser.add_argument ('-CHR', '--chromosome', default = 'X')
+	parser.add_argument ('-chr', '--chromosome', default = 'X')
 	parser.add_argument ('-specie', '--specie', default = 'HS')
 	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
 	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 4.5)
@@ -846,9 +792,9 @@ def main () :
 	# file which contain info by transcript for this chromosome
 	indexBiotypeTranscript = path+'/transcriptType/transcriptType_chr'+chromosome
 	# file which contain biotype of transcript for this chromosome
-	BiotypeByTranscript = createDictionaryBiotypeByTranscript(indexBiotypeTranscript)
+	BiotypeByTranscript = rF.createDictionaryBiotypeByTranscript(indexBiotypeTranscript)
 	StrandByGene = createDictionaryStrandByGene(index)
-	AnnotationTranscript = getAnnotationTranscript(index, 
+	AnnotationTranscript = rF.GetAnnotationTranscript(index, 
 							ProteinCoding, BiotypeByTranscript)
 	# get g4 from the ouput of G4RNA Screener
 	for path, dirs, files in os.walk(directory):
