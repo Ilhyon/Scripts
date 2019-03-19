@@ -593,6 +593,26 @@ def createDicoFamily():
 								'tmRNA', 'tRNA', 'tRNA_pseudogene', 'ribozyme']}
 	return dicoFam
 
+def getListLocation(fam):
+	if fam == "Coding":
+		conditions = [ ['Exon','Intron','Splicing'],
+						['5','CDS','3', 'junction_5_CDS', 'junction_CDS_3'],
+						['junction_CDS_Intron','junction_Intron_CDS','junction_CDS_CDS'] ]
+		headers = [ ['Exon','Intron','Splicing Site'],
+					["5'UTR",'CDS',"3'UTR", 'Codon start', 'Codon stop'],
+					['Donor splicing site','Acceptor splicing site','Splicing junction'] ]
+	elif fam == "NonCoding":
+		conditions = [ ['ExonNC','IntronNC','Splicing'],
+						['junction_ExonNC_IntronNC','junction_IntronNC_ExonNC','junction_ExonNC_ExonNC'] ]
+		headers = [ ['Exon','Intron','Splicing Site'],
+					['Donor splice site','Acceptor splice site','Splicing Junction '] ]
+	else:
+		conditions = [ ['ExonNC','IntronNC','Splicing'],
+						['junction_ExonNC_IntronNC','junction_IntronNC_ExonNC','junction_ExonNC_ExonNC']]
+		headers = [ ['Exon','Intron','Splicing Site'],
+					['Donor splice site','Acceptor splice site','Splicing Junction ']]
+	return conditions, headers
+
 def computeOverall(liste, indice1, indice2):
 	totLength = sum([x[1]for x in liste])
 	nbpG4 = sum([x[2]for x in liste])
@@ -604,6 +624,66 @@ def computeOverall(liste, indice1, indice2):
 			nbTranscript, nbTrWithpG4, rateTr]
 	return tmp
 
+def writeOutput(SupraFamilyName, dicoFam, choice, LenghtByTranscript,
+				NumbersG4Transcript, NumberTranscriptByCat, outfilename, rnaTypeDetected):
+	liste = []
+	condition = 'Total'
+	column ='RNA Type\tTotal Length\t#PG4r\tDensity\t#Tr\t#TrWithPG4r\t%Tr'
+	for fam in SupraFamilyName:
+		liste.append(EnrichmentByFamily(fam, dicoFam[fam], condition, LenghtByTranscript,
+					NumbersG4Transcript, NumberTranscriptByCat))
+	liste.append(computeOverall(liste, 1000, 100))
+	header = 'Whole transcriptome'
+	PrintInFile (outfilename,header,column,liste)
+	if (choice == 'Coding'):
+		liste = EnrichmentByRnaType ('Coding', dicoFam["Coding"],'Total',
+									LenghtByTranscript, NumbersG4Transcript,
+									rnaTypeDetected, NumberTranscriptByCat)
+		liste.append(computeOverall(liste, 1000, 100))
+		header = 'By mRNA Subclass '
+		PrintInFile(outfilename,header,column,liste)
+		conditions, headers = getListLocation('Coding')
+	elif (choice == 'NonCoding'):
+		liste.append(EnrichmentByFamily ('LongNC', dicoFam["LongNC"],
+										condition, LenghtByTranscript,
+										NumbersG4Transcript, NumberTranscriptByCat))
+		liste.append(EnrichmentByFamily ('ShortNC', dicoFam["ShortNC"],
+										condition, LenghtByTranscript,
+										NumbersG4Transcript, NumberTranscriptByCat))
+		liste.append(computeOverall(liste, 1000, 100))
+		header = 'By ncRNA groupe'
+		PrintInFile (outfilename,header,column,liste)
+		liste = EnrichmentByRnaType('LongNC', dicoFam["LongNC"], 'Total',
+									LenghtByTranscript, NumbersG4Transcript,
+									rnaTypeDetected, NumberTranscriptByCat)
+		liste.append(computeOverall(liste, 1000, 100))
+		header = 'By long ncRNA Subclass '
+		PrintInFile (outfilename,header,column,liste)
+		liste = EnrichmentByRnaType ('ShortNC', ShortNC, 'Total',
+									LenghtByTranscript, NumbersG4Transcript,
+									rnaTypeDetected, NumberTranscriptByCat)
+		liste.append(computeOverall(liste, 1000, 100))
+		header = 'By short ncRNA Subclass '
+		PrintInFile (outfilename,header,column,liste)
+		conditions, headers = getListLocation('NonCoding')
+	else:
+		liste = EnrichmentByRnaType ('Pseudogene', Pseudogene, 'Total',
+									LenghtByTranscript, NumbersG4Transcript,
+									rnaTypeDetected, NumberTranscriptByCat)
+		liste.append(computeOverall(liste, 1000, 100))
+		header = 'By pseudogene Subclass '
+		PrintInFile (outfilename,header,column,liste)
+		conditions, headers = getListLocation('Other')
+	for condition in conditions:
+		for state in condition:
+			liste = EnrichmentByFamilyLocalisation('Coding', dicoFam["Coding"],
+													state, LenghtByTranscript,
+													NumbersG4Transcript,
+													rnaTypeDetected, 
+													NumberTranscriptByCat)
+			header = headers[conditions.index(condition)][condition.index(state)]
+			PrintInFile(outfilename,header,column,liste)
+	
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
 	GITDIR=os.getcwd()+'/'
@@ -649,67 +729,8 @@ def main () :
 													dicoFam["Coding"])
 	rnaTypeDetected = CreateRnaTypeDetected(LenghtByTranscript)
 	
-	column='RNA Type\tTotal Length\t#PG4r\tDensity\t#Tr\t#TrWithPG4r\t%Tr'
-	outfilename= open(GITDIR+'resultsTable/'+choice+'.csv',"w")
-	
-	condition = 'Total'
-	liste = []
-	for fam in SupraFamilyName:
-		liste.append(EnrichmentByFamily(fam, dicoFam[fam], condition, LenghtByTranscript,
-					NumbersG4Transcript, NumberTranscriptByCat))
-	liste.append(computeOverall(liste, 1000, 100))
-	header = 'Whole transcriptome'
-	PrintInFile (outfilename,header,column,liste)
-	
-	if (choice == 'Coding'):
-		liste=EnrichmentByRnaType ('Coding', dicoFam["Coding"],'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
-		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
-		header='By mRNA Subclass '
-		PrintInFile (outfilename,header,column,liste)
-		conditions=[['Exon','Intron','Splicing'],['5','CDS','3', 'junction_5_CDS', 'junction_CDS_3'],['junction_CDS_Intron','junction_Intron_CDS','junction_CDS_CDS']]
-		headers=[['Exon','Intron','Splicing Site'],["5'UTR",'CDS',"3'UTR", 'Codon start', 'Codon stop'],['Donor splicing site','Acceptor splicing site','Splicing junction']]
-		for condition in conditions:
-			for state in condition:
-				liste=EnrichmentByFamilyLocalisation('Coding', dicoFam["Coding"],state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
-				header=headers[conditions.index(condition)][condition.index(state)]
-				PrintInFile (outfilename,header,column,liste)
-	elif (choice == 'NonCoding'):
-		liste.append(EnrichmentByFamily ('LongNC', dicoFam["LongNC"],condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichmentByFamily ('ShortNC', dicoFam["ShortNC"],condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
-		header='By ncRNA groupe'
-		PrintInFile (outfilename,header,column,liste)
-		###
-		liste=EnrichmentByRnaType('LongNC', dicoFam["LongNC"],'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
-		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
-		header=header='By long ncRNA Subclass '
-		PrintInFile (outfilename,header,column,liste)
-		###
-		conditions=[['ExonNC','IntronNC','Splicing'],['junction_ExonNC_IntronNC','junction_IntronNC_ExonNC','junction_ExonNC_ExonNC']]
-		headers=[['Exon','Intron','Splicing Site'],['Donor splice site','Acceptor splice site','Splicing Junction ']]
-		for condition in conditions:
-			for state in condition:
-				#liste=EnrichssmentByFamily ('LongNC', LongNC,state,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat)
-				liste=EnrichmentByFamilyLocalisation('LongNC', dicoFam["LongNC"],state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
-				header=headers[conditions.index(condition)][condition.index(state)]
-				PrintInFile (outfilename,header,column,liste)
-		###
-		liste=EnrichmentByRnaType ('ShortNC', ShortNC,'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
-		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
-		header=header='By short ncRNA Subclass '
-		PrintInFile (outfilename,header,column,liste)
-	else:
-		liste=EnrichmentByRnaType ('Pseudogene', Pseudogene,'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
-		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
-		header='By pseudogene Subclass '
-		PrintInFile (outfilename,header,column,liste)
-		####
-		conditions=[['ExonNC','IntronNC','Splicing'],['junction_ExonNC_IntronNC','junction_IntronNC_ExonNC','junction_ExonNC_ExonNC']]
-		headers=[['Exon','Intron','Splicing Site'],['Donor splice site','Acceptor splice site','Splicing Junction ']]
-		for condition in conditions:
-			for state in condition:
-				liste=EnrichmentByFamilyLocalisation('Pseudogene', dicoFam["Pseudogene"],state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
-				header=headers[conditions.index(condition)][condition.index(state)]
-				PrintInFile (outfilename,header,column,liste)
+	outfilename = open(GITDIR+'resultsTable/'+choice+'.csv',"w")
+	writeOutput(SupraFamilyName, dicoFam, choice, LenghtByTranscript,
+				NumbersG4Transcript, NumberTranscriptByCat, outfilename, rnaTypeDetected)
 
 main()
