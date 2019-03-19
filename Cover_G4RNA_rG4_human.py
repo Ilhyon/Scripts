@@ -104,28 +104,28 @@ def coveragepG4(dicoTarget, Dtype, directory, bd):
 				endpG4 = pG4.split(":")[1].split("-")[1]
 				biotype = words[6]
 				location = words[5]
-				if location != "Intron" and biotype == "protein_coding" :
-					if chrm in dicoTarget :
-						for G4 in dicoTarget[chrm]:
-							if strandpG4 == dicoTarget[chrm][G4]["Strand"]:
-								coord = G4.split("|")[0]
-								startG4 = coord.split("-")[0]
-								endG4 = coord.split("-")[1]
-								G4seq = dicoTarget[chrm][G4]["Sequence"]
-								if G4+"\t"+G4seq not in resultrG4 :
-									if (startG4 > startpG4 and startG4 < endpG4) or (endG4 > startpG4 and endG4 < endpG4):
-										resultrG4.append(G4+"\t"+G4seq)
-										resultpG4.append(pG4+"\t"+sequence)
-								if G4+"\t"+G4seq not in resultrG4 :
-									if (startpG4 > startG4 and startpG4 < endG4) or (endpG4 > startG4 and endpG4 < endG4):
-										resultrG4.append(G4+"\t"+G4seq)
-										resultpG4.append(pG4+"\t"+sequence)
-								if G4seq not in resultrG4 :
-									if (re.search(G4seq, sequence) or re.search(sequence, G4seq)):
-										resultrG4.append(G4seq)
-										resultpG4.append(pG4+"\t"+sequence)
+				# ~ if location != "Intron" and biotype == "protein_coding" :
+				if chrm in dicoTarget :
+					for G4 in dicoTarget[chrm]:
+						if strandpG4 == dicoTarget[chrm][G4]["Strand"]:
+							coord = G4.split("|")[0]
+							startG4 = coord.split("-")[0]
+							endG4 = coord.split("-")[1]
+							G4seq = dicoTarget[chrm][G4]["Sequence"]
+							if G4+"\t"+G4seq not in resultrG4 :
+								if (startG4 > startpG4 and startG4 < endpG4) or (endG4 > startpG4 and endG4 < endpG4):
+									resultrG4.append(G4+"\t"+G4seq)
+									resultpG4.append(pG4+"\t"+sequence)
+							if G4+"\t"+G4seq not in resultrG4 :
+								if (startpG4 > startG4 and startpG4 < endG4) or (endpG4 > startG4 and endpG4 < endG4):
+									resultrG4.append(G4+"\t"+G4seq)
+									resultpG4.append(pG4+"\t"+sequence)
+							if G4+"\t"+G4seq not in resultrG4 :
+								if (re.search(G4seq, sequence) or re.search(sequence, G4seq)):
+									resultrG4.append(G4+"\t"+G4seq)
+									resultpG4.append(pG4+"\t"+sequence)
 	print "Number of pG4r ("+Dtype+") corresponding to G4 from "+bd+" : "+str(len(resultrG4))
-	print "Number of pG4r ("+Dtype+") corresponding to G4 from "+bd+" : "+str(len(list(set(resultpG4))))
+	# ~ print "Number of pG4r ("+Dtype+") corresponding to G4 from "+bd+" : "+str(len(list(set(resultpG4))))
 	return resultrG4
 
 def coveragerG4seq(dicoG4RNA, Dtype, directory):
@@ -218,13 +218,14 @@ def writepG4(listpG4):
 	output= open("/home/anais/Documents/Data/G4RNA/G4_all_score","w")
 	output.write("\n".join(listpG4))
 
-
 def main () :
 	parser = build_arg_parser()
 	arg = parser.parse_args()
 	sp=arg.specie	# specie to analyse
-	directoryG4nn = '/home/anais/Documents/Data/Human/G4Conserve-master/results/perChromosome/HS_All_G4InTranscript.txt' # only G4nn human
-	directoryAll = '/home/anais/Documents/Data/Human/All/HS_All_G4InTranscript.txt' # all score human
+	# ~ directoryG4nn = '/home/anais/Documents/Data/Human/G4Conserve-master/results/perChromosome/HS_All_G4InTranscript.txt' # only G4nn human
+	directoryG4nn = '/home/anais/Documents/Data/Human/G4Conserve-master/results/all/Sarah_HS_G4nn_G4InTranscript.txt' # only G4nn human
+	# ~ directoryAll = '/home/anais/Documents/Data/Human/All/HS_All_G4InTranscript.txt' # all score human
+	directoryAll = '/home/anais/Documents/Data/Human/G4Conserve-master/results/all/Sarah_HS_All_G4InTranscript.txt' # all score human
 	directoryrG4seq_K = '/home/anais/Documents/Publis/rG4seq/cdt_K.csv'
 	directoryrG4seq_PDS_K = '/home/anais/Documents/Publis/rG4seq/cdt_PDS-K.csv'
 	dicoG4RNA = importG4RNA()
@@ -236,9 +237,10 @@ def main () :
 	listpG4rG4seq_K, dicoK = coveragerG4seq(dicoG4RNA, "rG4seq K+", directoryrG4seq_K)
 	# ~ findCanonicalG4(listpG4rG4seq_K)
 	listrG4K = coveragepG4(dicoK, "G4all", directoryAll, "Kwok K+")
+	listpG4rG4seq_K, dicoK = coveragerG4seq(dicoG4RNA, "rG4seq K+", directoryrG4seq_K)
+	listrG4K = coveragepG4(dicoK, "G4nn", directoryG4nn, "Kwok K+")
 	# ~ findCanonicalG4(listrG4K)
 	# ~ listpG4rG4seq_K, dicoG4seq_PDS_K = coveragerG4seq(dicoG4RNA, "rG4seq K+", directoryrG4seq_PDS_K)
 	# ~ listrG4K = coveragepG4(dicoG4seq_PDS_K, "G4all", directoryAll, "Kwok K+")
-	del dicoK
 	
 main()

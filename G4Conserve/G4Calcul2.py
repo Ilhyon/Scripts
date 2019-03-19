@@ -124,38 +124,42 @@ def GetLenghtByTranscript(filename, BiotypeByTranscript, AnnotationTranscript,Co
 		if annotationTranscript and transcriptBiotype :
 			dicoTr = {"Biotype" : transcriptBiotype}
 			if transcriptBiotype in Coding:
-				dicoTr["Length 5UTR"] = GetLengthFraction(dicoLine["start5"],
+				dicoTr["5"] = GetLengthFraction(dicoLine["start5"],
 														dicoLine["end5"])
-				dicoTr["Length exons"] = GetLengthCodant(dicoLine["exonList"])
-				dicoTr["Length 3UTR"] = GetLengthFraction(dicoLine["start3"],
+				dicoTr["Exon"] = GetLengthCodant(dicoLine["exonList"])
+				dicoTr["3"] = GetLengthFraction(dicoLine["start3"],
 														dicoLine["end3"])
-				dicoTr["Length CDS"] = dicoTr["Length exons"] - \
-										dicoTr["Length 5UTR"] - \
-										dicoTr["Length 3UTR"]
+				dicoTr["CDS"] = dicoTr["Exon"] - \
+								dicoTr["5"] - \
+								dicoTr["3"]
 				if dicoLine["intronList"][0] != '':
-					dicoTr["Length introns"] = GetLengthCodant(dicoLine["intronList"])
-				dicoTr["Number overlap 5UTR-coding"] = 1
-				dicoTr["Number overlap coding-intron"] = len(dicoLine["exonList"]) - 1
-				dicoTr["Number overlap intron-coding"] = len(dicoLine["exonList"]) - 1
-				dicoTr["Number overlap coding-UTR3"] = 1
-				dicoTr["Total length"] = GetLengthTotal(dicoLine["exonList"])
-				dicoTr["Number junction"] = len(dicoLine["exonList"]) - 1
-				dicoTr["Number of splicingSites"] = dicoTr["Number overlap coding-intron"] + \
-													dicoTr["Number overlap intron-coding"] + \
-													dicoTr["Number junction"]
+					dicoTr["Intron"] = GetLengthCodant(dicoLine["intronList"])
+				else:
+					dicoTr["Intron"] = 0
+				dicoTr["junction_5_CDS"] = 1
+				dicoTr["junction_CDS_Intron"] = len(dicoLine["exonList"]) - 1
+				dicoTr["junction_Intron_CDS"] = len(dicoLine["exonList"]) - 1
+				dicoTr["junction_CDS_3"] = 1
+				dicoTr["Total"] = GetLengthTotal(dicoLine["exonList"])
+				dicoTr["junction_CDS_CDS"] = len(dicoLine["exonList"]) - 1
+				dicoTr["Splicing"] = dicoTr["junction_CDS_Intron"] + \
+									dicoTr["junction_Intron_CDS"] + \
+									dicoTr["junction_CDS_CDS"]
 				#(number junction on splicing events = CDS_Intron + INtronCDS+CDS_CDS)
 			else:
-				dicoTr["Length exons"] = GetLengthCodant(dicoLine["exonList"])
-				if dicoTr["Length exons"] != '':
-					dicoTr["Length introns"] = GetLengthCodant(dicoLine["intronList"])
-				dicoTr["Number overlap coding-intron"] = len(dicoLine["exonList"]) - 1
-				dicoTr["Number overlap intron-coding"] = len(dicoLine["exonList"]) - 1
-				dicoTr["Total length"] = GetLengthTotal(dicoLine["exonList"])
-				dicoTr["Number junction"] = len(dicoLine["exonList"]) - 1
-				dicoTr["Number of splicingSites"] = dicoTr["Number overlap coding-intron"] + \
-													dicoTr["Number overlap intron-coding"] + \
-													dicoTr["Number junction"]
+				dicoTr["ExonNC"] = GetLengthCodant(dicoLine["exonList"])
+				if dicoTr["ExonNC"] != '':
+					dicoTr["IntronNC"] = GetLengthCodant(dicoLine["intronList"])
+				dicoTr["junction_ExonNC_IntronNC"] = len(dicoLine["exonList"]) - 1
+				dicoTr["junction_IntronNC_ExonNC"] = len(dicoLine["exonList"]) - 1
+				dicoTr["Total"] = GetLengthTotal(dicoLine["exonList"])
+				dicoTr["junction_ExonNC_ExonNC"] = len(dicoLine["exonList"]) - 1
+				dicoTr["Splicing"] = dicoTr["junction_ExonNC_IntronNC"] + \
+									dicoTr["junction_IntronNC_ExonNC"] + \
+									dicoTr["junction_ExonNC_ExonNC"]
 			LenghtByTranscript[ dicoLine["idTr"] ] = dicoTr
+			
+				
 	inputfile.close()
 	return LenghtByTranscript
 
@@ -251,15 +255,15 @@ def GetNumbersG4Transcript(filename, Coding):
 	return NumbersG4Transcript
 
 def iniListLoca(biotype, coding):
-	if biotype in coding:
+	if biotype in coding or biotype == "Coding":
 		localisationName = ['5', 'CDS', '3', 'Exon', 'Intron',
 							'junction_5_CDS', 'junction_CDS_3',
 							'junction_CDS_Intron', 'junction_Intron_CDS',
 							'Total', 'junction_CDS_CDS','Splicing']
 	else:
 		localisationName = ['ExonNC', 'IntronNC', 'junction_ExonNC_IntronNC',
-							'junction_IntronNC_ExonNC', 'Total', 'junction_ExonNC_ExonNC',
-							'Splicing']
+							'junction_IntronNC_ExonNC', 'Total',
+							'junction_ExonNC_ExonNC', 'Splicing']
 	return localisationName
 
 def GetNumberTranscriptByCat(dicoLength, NumbersG4Transcript, coding):
@@ -281,29 +285,28 @@ def GetNumberTranscriptByCat(dicoLength, NumbersG4Transcript, coding):
 	"""
 	NumberTrByCat = {}
 	for idTr in dicoLength:
-		pprint(dicoLength[idTr])
 		if (NumberTrByCat.has_key(dicoLength[idTr]["Biotype"]) == False):
 			# if biotype not contain in the dico
 			localisationName = iniListLoca(dicoLength[idTr]["Biotype"], coding)
 			if len(localisationName) == 12: # coding
 				dicoTr = iniDicoNumberG4Coding(dicoLength[idTr]["Biotype"])
 			elif len(localisationName) == 7: # non coding
-				dicoTranscript = iniDicoNumberG4Coding(dicoLength[idTr]["Biotype"])
+				dicoTr = iniDicoNumberG4NonCoding(dicoLength[idTr]["Biotype"])
 			dicoTr["# tr in biotype"] = 0
 		else: # if biotype already contained in the dico
 			dicoTr = NumberTrByCat.get(dicoLength[idTr]["Biotype"])
 		dicoTr["# tr in biotype"] += 1
 		if NumbersG4Transcript.has_key(idTr) == True:
 			numberG4 = NumbersG4Transcript.get(idTr)
-			pprint(numberG4)
 			for position in numberG4:
 				if position != "Biotype" and numberG4[position] != 0:
 					# if the transcript contain G4 at this position
-					dicoTr[position] += dicoTr[position]
+					dicoTr[position] += 1
 		NumberTrByCat[ dicoLength[idTr]["Biotype"] ] = dicoTr
+	pprint(NumberTrByCat)
 	return NumberTrByCat
 
-def CreateRnaTypeDetected(LenghtByTranscript, rnaTypeDetected):
+def CreateRnaTypeDetected(LenghtByTranscript):
 	""" Create list of RNA type where PG4r were detected 
 	    Parameters
 	    ----------
@@ -316,14 +319,14 @@ def CreateRnaTypeDetected(LenghtByTranscript, rnaTypeDetected):
 	     rnaTypeDetected : list
 		list of RNA type where PG4r were detected
 	"""
-	rnaTypeDetected=[]
-	for key, values in LenghtByTranscript.items():
-		biotypeTranscript=key.split('-')[1]
+	rnaTypeDetected = []
+	for idTr in LenghtByTranscript:
+		biotypeTranscript = LenghtByTranscript[idTr]["Biotype"]
 		if (biotypeTranscript not in rnaTypeDetected) :
 			rnaTypeDetected.append(biotypeTranscript)
 	return rnaTypeDetected
 
-def EnrichssmentByFamily(familyName, family, state, 
+def EnrichmentByFamily(familyName, family, state, 
 						LenghtByTranscript, NumbersG4Transcript,
 						NumberTranscriptByCat):
 	""" Create list of calcul for a complete RNA family
@@ -347,36 +350,32 @@ def EnrichssmentByFamily(familyName, family, state,
 	    liste :  list
 		list of calcul
 	"""
-	if (familyName== 'Coding'):
-		localisationName=['5','CDS','3','Exon','Intron','junction_5_CDS','junction_CDS_3','junction_CDS_Intron','junction_Intron_CDS','Total','junction_CDS_CDS']
-	else:
-		localisationName=['ExonNC','IntronNC','junction_ExonNC_IntronNC','junction_IntronNC_ExonNC','Total','junction_ExonNC_ExonNC']
-	position=GetPositionForLocalisation(state, familyName)
-	length=0
-	num=0
-	listeBiotype=[]
-	for key, values in LenghtByTranscript.items(): # for each transcript in the transcriptom
-		transcriptId=key.split('-')[0]
-		transcriptBiotype=key.split('-')[1]
-		if (transcriptBiotype in family): # if transcript in this family
-			length=length+values[position]
-			if (transcriptBiotype not in listeBiotype):
-				listeBiotype.append(transcriptBiotype)
-			if (NumbersG4Transcript.has_key(key)==True): # if transcript contain G4
-				num=num+NumbersG4Transcript.get(key)[position]
-	numTrAll=0
-	numTrWithG4=0
+	localisationName = iniListLoca(familyName, family)
+	length = 0
+	num = 0
+	listeBiotype = []
+	for idTr in LenghtByTranscript:
+		biotype = LenghtByTranscript[idTr]["Biotype"]
+		if biotype in family:
+			length += LenghtByTranscript[idTr][state]
+			if biotype not in listeBiotype:
+				listeBiotype.append(biotype)
+			if NumbersG4Transcript.has_key(idTr) == True: 
+				num += NumbersG4Transcript.get(idTr)[state]
+	numTrAll = 0
+	numTrWithG4 = 0
 	for biotype in listeBiotype:
-		position=GetPositionForLocalisation(state, familyName)
-		numTrAll=numTrAll+NumberTranscriptByCat.get(biotype)[0]
-		numTrWithG4=numTrWithG4+NumberTranscriptByCat.get(biotype)[position+1]
-	percent=round(numTrWithG4/float(numTrAll)*100,2)
+		numTrAll += NumberTranscriptByCat.get(biotype)["# tr in biotype"]
+		numTrWithG4 += NumberTranscriptByCat.get(biotype)[state]
+	percent = round(numTrWithG4/float(numTrAll)*100,2)
 	if ('junction' in state):
-		return [familyName,length, num, round(num/float(length),4),numTrAll,numTrWithG4,percent]
+		return [familyName, length, num, round(num/float(length),4),
+				numTrAll, numTrWithG4, percent]
 	else:
-		return [familyName,length, num, round(num/float(length)*1000,4),numTrAll,numTrWithG4,percent]
+		return [familyName, length, num, round(num/float(length)*1000,4),
+				numTrAll, numTrWithG4, percent]
 
-def EnrichssmentByRnaType(familyName, family, state,
+def EnrichmentByRnaType(familyName, family, state,
 						LenghtByTranscript, NumbersG4Transcript,
 						rnaTypeDetected, NumberTranscriptByCat):
 	""" Create list of calcul for a RNA type  
@@ -402,40 +401,41 @@ def EnrichssmentByRnaType(familyName, family, state,
 	    liste :  list
 		list of calcul
 	"""
-	if (familyName== 'Coding'):
-		localisationName=['5','CDS','3','Exon','Intron','junction_5_CDS','junction_CDS_3','junction_CDS_Intron','junction_Intron_CDS','Total','junction_CDS_CDS']
-	else:
-		localisationName=['ExonNC','IntronNC','junction_ExonNC_IntronNC','junction_IntronNC_ExonNC','Total','junction_ExonNC_ExonNC']
-	position=GetPositionForLocalisation(state, familyName)
-	liste=[]
+	localisationName = iniListLoca(familyName, family)
+	liste = []
 	for rnaType in family:
-		if (rnaType in rnaTypeDetected):
-			length=0
-			num=0
-			numTrAll=0
-			numTrWithG4=0
-			for key, values in LenghtByTranscript.items(): # for each transcript in the transcriptom
-				transcriptId=key.split('-')[0]
-				transcriptBiotype=key.split('-')[1]
-				if (transcriptBiotype == rnaType): # if transcript in this family
-					length=length+values[position]
-					if (NumbersG4Transcript.has_key(key)==True): # if transcript contain G4
-						num=num+NumbersG4Transcript.get(key)[position]
-			position=GetPositionForLocalisation(state,familyName)
-			numTrAll=NumberTranscriptByCat.get(rnaType)[0]
-			numTrWithG4=NumberTranscriptByCat.get(rnaType)[position+1]
-			if (length !=0):
-				percent=round(numTrWithG4/float(numTrAll)*100,2)
+		if rnaType in rnaTypeDetected:
+			length = 0
+			num = 0
+			numTrAll = 0
+			numTrWithG4 = 0
+			for idTr in LenghtByTranscript:
+				if LenghtByTranscript[idTr]["Biotype"] == rnaType:
+					# if transcript in this family
+					length += LenghtByTranscript[idTr][state]
+					if NumbersG4Transcript.has_key(idTr) == True:
+						num += NumbersG4Transcript.get(idTr)[state]
+			numTrAll = NumberTranscriptByCat.get(rnaType)["# tr in biotype"]
+			numTrWithG4 = NumberTranscriptByCat.get(rnaType)[state]
+			if length != 0:
+				percent = round(numTrWithG4/float(numTrAll)*100,2)
 				if ('junction' in state):
-					liste.append([rnaType,length, num, round(num/float(length),4),numTrAll,numTrWithG4,percent])
+					liste.append([rnaType,length, num,
+								round(num/float(length),4),
+								numTrAll, numTrWithG4, percent])
 				else:
-					liste.append([rnaType,length, num, round(num/float(length)*1000,4),numTrAll,numTrWithG4,percent])
+					liste.append([rnaType,length, num,
+								round(num/float(length)*1000,4),
+								numTrAll, numTrWithG4, percent])
 			else:
-					liste.append([rnaType,length, num, round(num/float(length)*1000,4),numTrAll,numTrWithG4,0])
-			
+					liste.append([rnaType,length, num,
+								round(num/float(length)*1000,4),
+								numTrAll, numTrWithG4, 0])
 	return liste
 
-def EnrichssmentByRnaTypeLocalisation (familyName, family,state,LenghtByTranscript,NumbersG4Transcript, rnaType,NumberTranscriptByCat):	
+def EnrichmentByRnaTypeLocalisation(familyName, family, state,
+									LenghtByTranscript, NumbersG4Transcript,
+									rnaType,NumberTranscriptByCat):	
 	""" Create list of calcul for a RNA type  at a specific position 
 	    Parameters
 	    ----------
@@ -458,24 +458,20 @@ def EnrichssmentByRnaTypeLocalisation (familyName, family,state,LenghtByTranscri
 	    liste :  list
 		list of calcul
 	"""
-	position=GetPositionForLocalisation(state, familyName)
-	length=0
-	num=0
-	numTrAll=0
-	numTrWithG4=0
-	for key, values in LenghtByTranscript.items(): # for each transcript in the transcriptom
-		transcriptId=key.split('-')[0]
-		transcriptBiotype=key.split('-')[1]
-		if (transcriptBiotype == rnaType): # if transcript in this family
-			length=length+values[position]
-			if (NumbersG4Transcript.has_key(key)==True): # if transcript contain G4
-				num=num+NumbersG4Transcript.get(key)[position]
-
-	position=GetPositionForLocalisation(state,familyName)
-	numTrAll=NumberTranscriptByCat.get(rnaType)[0]
-	numTrWithG4=NumberTranscriptByCat.get(rnaType)[position+1]
-
-	percent=round(numTrWithG4/float(numTrAll)*100,2)
+	length = 0
+	num = 0
+	numTrAll = 0
+	numTrWithG4 = 0
+	for idTr in LenghtByTranscript:
+		if LenghtByTranscript[idTr]["Biotype"] == rnaType:
+			# if transcript in this family
+			length += LenghtByTranscript[idTr][state]
+			if (NumbersG4Transcript.has_key(idTr)==True):
+				# if transcript contain G4
+				num += NumbersG4Transcript.get(idTr)[state]
+	numTrAll = NumberTranscriptByCat.get(rnaType)["# tr in biotype"]
+	numTrWithG4 = NumberTranscriptByCat.get(rnaType)[state]
+	percent = round(numTrWithG4/float(numTrAll)*100,2)
 
 	if (length !=0):
 		if ('junction' in state):
@@ -485,7 +481,7 @@ def EnrichssmentByRnaTypeLocalisation (familyName, family,state,LenghtByTranscri
 	else:
 		return [rnaType,length, num, 0,numTrAll,numTrWithG4,percent]
 
-def EnrichssmentByFamilyLocalisation(familyName, family,state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat):
+def EnrichmentByFamilyLocalisation(familyName, family,state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat):
 	""" Create ensembl of list of calcul for all RNA type  at a specific position for a category
 	    Parameters
 	    ----------
@@ -508,15 +504,16 @@ def EnrichssmentByFamilyLocalisation(familyName, family,state,LenghtByTranscript
 	    liste :  list
 		list of calcul
 	"""
-	liste=[]
-	position=GetPositionForLocalisation(state, familyName)
+	liste = []
 	for rnaType in family:
-		if (rnaType in rnaTypeDetected):
-			liste.append(EnrichssmentByRnaTypeLocalisation (familyName, family,state,LenghtByTranscript,NumbersG4Transcript, rnaType,NumberTranscriptByCat ))
+		if rnaType in rnaTypeDetected:
+			liste.append(EnrichmentByRnaTypeLocalisation(familyName, family, state,
+														LenghtByTranscript, NumbersG4Transcript,
+														rnaType, NumberTranscriptByCat))
 	if ('junction' in state):
-		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste])),4)])
+		liste.append(computeOverall(liste, 1000, 1))
 	else:
-		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste])),4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)]) # *100 because percent
+		liste.append(liste.append(computeOverall(liste, 1000, 100)))
 	return liste
 
 def PrintInFile (outfilename,header,column,liste):
@@ -539,8 +536,9 @@ def PrintInFile (outfilename,header,column,liste):
 	outfilename.write(header+'\n')
 	outfilename.write(column+'\n')
 	for element in liste:
-		s=[str(item) for item in element]
-		outfilename.write('\t'.join(s)+'\n')
+		if element:
+			s = [str(item) for item in element]
+			outfilename.write('\t'.join(s)+'\n')
 	outfilename.write('\n')
 
 def createDicoFamily():
@@ -561,24 +559,24 @@ def createDicoFamily():
 								'TR_J_pseudogene', 'TR_V_pseudogene',
 								'unitary_pseudogene', 'unprocessed_pseudogene',
 								'polymorphic_pseudogene'],
-				"Long non codint" : ['macro_lncRNA', 'bidirectional_promoter_lncRNA',
-									'sense_intronic', '3prime_overlapping_ncRNA',
-									'ambiguous_orf', 'antisense',
-									'lincRNA', 'ncrna_host','non_coding',
-									'processed_transcript', 'retained_intron',
-									'sense_overlapping'],
-				"Short non coding" : ['vaultRNA', 'scaRNA', 'miRNA',
-										'miRNA_pseudogene', 'misc_RNA', 
-										'misc_RNA_pseudogene', 'Mt_rRNA',
-										'Mt_tRNA', 'Mt_tRNA_pseudogene',
-										'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA',
-										'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene', 
-										'scRNA', 'scRNA_pseudogene', 'snlRNA',
-										'snoRNA', 'snoRNA_pseudogene', 'snRNA',
-										'snRNA_pseudogene', 'SRP_RNA', 'tmRNA',
-										'tRNA', 'tRNA_pseudogene','ribozyme'],
-				"Predicted" : ['TEC'],
-				'Non coding' : ['vaultRNA', 'macro_lncRNA',
+				"LongNC" : ['macro_lncRNA', 'bidirectional_promoter_lncRNA',
+							'sense_intronic', '3prime_overlapping_ncRNA',
+							'ambiguous_orf', 'antisense',
+							'lincRNA', 'ncrna_host','non_coding',
+							'processed_transcript', 'retained_intron',
+							'sense_overlapping'],
+				"ShortNC" : ['vaultRNA', 'scaRNA', 'miRNA',
+							'miRNA_pseudogene', 'misc_RNA', 
+							'misc_RNA_pseudogene', 'Mt_rRNA',
+							'Mt_tRNA', 'Mt_tRNA_pseudogene',
+							'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA',
+							'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene', 
+							'scRNA', 'scRNA_pseudogene', 'snlRNA',
+							'snoRNA', 'snoRNA_pseudogene', 'snRNA',
+							'snRNA_pseudogene', 'SRP_RNA', 'tmRNA',
+							'tRNA', 'tRNA_pseudogene','ribozyme'],
+				"Predictif" : ['TEC'],
+				'NonCoding' : ['vaultRNA', 'macro_lncRNA',
 								'bidirectional_promoter_lncRNA',
 								'sense_intronic', '3prime_overlapping_ncRNA',
 								'ambiguous_orf', 'antisense', 'lincRNA',
@@ -594,6 +592,17 @@ def createDicoFamily():
 								'snRNA', 'snRNA_pseudogene', 'SRP_RNA',
 								'tmRNA', 'tRNA', 'tRNA_pseudogene', 'ribozyme']}
 	return dicoFam
+
+def computeOverall(liste, indice1, indice2):
+	totLength = sum([x[1]for x in liste])
+	nbpG4 = sum([x[2]for x in liste])
+	density = round(nbpG4 / totLength * indice1,4)
+	nbTranscript = sum([x[4]for x in liste])
+	nbTrWithpG4 = sum([x[5]for x in liste])
+	rateTr = round(nbTrWithpG4 / nbTranscript * indice2, 4)
+	tmp = ['Overall', totLength, nbpG4, density,
+			nbTranscript, nbTrWithpG4, rateTr]
+	return tmp
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
@@ -611,16 +620,8 @@ def main () :
 	chromosome = arg.chromosome
 	specie = arg.specie
 	choice = arg.choice
-	GITDIR=os.getcwd()+'/'
-
-	Coding=['IG_C_gene', 'IG_D_gene', 'IG_J_gene', 'IG_LV_gene', 'IG_M_gene', 'IG_V_gene', 'IG_Z_gene', 'nonsense_mediated_decay', 'nontranslating_CDS', 'non_stop_decay', 'protein_coding', 'TR_C_gene', 'TR_D_gene', 'TR_gene', 'TR_J_gene', 'TR_V_gene']
-	Pseudogene=['transcribed_unitary_pseudogene','disrupted_domain', 'IG_C_pseudogene', 'IG_J_pseudogene', 'IG_pseudogene', 'IG_V_pseudogene', 'processed_pseudogene', 'pseudogene', 'transcribed_processed_pseudogene', 'transcribed_unprocessed_pseudogene', 'translated_processed_pseudogene', 'translated_unprocessed_pseudogene', 'TR_J_pseudogene', 'TR_V_pseudogene', 'unitary_pseudogene', 'unprocessed_pseudogene','polymorphic_pseudogene']
-	LongNC=['macro_lncRNA','bidirectional_promoter_lncRNA','sense_intronic','3prime_overlapping_ncRNA','ambiguous_orf','antisense','lincRNA','ncrna_host','non_coding','processed_transcript','retained_intron','sense_overlapping']
-	ShortNC=['vaultRNA','scaRNA','miRNA', 'miRNA_pseudogene', 'misc_RNA', 'misc_RNA_pseudogene', 'Mt_rRNA' ,'Mt_tRNA', 'Mt_tRNA_pseudogene', 'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA', 'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene','scRNA', 'scRNA_pseudogene', 'snlRNA', 'snoRNA', 'snoRNA_pseudogene', 'snRNA', 'snRNA_pseudogene', 'SRP_RNA', 'tmRNA', 'tRNA', 'tRNA_pseudogene','ribozyme']
-	Predictif=['TEC']
-	NonCoding=['vaultRNA','macro_lncRNA','bidirectional_promoter_lncRNA','sense_intronic','3prime_overlapping_ncRNA','ambiguous_orf','antisense','lincRNA','ncrna_host','non_coding','processed_transcript','retained_intron','sense_overlapping','3prime_overlapping_ncRNA','scaRNA','miRNA', 'miRNA_pseudogene', 'misc_RNA', 'misc_RNA_pseudogene', 'Mt_rRNA' ,'Mt_tRNA', 'Mt_tRNA_pseudogene', 'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA', 'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene','scRNA','scRNA_pseudogene', 'snlRNA', 'snoRNA', 'snoRNA_pseudogene', 'snRNA', 'snRNA_pseudogene', 'SRP_RNA', 'tmRNA', 'tRNA', 'tRNA_pseudogene','ribozyme']
-	SupraFamily=[Coding, NonCoding, Pseudogene, Predictif]
-	SupraFamilyName=['Coding', 'NonCoding', 'Pseudogene', 'Predictif']
+	GITDIR = os.getcwd()+'/'
+	SupraFamilyName = ['Coding', 'NonCoding', 'Pseudogene', 'Predictif']
 	dicoFam = createDicoFamily()
 	
 	if (chromosome == 'all'):
@@ -633,11 +634,6 @@ def main () :
 		index = directory+'/'+specie+'_transcript_unspliced_chr'+chromosome+'_Index.txt'
 		indextranscriptBiotype = path+'/transcriptType/transcriptType_chr'+chromosome
 		fileG4InTranscriptome = '/home/local/USHERBROOKE/bels2814/Documents/These/HUMAN/HS_chr'+chromosome+'_G4InTranscript.txt'
-
-	# Assignation of variable for the start
-	NumberTranscriptByCat={} # dictionary of list of number of each for each rna type (position 0 = all gene, position 1 = gene with G4)
-	rnaTypeDetected=[] # list of rnaType detected in this species
-	
 	# Filling dictionary
 	BiotypeByTranscript = rF.createDictionaryBiotypeByTranscript(indextranscriptBiotype)
 	AnnotationTranscript = rF.GetAnnotationTranscript(index, dicoFam["Coding"],
@@ -651,55 +647,40 @@ def main () :
 	NumberTranscriptByCat = GetNumberTranscriptByCat(LenghtByTranscript,
 													NumbersG4Transcript,
 													dicoFam["Coding"])
-	
-	rnaTypeDetected = CreateRnaTypeDetected(LenghtByTranscript,rnaTypeDetected)
+	rnaTypeDetected = CreateRnaTypeDetected(LenghtByTranscript)
 	
 	column='RNA Type\tTotal Length\t#PG4r\tDensity\t#Tr\t#TrWithPG4r\t%Tr'
 	outfilename= open(GITDIR+'resultsTable/'+choice+'.csv',"w")
 	
+	condition = 'Total'
+	liste = []
+	for fam in SupraFamilyName:
+		liste.append(EnrichmentByFamily(fam, dicoFam[fam], condition, LenghtByTranscript,
+					NumbersG4Transcript, NumberTranscriptByCat))
+	liste.append(computeOverall(liste, 1000, 100))
+	header = 'Whole transcriptome'
+	PrintInFile (outfilename,header,column,liste)
+	
 	if (choice == 'Coding'):
-		liste=[]
-		condition='Total'
-		liste.append(EnrichssmentByFamily ('Coding', Coding,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichssmentByFamily ('NonCoding', NonCoding,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichssmentByFamily ('Pseudogene', Pseudogene,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichssmentByFamily ('Predictif', Predictif,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
-		header='Whole transcriptome'
-		PrintInFile (outfilename,header,column,liste)
-		###
-		liste=EnrichssmentByRnaType ('Coding', Coding,'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
+		liste=EnrichmentByRnaType ('Coding', dicoFam["Coding"],'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
 		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
 		header='By mRNA Subclass '
 		PrintInFile (outfilename,header,column,liste)
-		###
 		conditions=[['Exon','Intron','Splicing'],['5','CDS','3', 'junction_5_CDS', 'junction_CDS_3'],['junction_CDS_Intron','junction_Intron_CDS','junction_CDS_CDS']]
 		headers=[['Exon','Intron','Splicing Site'],["5'UTR",'CDS',"3'UTR", 'Codon start', 'Codon stop'],['Donor splicing site','Acceptor splicing site','Splicing junction']]
 		for condition in conditions:
 			for state in condition:
-				#liste=EnrichssmentByFamily ('Coding', Coding,state,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat)
-				liste=EnrichssmentByFamilyLocalisation('Coding', Coding,state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
+				liste=EnrichmentByFamilyLocalisation('Coding', dicoFam["Coding"],state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
 				header=headers[conditions.index(condition)][condition.index(state)]
 				PrintInFile (outfilename,header,column,liste)
-
 	elif (choice == 'NonCoding'):
-		liste=[]
-		condition='Total'
-		liste.append(EnrichssmentByFamily ('Coding', Coding,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichssmentByFamily ('NonCoding', NonCoding,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichssmentByFamily ('Pseudogene', Pseudogene,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichssmentByFamily ('Predictif', Predictif,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
-		header='Whole transcriptome'
-		PrintInFile (outfilename,header,column,liste)
-		###
-		liste.append(EnrichssmentByFamily ('LongNC', LongNC,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichssmentByFamily ('ShortNC', ShortNC,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
+		liste.append(EnrichmentByFamily ('LongNC', dicoFam["LongNC"],condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
+		liste.append(EnrichmentByFamily ('ShortNC', dicoFam["ShortNC"],condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
 		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
 		header='By ncRNA groupe'
 		PrintInFile (outfilename,header,column,liste)
 		###
-		liste=EnrichssmentByRnaType ('LongNC', LongNC,'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
+		liste=EnrichmentByRnaType('LongNC', dicoFam["LongNC"],'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
 		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
 		header=header='By long ncRNA Subclass '
 		PrintInFile (outfilename,header,column,liste)
@@ -709,53 +690,26 @@ def main () :
 		for condition in conditions:
 			for state in condition:
 				#liste=EnrichssmentByFamily ('LongNC', LongNC,state,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat)
-				liste=EnrichssmentByFamilyLocalisation('LongNC', LongNC,state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
+				liste=EnrichmentByFamilyLocalisation('LongNC', dicoFam["LongNC"],state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
 				header=headers[conditions.index(condition)][condition.index(state)]
 				PrintInFile (outfilename,header,column,liste)
 		###
-		liste=EnrichssmentByRnaType ('ShortNC', ShortNC,'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
+		liste=EnrichmentByRnaType ('ShortNC', ShortNC,'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
 		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
 		header=header='By short ncRNA Subclass '
 		PrintInFile (outfilename,header,column,liste)
-	
-	
 	else:
-		
-
-		liste=[]
-		condition='Total'
-		liste.append(EnrichssmentByFamily ('Coding', Coding,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichssmentByFamily ('NonCoding', NonCoding,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichssmentByFamily ('Pseudogene', Pseudogene,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
-		liste.append(EnrichssmentByFamily ('Predictif', Predictif,condition,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat))
+		liste=EnrichmentByRnaType ('Pseudogene', Pseudogene,'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
 		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
-
-		header='Whole transcriptome'
-		PrintInFile (outfilename,header,column,liste)
-		
-		
-		#print '-----------------------------------------------------'
-
-
-		liste=EnrichssmentByRnaType ('Pseudogene', Pseudogene,'Total',LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
-		liste.append(['Overall',sum([x[1]for x in liste]),sum([x[2]for x in liste]),round(sum([x[2]for x in liste])/float(sum([x[1]for x in liste]))*1000,4),sum([x[4]for x in liste]),sum([x[5]for x in liste]),round(sum([x[5]for x in liste])/float(sum([x[4]for x in liste]))*100,4)])
-
-
-
 		header='By pseudogene Subclass '
 		PrintInFile (outfilename,header,column,liste)
 		####
 		conditions=[['ExonNC','IntronNC','Splicing'],['junction_ExonNC_IntronNC','junction_IntronNC_ExonNC','junction_ExonNC_ExonNC']]
 		headers=[['Exon','Intron','Splicing Site'],['Donor splice site','Acceptor splice site','Splicing Junction ']]
 		for condition in conditions:
-			
 			for state in condition:
-				#liste=EnrichssmentByFamily ('Pseudogene', Pseudogene,state,LenghtByTranscript,NumbersG4Transcript,NumberTranscriptByCat)
-				
-				liste=EnrichssmentByFamilyLocalisation('Pseudogene', Pseudogene,state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
+				liste=EnrichmentByFamilyLocalisation('Pseudogene', dicoFam["Pseudogene"],state,LenghtByTranscript,NumbersG4Transcript, rnaTypeDetected,NumberTranscriptByCat)
 				header=headers[conditions.index(condition)][condition.index(state)]
 				PrintInFile (outfilename,header,column,liste)
-	
-
 
 main()
