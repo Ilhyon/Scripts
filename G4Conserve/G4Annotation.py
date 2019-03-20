@@ -764,8 +764,8 @@ def build_arg_parser():
 	parser.add_argument ('-p', '--path', default = GITDIR+'data')
 	parser.add_argument ('-chr', '--chromosome', default = 'X')
 	parser.add_argument ('-specie', '--specie', default = 'HS')
-	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
-	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 4.5)
+	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = -4.51)
+	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 0)
 	parser.add_argument ('-G4NN', '--THRESHOLD_G4NN', default = 0.5)
 	parser.add_argument ('-E', '--EXTENSION', default = 100)
 	parser.add_argument ('-W', '--WINDOW', default = 60)
@@ -792,6 +792,7 @@ def main () :
 	# file which contain info by transcript for this chromosome
 	indexBiotypeTranscript = path+'/transcriptType/transcriptType_chr'+chromosome
 	# file which contain biotype of transcript for this chromosome
+	print "Chromosome " + chromosome
 	BiotypeByTranscript = rF.createDictionaryBiotypeByTranscript(indexBiotypeTranscript)
 	StrandByGene = createDictionaryStrandByGene(index)
 	AnnotationTranscript = rF.GetAnnotationTranscript(index, 
@@ -821,9 +822,9 @@ def main () :
 					G4InTranscript, G4InGenome, TranscriptPerG4,
 					AnnotationTranscript, G4DetectedInJunction, ProteinCoding,
 					'Junction')
-	print len(G4InTranscript)
 	extractionG4InTranscript(GITDIR+'results/perChromosome', specie, chromosome, G4InTranscript)	
 	extractionG4InGenome(GITDIR+'results/perChromosome', specie, chromosome, G4InGenome)	
 	extractionTranscriptPerG4(GITDIR+'results/perChromosome', specie, chromosome, TranscriptPerG4)
+	print "\t Done."
 	
 main()
