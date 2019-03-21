@@ -16,54 +16,6 @@ def build_arg_parser():
 	parser.add_argument ('-sp', '--specie', default = 'MM')
 	return parser
 
-def importGTF(sp):
-	filename = "/home/anais/Documents/Data/Genomes/"+sp+"/"+sp+".gtf"
-	exists = os.path.isfile(filename)
-	if exists :	
-		dicoFeature = {}
-		with open(filename) as f: # file opening
-			content = f.read()
-			lines = content.split('\n')
-			for l in lines: # browse all lines
-				if not l.startswith('#') and l:
-					words=l.split('\t')
-					attributes = words[8].split(';')
-					idGene = attributes[0].split('"')[1]
-					feature = words[2]
-					chrm = words[0]
-					startFeature = words[3]
-					endFeature = words[4]
-					strand = words[6]
-					strand = changeStrandFormat(strand)
-					biotype = retrieveBiotypeFronAttributes(attributes)
-					if feature == "exon" :
-						idTr = retrieveIdTrFronAttributes(attributes)
-						rank, idExon = retrieveInfoExonFronAttributes(attributes)
-						dicoFeature.update(createKeyTranscript(dicoFeature, idGene, idTr, "Exon"))
-						dicoFeature[idTr]["Exon"].update({idExon : {"Chromosome" : chrm,
-																	"Start" : startFeature,
-																	"End" :endFeature,
-																	"Biotype" : biotype,
-																	"Strand" : strand,
-																	"Rank" : rank}})
-					elif feature == "five_prime_utr" :
-						idTr = retrieveIdTrFronAttributes(attributes)
-						dicoFeature.update(createKeyTranscript(dicoFeature, idGene, idTr, "5UTR"))
-						dicoFeature[idTr]["5UTR"].update({"Chromosome" : chrm,
-															"Start" : startFeature,
-															"End" :endFeature,
-															"Biotype" : biotype,
-															"Strand" : strand})
-					elif feature == "three_prime_utr" :
-						idTr = retrieveIdTrFronAttributes(attributes)
-						dicoFeature.update(createKeyTranscript(dicoFeature, idGene, idTr, "3UTR"))
-						dicoFeature[idTr]["3UTR"].update({"Chromosome" : chrm,
-															"Start" : startFeature,
-															"End" :endFeature,
-															"Biotype" : biotype,
-															"Strand" : strand})
-	return dicoFeature
-
 def writeTranscriptFile(sp, dicoFeature) :
 	words = sp.split("_")
 	letters = [word[0] for word in words]
@@ -141,10 +93,10 @@ def changeStrandFormat(strand) :
 		strand = -1
 	return strand
 
-def retrieveBiotypeFronAttributes(attributes) :
+def retrieveBiotypeFronAttributes(attributes, feature) :
 	biotype = ""
 	for attribute in attributes:
-		if re.search("transcript_biotype", attribute):
+		if re.search(feature+"_biotype", attribute):
 			biotype = attribute.split('"')[1]
 	return biotype
 
@@ -193,13 +145,77 @@ def createKeyTranscript(dico, idGene, idTr, feature) :
 		dico[idTr].update({feature : {}})
 	return dico
 
+def importGTF(filename):
+	exists = os.path.isfile(filename)
+	if exists :	
+		dicoTr = {}
+		dicoGene = {}
+		with open(filename) as f: # file opening
+			content = f.read()
+			lines = content.split('\n')
+			for l in lines: # browse all lines
+				if not l.startswith('#') and l:
+					words=l.split('\t')
+					attributes = words[8].split(';')
+					idGene = attributes[0].split('"')[1]
+					feature = words[2]
+					chrm = words[0]
+					startFeature = words[3]
+					endFeature = words[4]
+					strand = words[6]
+					strand = changeStrandFormat(strand)
+					biotype = retrieveBiotypeFronAttributes(attributes, feature)
+					if feature == "exon" :
+						idTr = retrieveIdTrFronAttributes(attributes)
+						rank, idExon = retrieveInfoExonFronAttributes(attributes)
+						dicoTr.update(createKeyTranscript(dicoTr, idGene, idTr, "Exon"))
+						dicoTr[idTr]["Exon"].update({idExon : {"Chromosome" : chrm,
+																"Start" : startFeature,
+																"End" :endFeature,
+																"Biotype" : biotype,
+																"Strand" : strand,
+																"Rank" : rank}})
+					elif feature == "five_prime_utr" :
+						idTr = retrieveIdTrFronAttributes(attributes)
+						dicoTr.update(createKeyTranscript(dicoTr, idGene, idTr, "5UTR"))
+						dicoTr[idTr]["5UTR"].update({"Chromosome" : chrm,
+													"Start" : startFeature,
+													"End" :endFeature,
+													"Biotype" : biotype,
+													"Strand" : strand})
+					elif feature == "three_prime_utr" :
+						idTr = retrieveIdTrFronAttributes(attributes)
+						dicoTr.update(createKeyTranscript(dicoTr, idGene, idTr, "3UTR"))
+						dicoTr[idTr]["3UTR"].update({"Chromosome" : chrm,
+													"Start" : startFeature,
+													"End" :endFeature,
+													"Biotype" : biotype,
+													"Strand" : strand})
+					elif feature == "gene":
+						dicoGene.update({idGene : {"Chromosome" : chrm,
+													"Start" : startFeature,
+													"End" :endFeature,
+													"Biotype" : biotype,
+													"Strand" : strand}})
+					elif feature == "transcript":
+						idTr = retrieveIdTrFronAttributes(attributes)
+						if idTr not in dicoTr:
+							dicoTr.update({idTr : {}})
+						dicoTr[idTr].update({"Chromosome" : chrm,
+											"Start" : startFeature,
+											"End" :endFeature,
+											"Biotype" : biotype,
+											"Strand" : strand})
+	return dicoTr, dicoGene
+
 def main () :
 	parser = build_arg_parser()
 	arg = parser.parse_args()
 	sp=arg.specie	# specie to parse
 	print "GTF for "+sp
-	dicoFeature = importGTF(sp)
-	writeTranscriptFile(sp, dicoFeature)
+	dicoTr, dicoGene = importGTF(sp)
+	pprint(dicoTr)
+	# ~ writeTranscriptFile(sp, dicoTr)
 	print "\tDone"
 
 main()

@@ -6,16 +6,26 @@ import argparse
 
 ########################################################################
 def parserBold(filename):
-	fileparse = []
 	e1 = r"(?i)(?P<run>g{3,})(.{1,7}?)(?P=run)(.{1,7}?)(?P=run)(.{1,7}?)(?P=run)"
 	with open(filename) as f: # file opening
 		content = f.read()
 		lines = content.split('\n')
-		for l in lines: #parcour de toute les lignes
-			#~ print "---------------------------------"
-			#~ print l
+		for l in lines:
 			if(re.search(e1,l)):
-				print re.findall(e1,l)
+				print l
+			# ~ if not l.startswith('Gene') and l:
+				# ~ words = l.split('\t')
+				# ~ if words[2].split("r")[0] :
+					# ~ chrm = words[2].split("r")[1]
+				# ~ else :
+					# ~ chrm = ""
+				# ~ geneID = words[0]
+				# ~ sequence = words[6]
+				# ~ G4type= words[1]
+				# ~ folding = words[7]
+				# ~ if folding == "1" and geneID != "Artificial" and re.search("WT", G4type):
+					# ~ if(re.search(e1,l)):
+						# ~ print re.findall(e1,sequence)
 ########################################################################
 def ExtractionG4InTranscript(directory, specie, chromosome, G4InTranscript):
 	output= open(directory+"/"+specie+"_chr"+chromosome+"_G4InTranscript_Unique.txt","w") ## file opening
@@ -25,7 +35,7 @@ def ExtractionG4InTranscript(directory, specie, chromosome, G4InTranscript):
 ########################################################################
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Unique')
-	parser.add_argument ('-p', '--path', default = '/home/anais/Documents/Data/Mouse/mouseEssai/out/MM_Uniq_G4InTranscript.txt')
+	parser.add_argument ('-p', '--path', default = '/home/anais/Documents/Data/G4RNA/G4_G4nn')
 	parser.add_argument ('-sf', '--subfamily', default = 'non_stop_decay')
 	parser.add_argument ('-s', '--specie', default = 'MM')
 	return parser

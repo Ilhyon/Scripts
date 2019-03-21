@@ -1,14 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-:v
 
-# This script is a parser. 
-# Inputs :
-#	- gtf -> information on genes
-#	- fasta -> entire fasta for a chromosome
-# Output :
-#	- fasta -> a fasta file containing all gene of one specie
-# If a gene is on the reverse strand, the sequence is also reversed like
-# in ensembl.
+"""
+``init.py`` **module description**:
+This module has as input a fasta file of an entire chromosome but also
+a gtf file from ensemble containing all inforation about genes and 
+transcripts.
+This script will parse the fasta file of a chromosome into a fasta file 
+containing all genes of this chromosome.
+For the assembly that were used, they are the one from pan-compara.
+.. moduleauthor:: Anaìs Vannutelli, Jean-Pierre Perreault and Aida Ouangraoua
+December 2018
+Université de Sherbrooke Canada
+Laboratoty CoBiUS and Jean-Pierre Perreault
+"""
 
 import re
 import os
@@ -23,7 +28,7 @@ def build_arg_parser():
 
 def reverseSequence(Sequence) :
 	"""
-		Create the reverse complement of a DNA sequence
+		Create the reverse complement of a DNA sequence.
 	"""
 	reverse = ""
 	for n in Sequence:
@@ -95,12 +100,22 @@ def importGTF(sp, dicoChromosome) :
 						elif strand == "-":
 							strand = "-1"
 						if chrm in dicoChromosome :
-							# -1 for the indice in python : start at 0 and not 1
-							# +1 for the sequence :
-							# 1 2 3 4 5 6 7 8 9
-							# A T C G G G T A G
-							# 6-3 = 3 but there is 4 nucleotides so 6-3 +1 = 4
-							geneSequence = dicoChromosome[chrm][(int(startFeature)-1):(int(endFeature)-1+1)]
+							if int(startFeature) > 0 and endFeature > 0:
+								"""
+								-1 for coords because in python : start at 0 and not 1
+								+1 for the sequence :
+								1 2 3 4 5 6 7 8 9
+								A T C G G G T A G
+								exemple : 6-3 = 3 but there is 4 nucleotides
+								so 6-3 +1 = 4
+								"""
+								geneSequence = dicoChromosome[chrm][(int(startFeature)-1):(int(endFeature)-1+1)]
+							elif int(startFeature) < 0 :
+								# genes overlaping the origin of 
+								# replication in bacteria
+								negSeq = dicoChromosome[chrm][int(startFeature):] # sequence before the origin of replication (for some bacteria)
+								posSeq = dicoChromosome[chrm][0:int(endFeature)] # sequence after the origin of replication
+								geneSequence = negSeq + posSeq
 							dicoGene.update({idGene : {"Chromosome" : chrm, "Start" : startFeature, "End" : endFeature, "Strand" : strand, "Sequence" : geneSequence}})
 	return dicoGene
 	

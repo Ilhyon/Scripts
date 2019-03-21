@@ -601,8 +601,10 @@ def returnG4InGene(G4DetectedInGene,
 						endG4 = dicoLine['WindowEnd']
 					else: 
 						# cf calcul 1 from calculCoords
-						startG4 = dicoLine['WindowEnd']
-						endG4 = dicoLine['WindowStart']
+						startG4 = dicoLine['GeneEnd'] - \
+								(dicoLine['WindowStart'] -\
+								dicoLine['GeneStart'])
+						endG4 = startG4 - (len(dicoLine['WindowSeq'])) + 1
 					# initialization of a list for eahc score
 					listeCGcC = [ dicoLine['cGcC'] ]
 					listeG4Hunter = [ dicoLine['g4H'] ]
@@ -615,7 +617,7 @@ def returnG4InGene(G4DetectedInGene,
 					if dicoLine['Strand'] == '1' :
 						endG4 = dicoLine['WindowEnd']
 					else :
-						startG4 = dicoLine['WindowEnd']
+						endG4 = startG4 - (len(sequenceG4)) + 1
 					listeCGcC.append(dicoLine['cGcC'])
 					listeG4Hunter.append(dicoLine['g4H'])
 					listeG4NN.append(dicoLine['g4NN'])
@@ -764,8 +766,8 @@ def build_arg_parser():
 	parser.add_argument ('-p', '--path', default = GITDIR+'data')
 	parser.add_argument ('-chr', '--chromosome', default = 'X')
 	parser.add_argument ('-specie', '--specie', default = 'HS')
-	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = -4.51)
-	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 0)
+	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
+	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 4.5)
 	parser.add_argument ('-G4NN', '--THRESHOLD_G4NN', default = 0.5)
 	parser.add_argument ('-E', '--EXTENSION', default = 100)
 	parser.add_argument ('-W', '--WINDOW', default = 60)
