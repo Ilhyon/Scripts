@@ -147,6 +147,31 @@ def createKeyTranscript(dico, idGene, idTr, feature) :
 		dico[idTr].update({feature : {}})
 	return dico
 
+def importGTFSequence(filename):
+	dicoGene = {}
+	with open(filename) as f: # file opening
+		content = f.read()
+		lines = content.split('\n')
+		for l in lines: # browse all lines
+			if not l.startswith('#') and l:
+				words = l.split('\t')
+				idGene = words[8].split(';')[0].split('"')[1]
+				feature = words[2]
+				if feature == "gene" :
+					chrm = words[0]
+					startFeature = words[3]
+					endFeature = words[4]
+					strand = words[6]
+					if strand == "+":
+						strand = "1"
+					elif strand == "-":
+						strand = "-1"
+					dicoGene[idGene] = {'Chromosome' : chrm,
+										'geneStart' : int(startFeature),
+										'geneEnd' : int(endFeature),
+										'Strand' : strand}
+	return dicoGene
+
 def importGTF(filename):
 	exists = os.path.isfile(filename)
 	if exists :
