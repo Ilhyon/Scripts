@@ -7,7 +7,7 @@ import pandas as pd
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
-	GITDIR=os.getcwd()+'/'
+	# GITDIR = os.getcwd()+'/'
 	parser.add_argument ('-p', '--path', default = '/home/anais/Documents/Data/Genomes')
 	parser.add_argument ('-sp', '--specie', default = 'yersinia_pestis_biovar_microtus_str_91001')
 	return parser
@@ -30,4 +30,4 @@ if __name__ == '__main__':
 	sp = arg.specie
 	filename = path+'/'+sp+'/'+sp+'.gtf'
 	dicoTr, dicoGene = Parser_gtf.importGTF(filename)
-	mainDetectpG4(dicoTr, dicoGene, dfpG4)
+	main(dicoTr, dicoGene, dfpG4)

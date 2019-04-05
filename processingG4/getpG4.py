@@ -21,7 +21,7 @@ def getChromosomalPositionForwardStrand(position,
 									junLength,
 									startIntron,
 									endIntron):
-	""" 
+	"""
 		Give chromosomal positions of G4 around a junction,
 		in a forward gene.
 	"""
@@ -29,7 +29,7 @@ def getChromosomalPositionForwardStrand(position,
 		upstreamLength = junLength - position
 		position = startIntron - 1 - upstreamLength
 	else:	# downstream sequence
-		downstreamLength = position - junLength 
+		downstreamLength = position - junLength
 		position = endIntron + 1 + downstreamLength - 1
 	return position
 
@@ -37,7 +37,7 @@ def getChromosomalPositionReverseStrand(position,
 									junLength,
 									startIntron,
 									endIntron):
-	""" 
+	"""
 		Give chromosomal positions of G4 around a junction,
 		in a reverse gene.
 	"""
@@ -71,7 +71,7 @@ def getChromosomalCoord(pG4Start, pG4End, geneDesc, junctionLength):
 					junctionLength,
 					intronStart,
 					intronEnd)
-		
+
 	else: # gene on reverse strand
 		pG4Start = getChromosomalPositionReverseStrand(pG4Start,
 					junctionLength,
@@ -86,12 +86,12 @@ def getChromosomalCoord(pG4Start, pG4End, geneDesc, junctionLength):
 		pG4End = tmp
 	return pG4Start, pG4End
 
-def changeCoordByStrand(start, end):
-	if start > end: # gene on reverse strand
-		tmp = start
-		start = end
-		end = tmp
-	return start, end
+def changeCoordByStrand(pG4rStart, pG4rEnd, pG4rSeq, strand,
+						geneStart, geneEnd):
+	if strand == "-1":
+		pG4rStart = geneStart - (pG4rStart - geneEnd)
+		pG4rEnd = pG4rStart - (len(pG4rSeq)) + 1
+	return pG4rStart, pG4rEnd
 
 def mergeWindows(dfTmp, feature, junctionLength):
 	"""
@@ -99,18 +99,23 @@ def mergeWindows(dfTmp, feature, junctionLength):
 	"""
 	lastRow = len(dfTmp.index) -1
 	geneDesc = dfTmp.geneDesc.iloc[0]
-	geneId = geneDesc.split("|")[0]
+	geneDescSplit = geneDesc.split("|")
+	geneId = geneDescSplit[0]
+	strand = geneDescSplit[2]
+	geneStart = int(geneDescSplit[3])
+	geneEnd = int(geneDescSplit[4])
 	meancGcC = dfTmp.cGcC.mean()
 	meanG4H = dfTmp.G4H.mean()
 	meanG4NN = dfTmp.G4NN.mean()
-	pG4Start = dfTmp.wStart.iloc[0]
-	pG4End = dfTmp.wEnd.iloc[lastRow]
-	pG4Start, pG4End = changeCoordByStrand(pG4Start, pG4End)
+	pG4Start = int(dfTmp.wStart.iloc[0])
+	pG4End = int(dfTmp.wEnd.iloc[lastRow])
+	pG4rSeq = mergeOverlappingSequences(dfTmp)
+	pG4Start, pG4End = changeCoordByStrand(pG4Start, pG4End, pG4rSeq, strand,
+		geneStart, geneEnd)
 	if feature == "Junction":
 		if pG4Start < junctionLength and pG4End > junctionLength :
 			pG4Start, pG4End = getChromosomalCoord(pG4Start, pG4End,
 								geneDesc, junctionLength)
-			pG4Seq = mergeOverlappingSequences(dfTmp)
 			pG4 = {"geneDesc" : [geneDesc], "Gene" : geneId,
 					"cGcC" : [meancGcC], "G4H" : [meanG4H], "G4NN" : [meanG4NN],
 					"pG4Start" : [pG4Start], "pG4End" : [pG4End],
@@ -119,11 +124,10 @@ def mergeWindows(dfTmp, feature, junctionLength):
 		else:
 			pG4 = None
 	else:
-		pG4Seq = mergeOverlappingSequences(dfTmp)
 		pG4 = {"geneDesc" : [geneDesc], "Gene" : geneId,
 				"cGcC" : [meancGcC], "G4H" : [meanG4H], "G4NN" : [meanG4NN],
 				"pG4Start" : [pG4Start], "pG4End" : [pG4End],
-				"seqG4" : [pG4Seq],
+				"seqG4" : [pG4rSeq],
 				"Feature" : [feature]}
 	return pG4
 
@@ -137,7 +141,7 @@ def filterOnScores(dicoParam, dfWindows):
 	dfWindows = dfWindows[ dfWindows.G4NN >= dicoParam["g4NN"] ].dropna()
 	return dfWindows
 
-def mainDetectpG4(filename, dicoParam, feature):
+def main(filename, dicoParam, feature):
 	dfpG4 = pd.DataFrame()
 	dfTmp = pd.DataFrame()
 	dfWindows = pd.read_csv(filename, sep='\t', index_col=0)
@@ -148,20 +152,19 @@ def mainDetectpG4(filename, dicoParam, feature):
 	dfWindows = filterOnScores(dicoParam, dfWindows)
 	dfTmp = dfTmp.append(dfWindows[0:1]) # store the first window
 	for w in range(1,len(dfWindows)): # w for window
-		# ~ print dfWindows[w:w+1] #-> ligne w
-		# browses all windows over thresholds, exept the first
+		# browses all windows over thresholds, exept the first one
 		if (dfWindows.wStart.iloc[w] >= dfWindows.wStart.iloc[w-1] and
 		dfWindows.wStart.iloc[w] <= dfWindows.wEnd.iloc[w-1] and
 		dfWindows.geneDesc.iloc[w] == dfWindows.geneDesc.iloc[w-1]):
-			# add window for current pG4
+			# if window overlap, add window at the current pG4
 			dfTmp = dfTmp.append(dfWindows[w:w+1])
 		else: # new pG4
 			dfTmp = pd.DataFrame.from_dict(mergeWindows(dfTmp,
 					feature, dicoParam["junctionLength"]))
 			dfpG4 = dfpG4.append(dfTmp)
-			dfTmp = dfWindows.iloc[w:w+1] 
+			dfTmp = dfWindows.iloc[w:w+1]
 			# reinitiate the dfTmp with the new pG4
 	return dfpG4
 
 if __name__ == '__main__':
-	mainDetectpG4(filename, dicoParam, feature)
+	main(filename, dicoParam, feature)

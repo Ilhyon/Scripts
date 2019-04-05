@@ -40,25 +40,27 @@ def createListCodingProtein():
 					'TR_V_gene']
 	return codingProtein
 
-def main(dicoParam, path, chromosome, GITDIR, dicoTr, dicoGene):
+def main(dicoParam, path, dicoTr, dicoGene):
 	codingProtein = createListCodingProtein()
 	dfpG4 = pd.DataFrame()
 	G4DetectedInJunction = {}
-	directory = path+'/chr'+chromosome
-	# directory containing data for a chromosome
-	for path, dirs, files in os.walk(directory): # for each element of the directory to passed
+	directory = path + '/CSVFile'
+	# directory containing data for a specie
+	for path, dirs, files in os.walk(directory):
+		# for each element of the directory to passed
 		for filename in files: # for each files
-			inputfile = directory+'/'+filename
+			inputfile = directory + '/' + filename
 			if ('gene_unspliced' in filename and '.csv' in filename ):
-				# windows in genes	
-				dfpG4 = dfpG4.append(getpG4.mainDetectpG4(inputfile,
+				# windows in genes
+				dfpG4 = dfpG4.append(getpG4.main(inputfile,
 						dicoParam, "Gene"))
 				dfpG4 = dfpG4.reset_index(drop=True)
-			elif ('transcript_unspliced' in filename and '.csv' in filename): ## for G4 in junction CDS-CDS --> from splicing
-				dfpG4 = dfpG4.append(getpG4.mainDetectpG4(inputfile,
-						dicoParam,"Junction"))
-				dfpG4 = dfpG4.reset_index(drop=True)
-	G4Annotation.main(dicoTr, dicoGene, dfpG4)
+			# elif ('transcript_unspliced' in filename and '.csv' in filename): ## for G4 in junction CDS-CDS --> from splicing
+			# 	dfpG4 = dfpG4.append(getpG4.main(inputfile,
+			# 			dicoParam,"Junction"))
+			# 	dfpG4 = dfpG4.reset_index(drop=True)
+	print '\t'+str(len(dfpG4))
+	# G4Annotation.main(dicoTr, dicoGene, dfpG4)
 
 def createDicoParam(arg):
 	dicoParam = {"g4H" : float(arg.THRESHOLD_G4H),
@@ -68,13 +70,13 @@ def createDicoParam(arg):
 				"windowLength" : int(arg.EXTENSION),
 				"step" : int(arg.STEP)}
 	return dicoParam
-	
+
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
-	GITDIR=os.getcwd()+'/'
-	parser.add_argument ('-p', '--path', default = GITDIR+'data')
-	parser.add_argument ('-chr', '--chromosome', default = 'Y')
-	parser.add_argument ('-sp', '--specie', default = 'HS')
+	GITDIR = os.getcwd()+'/'
+	parser.add_argument ('-p', '--path', default = GITDIR)
+	parser.add_argument ('-sp', '--specie', default = \
+		'yersinia_pestis_biovar_microtus_str_91001')
 	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
 	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 4.5)
 	parser.add_argument ('-G4NN', '--THRESHOLD_G4NN', default = 0.5)
@@ -86,17 +88,17 @@ def build_arg_parser():
 if __name__ == '__main__':
 	parser = build_arg_parser()
 	arg = parser.parse_args()
-	path = arg.path # directory which contain all the directory chromosome
-	chromosome = arg.chromosome
-	specie = arg.specie
+	sp = arg.specie
+	path = arg.path + sp
 	dicoParam = createDicoParam(arg)
-	GITDIR = os.getcwd()
-	print "Chromosome : "+chromosome
-	dicoTr, dicoGene = Parser_gtf.importGTF('/home/anais/Documents/Data/Genomes/homo_sapiens/homo_sapiens.gtf')
+	print "Specie : " + sp
+	dicoTr, dicoGene = Parser_gtf.importGTF('/home/anais/Documents/Data/' + \
+		'Genomes/yersinia_pestis_biovar_microtus_str_91001/' + \
+		'yersinia_pestis_biovar_microtus_str_91001.gtf')
 	print "\tImport gtf done"
-	main(dicoParam, path, chromosome, GITDIR, dicoTr, dicoGene)
+	main(dicoParam, path, dicoTr, dicoGene)
 	print "\tDone"
-	
-	
+
+
 	# ~ listeG4InGeneEntire={}
 	# ~ listeG4InGeneJunction={}

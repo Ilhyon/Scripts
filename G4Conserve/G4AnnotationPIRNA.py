@@ -8,7 +8,6 @@ contact: sarah.belhamiti@usherbrooke.ca
 
 This software is a computer program whose annote the G4 region of one chromosome of one specie.
 
-
 ---------------------------------------------------
 
 ``G4Annotation`` **module description**:
@@ -25,24 +24,10 @@ December 2017
 
 """
 
-import csv, math, numpy
-import string
-import subprocess
-import Bio.Align.Applications
 import sys
-import Bio
 import os
-import scipy.sparse as sparse
 import re
-import random
-import matplotlib as mpl 
-import matplotlib.pyplot as plt
-import numpy as np
 import argparse
-from Bio import SeqIO
-from scipy import stats
-from pylab import *
-import numpy as np 
 
 
 def GetLengthFraction(positionA,positionB):
@@ -58,13 +43,13 @@ def GetLengthFraction(positionA,positionB):
 	    length: integer
 		lenght between two positions
 	"""
-	length=0
-	if ((positionA and positionB) != ""): # because some transcript doesn't have 5' for exemple (and start5 and end5 will be == '')
-		length=(abs(int(positionA)-int(positionB)))+1
-	return int(length)
+	length = 0
+	if (positionA and positionB) != "":
+		# some transcript doesn't have 5' 
+		length = ( abs( int(positionA) - int(positionB) ) ) + 1
+	return length
 
-######################################################################################################################################################
-def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool): ## for G4 in gene
+def ReturnG4InGene(G4DetectedInGene, inputfile, parametersTool):
 	""" Add informations in dictionary with informations of region G4 detected (score cgCc, scote G4Hunter, sequence and score G4NN) for each 
 		regions of G4 discovered in the genes
 
@@ -237,10 +222,6 @@ def main () :
 	print 'Length of all piRNA (nt):	'+str(length)
 	print 'Densité in Kb :	'+str(round(len(G4DetectedInGene)/ float(length) * 1000,2))
 	print 'Percent piRNA with Kb:	'+str(round(len(G4DetectedInGene)/ float(len(piRNA)) * 100,2))
-
-	
-		
-	
 	
 main()
 	

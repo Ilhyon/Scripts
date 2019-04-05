@@ -48,7 +48,7 @@ def addWindowToSequenceG4(g4Seq, windowSeq, step, windowLength):
 		g4Seq += windowSeq[-step:] # take the stepsize added
 	return g4Seq
 
-def positionChromosomiqueGenePositif(position,
+def getChromosomalPositionForwardStrand(position,
 									junLength,
 									startIntron,
 									endIntron): # convert a position of an Intron in chromosomique position (gene +)
@@ -56,13 +56,15 @@ def positionChromosomiqueGenePositif(position,
 		Give chromosomal positions of G4 around a junction,
 		in a forward gene.
 	"""
-	if position <= junLength:	# because start G4 classifier from 0
-		position = startIntron - 1 - junLength + position
+	if position <= junLength:	# upstream sequence
+		upstreamLength = junLength - position
+		position = startIntron - 1 - upstreamLength
 	else:	# downstream sequence
-		position = endIntron + 1 - junLength + position - 1
+		downstreamLength = position - junLength 
+		position = endIntron + 1 + downstreamLength - 1
 	return position
 
-def positionChromosomiqueGeneNegatif(position,
+def getChromosomalPositionReverseStrand(position,
 									junLength,
 									startIntron,
 									endIntron):	# convert a position of an Intron in chromosomique position (gene -)
@@ -134,6 +136,21 @@ def CreateDictionaryStrandByGene (filename):
 					dico[gene]=strand
 	return dico
 
+def getChromosomalPositionForJunction(coord, strand, junLength,
+									startFirstWindow,
+									endFirstWindow):
+	if strand == "1":
+		coord = getChromosomalPositionForwardStrand(coord,
+												junLength,
+												startFirstWindow,
+												endFirstWindow)
+	else:
+		coord = getChromosomalPositionReverseStrand(coord,
+												junLength,
+												startFirstWindow,
+												endFirstWindow)
+	return coord
+
 def readLineG4Screener(line, StrandByGene, feature):
 	"""
 		There is many information in the output of G4RNA screener so 
@@ -145,14 +162,20 @@ def readLineG4Screener(line, StrandByGene, feature):
 	dicoLine = {feature+"Description" : words[1],
 				"GeneID" : words[1].split("|")[0],
 				"Strand" : StrandByGene[words[1].split("|")[0]],
-				feature+"Start" : int(words[1].split("|")[1]),
-				feature+"End" : int(words[1].split("|")[2]),
 				"cGcC" : float(words[2]),
 				"g4H" : float(words[3]),
 				"WindowSeq" : words[4],
 				"WindowStart" : int(words[5]),
 				"WindowEnd" : int(words[6]),
 				"g4NN" : float(words[7])}
+	if feature == "Gene":
+		dicoLine.update({feature+"Start" : int(words[1].split("|")[1]),
+						feature+"End" : int(words[1].split("|")[2])})
+	else:
+		# for a junction, it is the coord of the intron
+		dicoLine.update({feature+"Start" : int(words[1].split("|")[1].split("-")[0]),
+						feature+"End" : int(words[1].split("|")[1].split("-")[1])})
+				
 	return dicoLine
 
 def windowOverUpdateDicoTmppG4(dicoTmp, dicoLine,
@@ -181,8 +204,8 @@ def windowOverUpdateDicoTmppG4(dicoTmp, dicoLine,
 		dicoTmp[startG4]["g4Sequence"] = g4Seq
 	return dicoTmp
 
-def windowUnderUpdateDicoTmppG4(dicoTmp, dicoLine, G4DetectedInGene,
-								startG4):
+def windowUnderUpdateDicoTmppG4(dicoTmp, dicoLine, G4DetectedInFeature,
+								startG4, feature):
 	"""
 		Processing of the information if we are under a threshold
 	"""
@@ -193,23 +216,25 @@ def windowUnderUpdateDicoTmppG4(dicoTmp, dicoLine, G4DetectedInGene,
 		idG4 = createIdG4(dicoLine["GeneID"],
 						startG4, dicoTmp[startG4]["End"],
 						dicoLine["Strand"])
-		if idG4 not in G4DetectedInGene and dicoLine["Strand"]: 
-			G4DetectedInGene[idG4] = {"cGcC" : str(meanCGcC),
-									"g4H" : str(meanG4Hunter),
-									"pG4Sequence" : dicoTmp[startG4]["g4Sequence"],
-									"g4NN" : str(meanG4NN)}
+		if idG4 not in G4DetectedInFeature and dicoLine["Strand"]: 
+			G4DetectedInFeature[idG4] = {"cGcC" : str(meanCGcC),
+										"g4H" : str(meanG4Hunter),
+										"pG4Sequence" : dicoTmp[startG4]["g4Sequence"],
+										"g4NN" : str(meanG4NN)}
 			del dicoTmp[startG4]			
-	return G4DetectedInGene, dicoTmp
+	return G4DetectedInFeature, dicoTmp
 
-def ReturnG4InGene(G4DetectedInGene,
-					inputfile,
-					dicoParametersTool,
-					StrandByGene,
-					feature):
+def getG4(G4DetectedInFeature,
+		inputfile,
+		dicoParametersTool,
+		StrandByGene,
+		feature):
 	"""
-		Return a dictionary with informations of region G4 detected 
-		(score cgCc, scote G4Hunter, sequence and score G4NN) for each 
-		regions of G4 discovered in genes.
+		This function filter the output of G4RNA screener. We get all
+		windows upper all thresholds. Those windows will be region of 
+		predicted G4.
+		It returns a dictionary with G4 and some informations :
+		score cgCc, scote G4Hunter, sequence and score G4NN. 
 	"""
 	dicoTmp = {}
 	windowCounter = 0
@@ -233,7 +258,17 @@ def ReturnG4InGene(G4DetectedInGene,
 					windowCounter += 1
 					descriptionGeneOverThreshold = dicoLine[feature+"Description"]
 					if windowCounter == 1:
-						startG4, endG4 = retrieveG4CoordByStrand(dicoLine["Strand"],
+						if feature == "Junction" :
+							startFirstWindow = dicoLine[feature+"Start"]
+							endFirstWindow = dicoLine[feature+"End"]
+							startG4 = getChromosomalPositionForJunction(dicoLine["WindowStart"], 
+								dicoLine["Strand"],
+								dicoParametersTool["junctionLength"],
+								startFirstWindow,
+								endFirstWindow)
+							endG4 = dicoLine["WindowEnd"]
+						else :
+							startG4, endG4 = retrieveG4CoordByStrand(dicoLine["Strand"],
 											dicoLine["WindowStart"],
 											dicoLine["WindowEnd"])
 					elif windowCounter > 1:
@@ -251,16 +286,34 @@ def ReturnG4InGene(G4DetectedInGene,
 					dicoLine["g4NN"] < dicoParametersTool["g4NN"]):
 					# one of the score is under the threshold or 
 					# this windows contain info of an other gene
-					if startG4:
-						G4DetectedInGene, dicoTmp = windowUnderUpdateDicoTmppG4(dicoTmp,
-																			dicoLine,
-																			G4DetectedInGene,
-																			startG4)
+					# ~ if startG4 == 24206069 and windowCounter > 0:
+						# ~ pprint(dicoTmp)
+						# ~ print windowCounter
+						# ~ print "-------------"
+					if startG4 and windowCounter > 0:
+						if feature == "Junction":
+							endG4 = getChromosomalPositionForJunction(endG4,
+								dicoLine["Strand"],
+								dicoParametersTool["junctionLength"],
+								startFirstWindow,
+								endFirstWindow)
+							dicoTmp[startG4]["End"] = endG4
+							if isG4OnJunction(startG4, endG4,
+								dicoLine[feature+"Start"], dicoLine[feature+"End"]):
+								G4DetectedInFeature, dicoTmp = windowUnderUpdateDicoTmppG4(dicoTmp,
+														dicoLine,
+														G4DetectedInFeature,
+														startG4,feature)
+						else:
+							G4DetectedInFeature, dicoTmp = windowUnderUpdateDicoTmppG4(dicoTmp,
+														dicoLine,
+														G4DetectedInFeature,
+														startG4, feature)
 						windowCounter = 0
 					descriptionGeneOverThreshold = dicoLine[feature+"Description"]
-	return G4DetectedInGene
+	return G4DetectedInFeature
 
-def G4IsOnJunction(startG4, endG4, startBorder, endBorder):
+def isG4OnJunction(startG4, endG4, startBorder, endBorder):
 	""" 
 		Return a boolean : if the G4 is on the junction it's true 
 		elswise it's false.
@@ -269,98 +322,6 @@ def G4IsOnJunction(startG4, endG4, startBorder, endBorder):
 	if (startG4 <startBorder and endG4 >startBorder) or (startG4 >startBorder and endG4<startBorder):
 		onJunction=True
 	return onJunction
-
-def ReturnG4InJunction(inputfile,
-					dicoParam,
-					StrandByGene,
-					feature): ## for G4 in junction 
-	"""
-		Return a dictionary with informations of region G4 detected 
-		(score cgCc, scote G4Hunter, sequence and score G4NN) for each 
-		regions of G4 discovered in junctions.
-	"""
-	dicoTmp = {}
-	windowCounter = 0
-	startG4 = None
-	descriptionGeneOverThreshold = ""
-	with open(inputfile) as f: # file opening
-		content = f.read()
-		lines = content.split('\n')
-		for line in lines:
-			if (re.search('^[0-9]', line)): # if the line is not the header of the file 
-				dicoLine = readLineG4Screener(line, StrandByGene,"Ah")
-				if (cGcC >= dicoParam["cGcC"] and
-					g4H >= dicoParam["g4H"] and
-					g4NN >= dicoParam["g4NN"] and
-					startWindow):
-					# if window contain value > several threshold
-					onJunction = False
-					passed = True # passage over the differents threshold for this window
-					if oldPassed != passed: # if it's the first windows (beginning if the passage)
-						listeCGcC = [] # list which will contain the values of score cgCG for windows over the THRESHOLD_CGCC
-						listeG4H = []  # list which will contain the values of score G4H for windows over the THRESHOLD_G4H
-						listeG4NN = []  # list which will contain the values of score G4NN for windows over the THRESHOLD_G4NN
-						descriptionOverThreshold = description # assignation of description for this variable
-						gene_startG4 = gene
-						sequenceG4 = sequenceWindow
-						startFirstWindow = startBorder
-						endFirstWindow = endBorder
-						oldPassed = passed # assignation, we pass over the thresholds
-						#if (strand == str(1)): # if gene positif
-						startG4 = int(startWindow) # startG4 same as startWindow of G4 screener
-						endG4 = int(endWindow) # endG4 same as endWindow of G4 screener
-						#else:	# if gene negatif
-							#startG4=int(endBorder)-(int(startWindow)-int(startBorder)) # calcul of startG4
-							#endG4=int(startG4)-(len(sequence))+1 # calcul of endG4
-						listeCGcC = [cGcC] # add score cGCc  in the list 
-						listeG4Hunter = [g4H] # add score G4H  in the list 
-						listeG4NN = [g4NN] # add score G4NN  in the list 	
-					else: # if it's not the first windows above the thresholds
-						if len(sequenceWindow) < dicoParam["windowLength"]: 
-						# if the sequence is shorter than the window's 
-						# length (can happen for the last one)
-							overlap = dicoParam["windowLength"]
-							- dicoParam["step"]
-							sequenceG4 += sequenceWindow[-len(sequenceWindow) - overlap :]
-							# we only retrieve the end of the sequence
-						else:
-							sequenceG4 += sequenceWindow[- dicoParam["step"]:] # take the stepsize added
-							# we only retrieve the sequence that don't
-							# overlap the previous window
-						#if (strand == str(1)): # if gene positif
-						endG4=endWindow # endG4 moves from the end of the first window,  same as endWindow of G4 screener
-						#else: # if gene negatif
-							#endG4=int(startG4)-(len(sequenceG4))+1 # endG4 moves from the end of the first window, # calcul of endG4
-						lastRow=numRow # numRow of the last windows study over the threshols
-						listeCGcC.append(cGcC) # add score cGcC for the windows over the threshold
-						listeG4Hunter.append(g4H) # add score G4H for the windows over the threshold
-						listeG4NN.append(g4NN) # add score G4NN for the windows over the threshold
-					
-				if (cGcC < dicoParam["cGcC"] or
-					g4H < dicoParam["g4H"] or
-					g4NN < dicoParam["g4NN"] or
-					descriptionOverThreshold != description):
-				# if one of the score is under his threshold or if this windows contain info of an other gene
-					passed=False # passed passed became false (pass under the thresolds)
-					if (oldPassed != passed ): # last windows before under the thresolds
-						meanCGcC=mean(listeCGcC) # mean of the score cGcC will be the score for this region containing G4
-						meanG4Hunter=mean(listeG4Hunter) # mean of the score G4Hunter will be the score for this region containing G4
-						meanG4NN=mean(listeG4NN) # mean of the score G4NN will be the score for this region containing G4
-						oldPassed=passed # assignation, we pass under the thresholds
-						if (strand == "1"): # if gene positif
-							startG4=positionChromosomiqueGenePositif(startG4, dicoParam["junctionLength"], startFirstWindow, endFirstWindow)	
-							endG4=positionChromosomiqueGenePositif(endG4, dicoParam["junctionLength"], startFirstWindow, endFirstWindow)
-						else: # if gene negatif
-							startG4=positionChromosomiqueGeneNegatif(startG4, dicoParam["junctionLength"], startFirstWindow, endFirstWindow)	
-							endG4=positionChromosomiqueGeneNegatif(endG4, dicoParam["junctionLength"], startFirstWindow, endFirstWindow)
-						if (strand == "1"):
-							headerG4=gene+"|"+str(startG4)+"|"+str(endG4)+"|"+strand
-						elif (strand == "-1"):
-							headerG4=gene+"|"+str(endG4)+"|"+str(startG4)+"|"+strand
-						onJonction=G4IsOnJunction(startG4, endG4, startBorder, endBorder)	
-						if headerG4 not in G4DetectedInJunction and  onJonction :
-							G4DetectedInJunction[headerG4]=str(meanCGcC), str(meanG4Hunter),sequenceG4 , str(meanG4NN)
-	return G4DetectedInJunction	
 
 def BorderOfTranscript(start5 , end5 , start3 , end3, exonList, intronList, strand):
 	listBorder=[]
@@ -762,6 +723,7 @@ def main () :
 					'TR_V_gene']
 	
 	G4DetectedInGene = {}
+	G4DetectedInJunction = {}
 	listeG4InGeneEntire={}
 	listeG4InGeneJunction={}
 
@@ -780,16 +742,20 @@ def main () :
 			inputfile=directory+'/'+filename
 			##EXTRACTION OF G4 BY SCORE G4NN > THRESHOLD IN A DICO
 			if ('gene_unspliced' in filename and '.csv' in filename ): ## for G4 in gene	
-				G4DetectedInGene=ReturnG4InGene(G4DetectedInGene,
-												inputfile,
-												dicoParameterG4Screener,
-												StrandByGene,
-												"Gene")
-				print len(G4DetectedInGene)
-			elif ('transcript_unspliced' in filename and '.csv' in filename): ## for G4 in junction CDS-CDS --> from splicing
-				G4DetectedInJunction=ReturnG4InJunction(inputfile,
+				G4DetectedInGene = getG4(G4DetectedInGene,
+										inputfile,
 										dicoParameterG4Screener,
-										StrandByGene)
+										StrandByGene,
+										"Gene")
+				# ~ print len(G4DetectedInGene)
+			elif ('transcript_unspliced' in filename and '.csv' in filename): ## for G4 in junction CDS-CDS --> from splicing
+				G4DetectedInJunction = getG4(G4DetectedInJunction,
+										inputfile,
+										dicoParameterG4Screener,
+										StrandByGene,
+										"Junction")
+				print len(G4DetectedInJunction)
+				# ~ pprint(G4DetectedInJunction)
 	
 	listeG4InGeneEntire=GetlisteG4InGene(G4DetectedInGene, listeG4InGeneEntire)
 	listeG4InGeneJunction=GetlisteG4InGene(G4DetectedInJunction, listeG4InGeneJunction)

@@ -85,7 +85,8 @@ def importG4RNA():
 	"""
 		Read a file that contain all G4 from G4RNA screener (file from 31/01/2019)
 		The db maybe update later so the results could change.
-		Return a dictionary of G4 folded and WT : {chr : {start-end : {"Start","End", "Sequence"}}
+		Return a dictionary of G4 folded and WT : 
+		{chr : {start-end : {"Start","End", "Sequence"}}
 	"""
 	directory = "/home/anais/Documents/Data/G4RNA/G4rna_G4.txt"
 	dicoG4RNA = {}

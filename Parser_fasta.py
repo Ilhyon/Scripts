@@ -4,9 +4,9 @@
 """
 ``init.py`` **module description**:
 This module has as input a fasta file of an entire chromosome but also
-a gtf file from ensemble containing all inforation about genes and 
+a gtf file from ensemble containing all inforation about genes and
 transcripts.
-This script will parse the fasta file of a chromosome into a fasta file 
+This script will parse the fasta file of a chromosome into a fasta file
 containing all genes of this chromosome.
 For the assembly that were used, they are the one from pan-compara.
 .. moduleauthor:: Anaìs Vannutelli, Jean-Pierre Perreault and Aida Ouangraoua
@@ -48,7 +48,7 @@ def reverseSequence(Sequence) :
 
 def importFastaChromosome(sp) :
 	"""
-		Import the fasta of a chromosome, they are downloaded from 
+		Import the fasta of a chromosome, they are downloaded from
 		ensembl FTP for each specie. The assembly are those that are
 		present in pan-compara.
 		{chromosome : sequence}
@@ -80,14 +80,14 @@ def importGTF(sp, dicoChromosome) :
 	"""
 	filename = "/home/anais/Documents/Data/Genomes/"+sp+"/"+sp+".gtf"
 	exists = os.path.isfile(filename)
-	if exists :	
+	if exists :
 		dicoGene = {}
 		with open(filename) as f: # file opening
 			content = f.read()
 			lines = content.split('\n')
 			for l in lines: # browse all lines
 				if not l.startswith('#') and l:
-					words=l.split('\t')
+					words = l.split('\t')
 					idGene = words[8].split(';')[0].split('"')[1]
 					feature = words[2]
 					if feature == "gene" :
@@ -111,14 +111,14 @@ def importGTF(sp, dicoChromosome) :
 								"""
 								geneSequence = dicoChromosome[chrm][(int(startFeature)-1):(int(endFeature)-1+1)]
 							elif int(startFeature) < 0 :
-								# genes overlaping the origin of 
+								# genes overlaping the origin of
 								# replication in bacteria
 								negSeq = dicoChromosome[chrm][int(startFeature):] # sequence before the origin of replication (for some bacteria)
 								posSeq = dicoChromosome[chrm][0:int(endFeature)] # sequence after the origin of replication
 								geneSequence = negSeq + posSeq
 							dicoGene.update({idGene : {"Chromosome" : chrm, "Start" : startFeature, "End" : endFeature, "Strand" : strand, "Sequence" : geneSequence}})
 	return dicoGene
-	
+
 def createFastaGene(sp, dicoGene):
 	"""
 		Create the output file, a fasta file with all gene of the specie.
@@ -147,15 +147,18 @@ def createFastaGene(sp, dicoGene):
 			cpt1 += 60
 			cpt2 += 60
 	output.close()
-	
-def main () :
-	parser = build_arg_parser()
-	arg = parser.parse_args()
-	sp=arg.specie # specie to analyse
-	print "Fasta for "+sp
+
+def main(sp):
+	print "Fasta for " + sp
 	dicoChromosome = importFastaChromosome(sp)
 	dicoGene = importGTF(sp, dicoChromosome)
 	createFastaGene(sp, dicoGene)
 	print "\tDone"
 
 main()
+
+if __name__ == '__main__':
+	parser = build_arg_parser()
+	arg = parser.parse_args()
+	sp = arg.specie # specie to analyse
+	main(sp)

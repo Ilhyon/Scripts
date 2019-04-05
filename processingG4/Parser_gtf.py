@@ -21,7 +21,8 @@ def writeTranscriptFile(sp, dicoFeature) :
 	letters = [word[0] for word in words]
 	ini = "".join(letters)
 	ini = ini.upper()
-	output = open("/home/anais/Documents/Data/Genomes/"+sp+"/"+ini+"_transcript_unspliced.txt","w") # file opening for reading
+	output = open("/home/anais/Documents/Data/Genomes/" + sp + "/" + ini + \
+		"_transcript_unspliced.txt","w") # file opening for reading
 	for transcript in dicoFeature :
 		nbExon = len(dicoFeature[transcript]["Exon"])
 		gene = dicoFeature[transcript]["Gene"]
@@ -32,9 +33,10 @@ def writeTranscriptFile(sp, dicoFeature) :
 			end = dicoFeature[transcript]["Exon"][exon]["End"]
 			strand = str(dicoFeature[transcript]["Exon"][exon]["Strand"])
 			rank = dicoFeature[transcript]["Exon"][exon]["Rank"]
-			start5UTR, end5UTR, start3UTR, end3UTR = retrieveUTRFromDico(dicoFeature[transcript])
-			line = gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t" #start of the line
-			if int(rank) == 1 and int(rank) == nbExon : 
+			start5UTR, end5UTR, start3UTR, end3UTR = \
+				retrieveUTRFromDico(dicoFeature[transcript])
+			line = gene+"\t"+transcript+"\t"+chromosome+"\t"+biotype+"\t"
+			if int(rank) == 1 and int(rank) == nbExon :
 				# if the transcript contain only one exon we put all the UTR
 				output.write(line
 							+start5UTR+"\t"
@@ -147,7 +149,7 @@ def createKeyTranscript(dico, idGene, idTr, feature) :
 
 def importGTF(filename):
 	exists = os.path.isfile(filename)
-	if exists :	
+	if exists :
 		dicoTr = {}
 		dicoGene = {}
 		with open(filename) as f: # file opening
@@ -204,17 +206,16 @@ def importGTF(filename):
 						dicoTr[idTr].update({"Gene" : idGene,
 											"Chromosome" : chrm,
 											"Start" : startFeature,
-											"End" :endFeature,
+											"End" : endFeature,
 											"Biotype" : biotype,
 											"Strand" : strand})
+	else:
+		print "This file don't exist : " + filename
 	return dicoTr, dicoGene
 
-if __name__ == '__main__':
-	parser = build_arg_parser()
-	arg = parser.parse_args()
-	sp=arg.specie	# specie to parse
-	# ~ print "GTF for "+sp
-	dicoTr, dicoGene = importGTF(sp)
-	pprint(dicoTr)
-	# ~ writeTranscriptFile(sp, dicoTr)
-	# ~ print "\tDone"
+# if __name__ == '__main__':
+# 	parser = build_arg_parser()
+# 	arg = parser.parse_args()
+# 	sp = arg.specie	# specie to parse
+# 	dicoTr, dicoGene = importGTF(sp)
+# 	pprint(dicoTr)
