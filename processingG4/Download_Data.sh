@@ -11,8 +11,8 @@ for i in $(ls);do mkdir --parents ~/Documents/Data/Genomes/$i/Fasta;done
 #ensembl
 for i in pongo_abelii monodelphis_domestica anolis_carolinensis ornithorhynchus_anatinus danio_rerio gasterosteus_aculeatus;do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensembl.org/pub/release-95/fasta/$i/dna/*dna.chromosome*.fa.gz;done
 wget -P ~/Documents/Data/Genomes/gasterosteus_aculeatus/Fasta ftp://ftp.ensembl.org/pub/release-95/fasta/gasterosteus_aculeatus/dna/*dna.group*.fa.gz;
-wget -P ~/Documents/Data/Genomes/homo_sapiens/Fasta ftp://ftp.ensembl.org/pub/release-72/fasta/homo_sapiens/dna/*dna.chromosome*.fa.gz
-wget -P ~/Documents/Data/Genomes/mus_musculus/Fasta ftp://ftp.ensembl.org/pub/release-72/fasta/mus_musculus/dna/*dna.chromosome*.fa.gz
+wget -P ~/Documents/Data/Genomes/homo_sapiens/Fasta ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/*dna.chromosome*.fa.gz
+wget -P ~/Documents/Data/Genomes/mus_musculus/Fasta ftp://ftp.ensembl.org/pub/release-75/fasta/mus_musculus/dna/*dna.chromosome*.fa.gz
 wget -P ~/Documents/Data/Genomes/gallus_gallus/Fasta  ftp://ftp.ensembl.org/pub/release-75/fasta/gallus_gallus/dna/*dna.chromosome*.fa.gz
 wget -P ~/Documents/Data/Genomes/pan_troglodytes/Fasta ftp://ftp.ensembl.org/pub/release-75/fasta/pan_troglodytes/dna/*dna.chromosome*.fa.gz
 #metazoa
@@ -29,7 +29,7 @@ for i in $(ls);do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgen
 # retrive gtf file
 #ensembl
 for i in pongo_abelii monodelphis_domestica anolis_carolinensis ornithorhynchus_anatinus danio_rerio gasterosteus_aculeatus; do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensembl.org/pub/release-95/gtf/$i/*.chr.gtf.gz;done
-wget -P ~/Documents/Data/Genomes/homo_sapiens/ ftp://ftp.ensembl.org/pub/release-72/gtf/homo_sapiens/*.gtf.gz
+wget -P ~/Documents/Data/Genomes/homo_sapiens/ ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/*.gtf.gz
 wget -P ~/Documents/Data/Genomes/mus_musculus/ ftp://ftp.ensembl.org/pub/release-72/gtf/mus_musculus/*.gtf.gz
 wget -P ~/Documents/Data/Genomes/gallus_gallus/ ftp://ftp.ensembl.org/pub/release-75/gtf/gallus_gallus/*.gtf.gz
 wget -P ~/Documents/Data/Genomes/pan_troglodytes/ ftp://ftp.ensembl.org/pub/release-75/gtf/pan_troglodytes/*.gtf.gz

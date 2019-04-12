@@ -9,7 +9,7 @@ transcripts.
 This script will parse the fasta file of a chromosome into a fasta file
 containing all genes of this chromosome.
 For the assembly that were used, they are the one from pan-compara.
-.. moduleauthor:: Anaìs Vannutelli, Jean-Pierre Perreault and Aida Ouangraoua
+.. moduleauthor:: Anaìs Vannutelli, Aida Ouangraoua
 December 2018
 Université de Sherbrooke Canada
 Laboratoty CoBiUS and Jean-Pierre Perreault
@@ -145,8 +145,10 @@ def createFastaGene(sp, dicoGene):
 		end = dicoGene[gene]["geneEnd"]
 		Sequence = dicoGene[gene]["Sequence"]
 		strand = str(dicoGene[gene]["Strand"])
-		output.write(">" + gene + "|" + chromosome + "|" + strand + "|" + \
-	 		str(start) + "|" + str(end) + "\n")
+		header = '>'+ gene +' ENSG00000000457 chromosome:'+ \
+			dicoGene[gene]['Assembly'] +':'+ chromosome \
+			+':'+ str(start) +':'+ str(end) +':'+ strand
+		output.write(header + "\n")
 		nbLine = math.ceil( float( end - start ) / 60 )
 		cpt1 = 0
 		cpt2 = 60
@@ -159,11 +161,59 @@ def createFastaGene(sp, dicoGene):
 			cpt2 += 60
 	output.close()
 
+def getJunctionSequences(dicoChromosome, filename):
+	dicoJunction = {}
+	dicoTr, dicoGene = pgtf.importGTF(filename)
+	del dicoGene
+	dicoTr = pgtf.getIntron(dicoTr)
+	for tr in dicoTr:
+		if 'Intron' in dicoTr[tr]:
+			for intron in dicoTr[tr]['Intron']:
+				if intron != 'Chromosome' and intron != 'Strand':
+					if dicoTr[tr]['Chromosome'] in dicoChromosome:
+						header = '>'+ tr +' ENSG00000000457 chromosome:'+ \
+						dicoTr[tr]['Assembly'] \
+						+':'+ dicoTr[tr]['Chromosome'] \
+						+':'+ str(dicoTr[tr]['Intron'][intron]['Start']) \
+						+':'+ str(dicoTr[tr]['Intron'][intron]['End']) \
+						+':'+ dicoTr[tr]['Strand']
+						seq = dicoChromosome[dicoTr[tr]['Chromosome']]\
+								[dicoTr[tr]['End']-100:dicoTr[tr]['End']]
+						dicoJunction[header] = seq
+	return dicoJunction
+
+def writeFastaJunction(dicoJunction, sp):
+	words = sp.split("_")
+	letters = [word[0] for word in words]
+	ini = "".join(letters)
+	ini = ini.upper()
+	output = open("/home/anais/Documents/Data/Genomes/" + sp + "/" + ini + \
+		"_transcript_unspliced.txt","w")
+	for junction in dicoJunction:
+		start = junction.split(':')[3]
+		end = junction.split(':')[4]
+		strand = junction.split(':')[5]
+		sequence = dicoJunction[junction]
+		output.write(junction + "\n")
+		nbLine = math.ceil( float( len(sequence) ) / 60 )
+		cpt1 = 0
+		cpt2 = 60
+		if strand == "-1" :
+			Sequence = reverseSequence(sequence)
+		for i in range(0,int(nbLine)) :
+			output.write( sequence[cpt1:cpt2] + "\n" )
+			# to have a new line after 60 characters
+			cpt1 += 60
+			cpt2 += 60
+	output.close()
+
 def main(sp):
 	print "Fasta for " + sp
 	dicoChromosome = importFastaChromosome(sp)
 	dicoGene = getGeneSequence(sp, dicoChromosome)
 	createFastaGene(sp, dicoGene)
+	dicoJunction = getJunctionSequences(dicoChromosome, '/home/anais/Documents/Data/Genomes/saccharomyces_cerevisiae/saccharomyces_cerevisiae.gtf')
+	writeFastaJunction(dicoJunction, sp)
 	print "\tDone"
 
 if __name__ == '__main__':
