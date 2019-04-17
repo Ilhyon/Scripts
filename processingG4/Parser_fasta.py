@@ -19,8 +19,9 @@ import re
 import os
 import math
 import argparse
-import Parser_gtf as pgtf
 from pprint import pprint
+import Parser_gtf as pgtf
+import recurrentFunction as rF
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'Parser_Fasta')
@@ -54,7 +55,8 @@ def importFastaChromosome(sp) :
 	""" Import the fasta file contain the whole chromosome sequence.
 
 	Fasta files are downloaded from ensembl FTP for each specie. The assembly
-	are those that are present in pan-compara.
+	are those that are present in pan-compara. We also compute the GC content
+	of all chromosomes (genome) and print it.
 
 	:param sp: current specie.
 	:type sp: string
@@ -64,6 +66,7 @@ def importFastaChromosome(sp) :
 	"""
 	directory = "/home/anais/Documents/Data/Genomes/" + sp + "/Fasta/"
 	dicoChromosome = {}
+	count = { 'G' : 0, 'C' : 0, 'A' : 0, 'T' : 0}
 	listFile = os.listdir(directory)
 	for filename in listFile :
 		with open(directory+filename) as f: # file opening
@@ -74,7 +77,12 @@ def importFastaChromosome(sp) :
 				chrm = header.split(' ')[0][1:]
 				sequence = "".join(l[1:])
 				dicoChromosome.update({chrm : sequence})
-	print "dico fasta done"
+				for nucleotide in count:
+					count[nucleotide] += sequence.count(nucleotide)
+	print "\tDictionnary fasta done"
+	GCcontent = float(count['G'] + count['C']) / \
+		(count['G'] + count['C'] + count['A'] + count['T']) * 100
+	print '\tGC content in genome is: ' + str(GCcontent) + '.'
 	return dicoChromosome
 
 def getGeneSequence(sp, dicoChromosome) :
@@ -97,7 +105,8 @@ def getGeneSequence(sp, dicoChromosome) :
 	if exists :
 		dicoGene = pgtf.importGTFSequence(filename)
 		for geneId in dicoGene:
-			if dicoGene[geneId]['Chromosome'] in dicoChromosome :
+			chrm = dicoGene[geneId]['Chromosome']
+			if chrm in dicoChromosome :
 				if (dicoGene[geneId]['geneStart'] > 0 and
 					dicoGene[geneId]['geneEnd'] > 0):
 					"""
@@ -109,14 +118,14 @@ def getGeneSequence(sp, dicoChromosome) :
 					so 6-3 +1 = 4
 					"""
 					geneSequence = \
-						dicoChromosome[dicoGene[geneId]['Chromosome']]\
+						dicoChromosome[chrm]\
 						[ dicoGene[geneId]['geneStart']-1:\
 						(dicoGene[geneId]['geneEnd']-1+1) ]
 				elif dicoGene[geneId]['geneStart'] < 0 :
 					# genes overlaping the origin of
 					# replication in bacteria
-					negSeq = dicoChromosome[chrm]\
-						[int(dicoGene[geneId]['Chromosome']):]
+					negSeq = dicoChromosome[chrm] \
+						[- -int(dicoGene[geneId]['geneStart']):]
 						# sequence before the origin of replication
 					posSeq = dicoChromosome[chrm]\
 						[0:int(dicoGene[geneId]['geneEnd'])]
@@ -125,76 +134,48 @@ def getGeneSequence(sp, dicoChromosome) :
 				dicoGene[geneId].update({"Sequence" : geneSequence})
 	return dicoGene
 
-def createFastaGene(sp, dicoGene):
-	""" Creates the outputfile, which is a fasta file with all genes from a sp.
+def createFasta(sp, dicoFeature, featureType):
+	"""Writes a fasta file depending on the feature.
+
+	Fasta file are created for genes or junction. Header are formated like those
+	of Ensembl. The identifier is the gene/transcript id. G4RNA Screener uses a
+	regex which detects only Human gene/transcript id as stable id. For this
+	reasin, the stable id is always ENSG00000000457. If the feature is gene, we
+	compute the GC content of all genes and print it.
 
 	:param sp: current specie.
 	:type sp: string
-	:param dicoGene: all genes and their sequences, coordinates, etc.
-	:type dicoGene: dictionary
+	:param dicoFeature: all genes and their sequences, coordinates, etc.
+	:type dicoFeature: dictionary
+	:param featureType: gene/junction, used to create the correct file dependign on
+		the feature
+	:type featureType: string
 	"""
-	words = sp.split("_")
-	letters = [word[0] for word in words]
-	ini = "".join(letters)
-	ini = ini.upper()
-	output = open("/home/anais/Documents/Data/Genomes/" + sp + "/" + ini + \
-		"_gene_unspliced.txt","w")
-	for gene in dicoGene :
-		chromosome = dicoGene[gene]["Chromosome"]
-		start = dicoGene[gene]["geneStart"]
-		end = dicoGene[gene]["geneEnd"]
-		Sequence = dicoGene[gene]["Sequence"]
-		strand = str(dicoGene[gene]["Strand"])
-		header = '>'+ gene +' ENSG00000000457 chromosome:'+ \
-			dicoGene[gene]['Assembly'] +':'+ chromosome \
-			+':'+ str(start) +':'+ str(end) +':'+ strand
+	ini = rF.setUpperLetter(sp)
+	if featureType == 'gene':
+		output = open("/home/anais/Documents/Data/Genomes/" + sp + "/" + ini + \
+			"_gene_unspliced.txt","w")
+		count = { 'G' : 0, 'C' : 0, 'A' : 0, 'T' : 0}
+	else:
+		output = open("/home/anais/Documents/Data/Genomes/" + sp + "/" + ini + \
+			"_transcript_unspliced.txt","w")
+	for feature in dicoFeature:
+		if featureType == 'gene':
+			chromosome = dicoFeature[feature]["Chromosome"]
+			start = dicoFeature[feature]["geneStart"]
+			end = dicoFeature[feature]["geneEnd"]
+			sequence = dicoFeature[feature]["Sequence"]
+			strand = str(dicoFeature[feature]["Strand"])
+			header = '>'+ feature +' ENSG00000000457 chromosome:'+ \
+				dicoFeature[feature]['Assembly'] +':'+ chromosome \
+				+':'+ str(start) +':'+ str(end) +':'+ strand
+			for nucleotide in count:
+				count[nucleotide] += sequence.count(nucleotide)
+		else:
+			strand = feature.split(':')[5]
+			sequence = dicoFeature[feature]
+			header = feature
 		output.write(header + "\n")
-		nbLine = math.ceil( float( end - start ) / 60 )
-		cpt1 = 0
-		cpt2 = 60
-		if strand == "-1" :
-			Sequence = reverseSequence(Sequence)
-		for i in range(0,int(nbLine)) :
-			output.write( Sequence[cpt1:cpt2] + "\n" )
-			# to have a new line after 60 characters
-			cpt1 += 60
-			cpt2 += 60
-	output.close()
-
-def getJunctionSequences(dicoChromosome, filename):
-	dicoJunction = {}
-	dicoTr, dicoGene = pgtf.importGTF(filename)
-	del dicoGene
-	dicoTr = pgtf.getIntron(dicoTr)
-	for tr in dicoTr:
-		if 'Intron' in dicoTr[tr]:
-			for intron in dicoTr[tr]['Intron']:
-				if intron != 'Chromosome' and intron != 'Strand':
-					if dicoTr[tr]['Chromosome'] in dicoChromosome:
-						header = '>'+ tr +' ENSG00000000457 chromosome:'+ \
-						dicoTr[tr]['Assembly'] \
-						+':'+ dicoTr[tr]['Chromosome'] \
-						+':'+ str(dicoTr[tr]['Intron'][intron]['Start']) \
-						+':'+ str(dicoTr[tr]['Intron'][intron]['End']) \
-						+':'+ dicoTr[tr]['Strand']
-						seq = dicoChromosome[dicoTr[tr]['Chromosome']]\
-								[dicoTr[tr]['End']-100:dicoTr[tr]['End']]
-						dicoJunction[header] = seq
-	return dicoJunction
-
-def writeFastaJunction(dicoJunction, sp):
-	words = sp.split("_")
-	letters = [word[0] for word in words]
-	ini = "".join(letters)
-	ini = ini.upper()
-	output = open("/home/anais/Documents/Data/Genomes/" + sp + "/" + ini + \
-		"_transcript_unspliced.txt","w")
-	for junction in dicoJunction:
-		start = junction.split(':')[3]
-		end = junction.split(':')[4]
-		strand = junction.split(':')[5]
-		sequence = dicoJunction[junction]
-		output.write(junction + "\n")
 		nbLine = math.ceil( float( len(sequence) ) / 60 )
 		cpt1 = 0
 		cpt2 = 60
@@ -206,14 +187,65 @@ def writeFastaJunction(dicoJunction, sp):
 			cpt1 += 60
 			cpt2 += 60
 	output.close()
+	try:
+	  count
+	except:
+		pass
+	else:
+		GCcontent = float(count['G'] + count['C']) / \
+			(count['G'] + count['C'] + count['A'] + count['T']) * 100
+		print '\tGC content in genes is: ' + str(GCcontent) + '.'
+
+def getJunctionSequences(dicoChromosome, filename):
+	"""Gets junction sequence.
+
+	We retrieves the 100 nucleotids upstream an intron and the 100 nucleotides
+	downstream of the same intron. This sequence will be a junction sequence.
+	Its coordinates will be the start and the end of the intron which is
+	spliced.
+
+	:param dicoChromosome: contains all chromosomes sequences.
+	:type dicoChromosome: dictionary
+	:param filename: name of the gtf file. it will be imported
+	:type filename: string
+
+	:returns: dicoJunction, contains all junction and its sequence.
+	:rtype: dictionary:
+	"""
+	dicoJunction = {}
+	dicoTr, dicoGene = pgtf.importGTF(filename)
+	del dicoGene
+	dicoTr = pgtf.getIntron(dicoTr)
+	for tr in dicoTr:
+		if 'Intron' in dicoTr[tr]:
+			for intron in dicoTr[tr]['Intron']:
+				if intron != 'Chromosome' and intron != 'Strand':
+					if dicoTr[tr]['Chromosome'] in dicoChromosome:
+						tmp = dicoTr[tr]['Intron']
+						chrm = dicoTr[tr]['Chromosome']
+						header = '>'+ tr +' ENSG00000000457 chromosome:'+ \
+						dicoTr[tr]['Assembly'] \
+						+':'+ chrm \
+						+':'+ str(dicoTr[tr]['Intron'][intron]['Start']) \
+						+':'+ str(dicoTr[tr]['Intron'][intron]['End']) \
+						+':'+ dicoTr[tr]['Strand']
+						seq = dicoChromosome[chrm]\
+								[tmp['Start']-100:tmp['End']]
+						seq += dicoChromosome[chrm]\
+								[tmp['End']:tmp['End']+100]
+						if dicoTr[tr]['Intron']['Strand'] == '-1':
+							seq = reverseSequence(seq)
+						dicoJunction[header] = seq
+	return dicoJunction
 
 def main(sp):
 	print "Fasta for " + sp
+	filename = '/home/anais/Documents/Data/Genomes/' + sp + '/' + sp + '.gtf'
 	dicoChromosome = importFastaChromosome(sp)
 	dicoGene = getGeneSequence(sp, dicoChromosome)
-	createFastaGene(sp, dicoGene)
-	dicoJunction = getJunctionSequences(dicoChromosome, '/home/anais/Documents/Data/Genomes/saccharomyces_cerevisiae/saccharomyces_cerevisiae.gtf')
-	writeFastaJunction(dicoJunction, sp)
+	createFasta(sp, dicoGene, 'gene')
+	dicoJunction = getJunctionSequences(dicoChromosome, filename)
+	createFasta(sp, dicoJunction, 'junction')
 	print "\tDone"
 
 if __name__ == '__main__':

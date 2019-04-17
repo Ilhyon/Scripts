@@ -5,6 +5,7 @@ import re
 import argparse
 import os
 from pprint import pprint
+import recurrentFunction as rF
 
 # \file Parser_gtf.py
 # \author Anaïs Vannutelli 18129080
@@ -13,103 +14,63 @@ from pprint import pprint
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'Parser_gtf')
-	parser.add_argument ('-sp', '--specie', default = 'MM')
+	parser.add_argument ('-sp', '--specie', default = 'mus_musculus')
 	return parser
 
-def writeTranscriptFile(sp, dicoFeature) :
-	words = sp.split('_')
-	letters = [word[0] for word in words]
-	ini = ''.join(letters)
-	ini = ini.upper()
-	output = open('/home/anais/Documents/Data/Genomes/' + sp + '/' + ini + \
-		'_transcript_unspliced.txt','w') # file opening for reading
-	for transcript in dicoFeature :
-		nbExon = len(dicoFeature[transcript]['Exon'])
-		gene = dicoFeature[transcript]['Gene']
-		for exon in dicoFeature[transcript]['Exon'] :
-			chromosome = dicoFeature[transcript]['Exon'][exon]['Chromosome']
-			biotype = dicoFeature[transcript]['Exon'][exon]['Biotype']
-			start = dicoFeature[transcript]['Exon'][exon]['Start']
-			end = dicoFeature[transcript]['Exon'][exon]['End']
-			strand = str(dicoFeature[transcript]['Exon'][exon]['Strand'])
-			rank = dicoFeature[transcript]['Exon'][exon]['Rank']
-			start5UTR, end5UTR, start3UTR, end3UTR = \
-				retrieveUTRFromDico(dicoFeature[transcript])
-			line = gene+'\t'+transcript+'\t'+chromosome+'\t'+biotype+'\t'
-			if int(rank) == 1 and int(rank) == nbExon :
-				# if the transcript contain only one exon we put all the UTR
-				output.write(line
-							+start5UTR+'\t'
-							+end5UTR+'\t'
-							+start3UTR+'\t'
-							+end3UTR+'\t'
-							+start+'\t'
-							+end+'\t'
-							+rank+'\t'
-							+strand+'\n')
-			elif int(rank) == 1 :
-				# if it's not the only one exon but it's the first one,
-				# we add only the 5UTR
-				output.write(line
-							+start5UTR+'\t'
-							+end5UTR+'\t\t\t'
-							+start+'\t'
-							+end+'\t'
-							+rank+'\t'
-							+strand+'\n')
-			elif int(rank) == nbExon :
-				# if it's not the only one exon but it's the last one,
-				# we add only the 3UTR
-				output.write(line
-							+'\t\t'
-							+start3UTR+'\t'
-							+end3UTR+'\t'
-							+start+'\t'
-							+end+'\t'
-							+rank+'\t'
-							+strand+'\n')
-			else :
-				# it's only a 'midle' exon so we add no UTR
-				output.write(line
-							+'\t\t\t\t'
-							+start+'\t'
-							+end+'\t'
-							+rank+'\t'
-							+strand+'\n')
-	output.close()
-
-def writeIDGene(sp, dicoFeature) :
+def changeStrandFormat(strand):
+	"""Changes the format of the strand from +/- to 1/-1.
 	"""
-		Create a file with all gene ID. I don't use this file anymore
-		but I let the function just in case.
-	"""
-	output = open('/home/anais/Documents/Data/Genomes/'+sp+'/'+ini+'_GeneID.txt','w') # file opening for reading
-	for gene in dicoFeature :
-		output.write(gene+'\n')
-	output.close()
-
-def changeStrandFormat(strand) :
 	if strand == '+':
 		strand = '1'
 	elif strand == '-':
 		strand = '-1'
 	return strand
 
-def retrieveBiotypeFronAttributes(attributes, feature) :
+def retrieveBiotypeFronAttributes(attributes, feature):
+	"""Gets the biotype from attributes.
+
+	:param attributes: last colons of gtf file, contains a lot of informations
+		but is different depending on the feature.
+	:type attributes: list
+	:param feature: transcript, gene, exon, or utr.
+	:type feature: string
+
+	:returns: biotype of the feature. The biotype of a gene can be different
+		compared to the transcript biotype.
+	:rtype: string
+	"""
 	biotype = ''
 	for attribute in attributes:
 		if re.search(feature+"_biotype", attribute):
 			biotype = attribute.split('"')[1]
 	return biotype
 
-def retrieveIdTrFronAttributes(attributes) :
+def retrieveIdTrFronAttributes(attributes):
+	"""Gets the id transcript from attributes.
+
+	:param attributes: last colons of gtf file, contains a lot of informations
+		but is different depending on the feature.
+	:type attributes: list
+
+	:returns: idTr, transctipt identifier.
+	:rtype: string
+	"""
 	idTr = ''
 	for attribute in attributes:
 		if re.search('transcript_id', attribute):
 			idTr = attribute.split('"')[1]
 	return idTr
 
-def retrieveInfoExonFronAttributes(attributes) :
+def retrieveInfoExonFronAttributes(attributes):
+	"""Gets rank and exon number from attributes.
+
+	:param attributes: last colons of gtf file, contains a lot of informations
+		but is different depending on the feature.
+	:type attributes: list
+
+	:returns: rank, idExon of an exon.
+	:rtype: strings
+	"""
 	rank = 0
 	idExon = 0
 	for attribute in attributes:
@@ -119,10 +80,14 @@ def retrieveInfoExonFronAttributes(attributes) :
 			idExon = attribute.split('"')[1]
 	return rank, idExon
 
-def retrieveUTRFromDico(dico) :
-	"""
-		From the dictionary of feature, we retrieve the coordinates of
-		UTR if they exist
+def retrieveUTRFromDico(dico):
+	"""Gets UTR coords if they exist.
+
+	:param dico: contains all transcripts and their features.
+	:type dico: dictionary
+
+	:returns: start5UTR, end5UTR, start3UTR, end3UTR.
+	:rtypes: strings
 	"""
 	start5UTR = ''
 	end5UTR = ''
@@ -134,12 +99,12 @@ def retrieveUTRFromDico(dico) :
 		start3UTR, end3UTR = retrieveCoordUTRFromDico(dico['3UTR'])
 	return start5UTR, end5UTR, start3UTR, end3UTR
 
-def retrieveCoordUTRFromDico(dico) :
+def retrieveCoordUTRFromDico(dico):
 	start = dico["Start"]
 	end = dico["End"]
 	return start, end
 
-def createKeyTranscript(dico, idGene, idTr, feature) :
+def createKeyTranscript(dico, idGene, idTr, feature):
 	if idTr not in dico :
 		dico[idTr] = {"Gene" : idGene,
 						feature : {}}
@@ -147,7 +112,15 @@ def createKeyTranscript(dico, idGene, idTr, feature) :
 		dico[idTr].update({feature : {}})
 	return dico
 
-def importGTFSequence(filename):
+def importGTFGene(filename):
+	"""Imports genes features from the gtf file.
+
+	:param filename: name of the gtf file.
+	:type filename: string
+
+	:returns: dicoGene, contains all informations abotu genes.
+	:rtype: dictionary
+	"""
 	dicoGene = {}
 	with open(filename) as f: # file opening
 		content = f.read()
@@ -156,30 +129,45 @@ def importGTFSequence(filename):
 			if not l.startswith('#') and l:
 				words = l.split('\t')
 				idGene = words[8].split(';')[0].split('"')[1]
+				attributes = words[8]
 				feature = words[2]
 				if feature == "gene" :
 					chrm = words[0]
 					startFeature = int(words[3])
 					endFeature = int(words[4])
 					strand = words[6]
+					biotype = retrieveBiotypeFronAttributes(attributes,
+						words[8])
 					if strand == '+':
 						strand = '1'
 					elif strand == '-':
 						strand = '-1'
 					dicoGene[idGene] = {'Chromosome' : chrm,
-										'geneStart' : startFeature,
-										'geneEnd' : endFeature,
+										'Start' : startFeature,
+										'End' : endFeature,
 										'Strand' : strand,
+										'Biotype' : biotype,
 										'Assembly' : assembly}
 			elif re.search('genome-version', l):
 				assembly = l.split(' ')[1]
 	return dicoGene
 
 def importGTF(filename):
+	"""Imports gtf file.
+
+	This function aims to retrieve as more as possible informations contained
+	in the gtf file related to transcripts.
+
+	:param filelame: name of the gtf file.
+	:type filename: string
+
+	:returns: dicoTr, contains all transcripts from a psecie and all features
+		linked to it : UTR, exon, intron.
+	:rtype: dictionary
+	"""
 	exists = os.path.isfile(filename)
 	if exists :
 		dicoTr = {}
-		dicoGene = {}
 		with open(filename) as f: # file opening
 			content = f.read()
 			lines = content.split('\n')
@@ -221,13 +209,6 @@ def importGTF(filename):
 													'End' :endFeature,
 													'Biotype' : biotype,
 													'Strand' : strand})
-					elif feature == 'gene':
-						dicoGene.update({idGene : {'Chromosome' : chrm,
-													'Start' : startFeature,
-													'End' :endFeature,
-													'Biotype' : biotype,
-													'Strand' : strand,
-													'Assembly' : assembly}})
 					elif feature == 'transcript':
 						idTr = retrieveIdTrFronAttributes(attributes)
 						if idTr not in dicoTr:
@@ -243,7 +224,7 @@ def importGTF(filename):
 					assembly = l.split(' ')[1]
 	else:
 		print "This file don't exist : " + filename
-	return dicoTr, dicoGene
+	return dicoTr
 
 def computesCoordRank1(strand, start, end):
 	"""Computes the coordinates of the first intron of a transcript.
@@ -337,6 +318,19 @@ def setCoordReverseStrand(dico):
 	return dico
 
 def getIntron(dicoTr):
+	"""Gets all intron of a specie transcriptom.
+
+	We browse all transcripts of a specie and computes all intron coordinates.
+	Coordinates will be stored as chromosomal coordinates. This mean that the
+	start will always be inferior compare to the end.
+
+	:param dicoTr: contains all transcripts from a psecie and all features
+		linked to it : UTR, exon, intron.
+	:type dicoTr: dictionary
+
+	:returns: dicoTr, updated with introns.
+	:rtype: dictionary
+	"""
 	for tr in dicoTr:
 		if tr != 'Assembly':
 			if len(dicoTr[tr]['Exon']) > 2:
@@ -396,22 +390,62 @@ def getIntron(dicoTr):
 					setCoordReverseStrand(dicoTr[tr]['Intron']))
 	return dicoTr
 
-def countIntron(dicoTr):
+def countIntron(dicoTr, sp):
+	"""Counts the length of intron and write them in a file.
+
+	Some transcript have intron of 1 nucleotides. We computes the length of
+	introns to see for each species what's the range of the intron length.
+
+	:param dicoTr: contains all transcript of a specie and all features in it
+		(exon, utr, intron and coords).
+	:type dicoTr: dictionnary
+	:param sp: name of the specie.
+	:type sp: string
+	"""
 	lenIntron = []
+	ini = rF.setUpperLetter(sp)
 	for tr in dicoTr:
 		if 'Intron' in dicoTr[tr]:
 			for intron in dicoTr[tr]['Intron']:
 				if intron != 'Chromosome' and intron != 'Strand':
 					lenIntron.append(dicoTr[tr]['Intron'][intron]['End'] - \
 						dicoTr[tr]['Intron'][intron]['Start'])
-	print lenIntron
+	if lenIntron:
+		output = open('/home/anais/Documents/Data/Genomes/' + sp + '/' + ini + \
+			'_intron_length.txt','w')
+		output.write(sp + '\n')
+		output.write('\n'.join(str(x) for x in lenIntron))
+
+def writeIntron(sp, dico):
+	"""Writes a file with all intron coords.
+
+	:param sp: name of the specie.
+	:type sp: string
+	:param dico: contains all transcript and its features (utr, exon, intron).
+	:type dico: dictionary
+	"""
+	ini = rF.setUpperLetter(sp)
+	output = open('/home/anais/Documents/Data/Genomes/' + sp + '/' + ini + \
+		'_intron.txt','w')
+	for tr in dico:
+		if 'Intron' in dicoTr[tr]:
+			for intron in dicoTr[tr]['Intron']:
+				if intron != 'Chromosome' and intron != 'Strand':
+					line = tr + '\t' + dico[tr]['Chromosome'] + '\t' + \
+						str(dico[tr]['Intron'][intron]['Start']) + '\t' + \
+						str(dico[tr]['Intron'][intron]['End']) + '\t' + \
+						dico[tr]['Strand'] + '\n'
+					output.write(line)
+	output.close()
 
 if __name__ == '__main__':
 	parser = build_arg_parser()
 	arg = parser.parse_args()
 	sp = arg.specie	# specie to parse
+	print sp
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + \
 		"/" + sp + ".gtf"
 	dicoTr, dicoGene = importGTF(filename)
 	dicoTr = getIntron(dicoTr)
-	countIntron(dicoTr)
+	writeIntron(sp, dicoTr)
+	countIntron(dicoTr, sp)
