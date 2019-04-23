@@ -26,14 +26,14 @@ def changeStrandFormat(strand):
 		strand = '-1'
 	return strand
 
-def retrieveBiotypeFronAttributes(attributes, feature):
+def retrieveBiotypeFronAttributes(feature, attributes):
 	"""Gets the biotype from attributes.
 
+	:param feature: transcript, gene, exon, or utr.
+	:type feature: string
 	:param attributes: last colons of gtf file, contains a lot of informations
 		but is different depending on the feature.
 	:type attributes: list
-	:param feature: transcript, gene, exon, or utr.
-	:type feature: string
 
 	:returns: biotype of the feature. The biotype of a gene can be different
 		compared to the transcript biotype.
@@ -129,15 +129,15 @@ def importGTFGene(filename):
 			if not l.startswith('#') and l:
 				words = l.split('\t')
 				idGene = words[8].split(';')[0].split('"')[1]
-				attributes = words[8]
+				attributes = words[8].split(';')
 				feature = words[2]
 				if feature == "gene" :
 					chrm = words[0]
 					startFeature = int(words[3])
 					endFeature = int(words[4])
 					strand = words[6]
-					biotype = retrieveBiotypeFronAttributes(attributes,
-						words[8])
+					biotype = retrieveBiotypeFronAttributes(feature,
+						attributes)
 					if strand == '+':
 						strand = '1'
 					elif strand == '-':
@@ -182,7 +182,7 @@ def importGTF(filename):
 					endFeature = int(words[4])
 					strand = words[6]
 					strand = changeStrandFormat(strand)
-					biotype = retrieveBiotypeFronAttributes(attributes, feature)
+					biotype = retrieveBiotypeFronAttributes(feature, attributes)
 					if feature == 'exon' :
 						idTr = retrieveIdTrFronAttributes(attributes)
 						rank, idExon = retrieveInfoExonFronAttributes(attributes)

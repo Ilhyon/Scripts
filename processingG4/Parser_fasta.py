@@ -103,12 +103,12 @@ def getGeneSequence(sp, dicoChromosome) :
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + "/" + sp + ".gtf"
 	exists = os.path.isfile(filename)
 	if exists :
-		dicoGene = pgtf.importGTFSequence(filename)
+		dicoGene = pgtf.importGTFGene(filename)
 		for geneId in dicoGene:
 			chrm = dicoGene[geneId]['Chromosome']
 			if chrm in dicoChromosome :
-				if (dicoGene[geneId]['geneStart'] > 0 and
-					dicoGene[geneId]['geneEnd'] > 0):
+				if (dicoGene[geneId]['Start'] > 0 and
+					dicoGene[geneId]['End'] > 0):
 					"""
 					-1 for coords because in python : start at 0 and not 1
 					+1 for the sequence :
@@ -119,19 +119,21 @@ def getGeneSequence(sp, dicoChromosome) :
 					"""
 					geneSequence = \
 						dicoChromosome[chrm]\
-						[ dicoGene[geneId]['geneStart']-1:\
-						(dicoGene[geneId]['geneEnd']-1+1) ]
-				elif dicoGene[geneId]['geneStart'] < 0 :
+						[ dicoGene[geneId]['Start']-1:\
+						(dicoGene[geneId]['End']-1+1) ]
+				elif dicoGene[geneId]['Start'] < 0 :
 					# genes overlaping the origin of
 					# replication in bacteria
 					negSeq = dicoChromosome[chrm] \
-						[- -int(dicoGene[geneId]['geneStart']):]
+						[- -int(dicoGene[geneId]['Start']):]
 						# sequence before the origin of replication
 					posSeq = dicoChromosome[chrm]\
-						[0:int(dicoGene[geneId]['geneEnd'])]
+						[0:int(dicoGene[geneId]['End'])]
 						# sequence after the origin of replication
 					geneSequence = negSeq + posSeq
 				dicoGene[geneId].update({"Sequence" : geneSequence})
+	else:
+		print 'gtf do not exist'
 	return dicoGene
 
 def createFasta(sp, dicoFeature, featureType):
@@ -160,32 +162,33 @@ def createFasta(sp, dicoFeature, featureType):
 		output = open("/home/anais/Documents/Data/Genomes/" + sp + "/" + ini + \
 			"_transcript_unspliced.txt","w")
 	for feature in dicoFeature:
-		if featureType == 'gene':
-			chromosome = dicoFeature[feature]["Chromosome"]
-			start = dicoFeature[feature]["geneStart"]
-			end = dicoFeature[feature]["geneEnd"]
-			sequence = dicoFeature[feature]["Sequence"]
-			strand = str(dicoFeature[feature]["Strand"])
-			header = '>'+ feature +' ENSG00000000457 chromosome:'+ \
-				dicoFeature[feature]['Assembly'] +':'+ chromosome \
-				+':'+ str(start) +':'+ str(end) +':'+ strand
-			for nucleotide in count:
-				count[nucleotide] += sequence.count(nucleotide)
-		else:
-			strand = feature.split(':')[5]
-			sequence = dicoFeature[feature]
-			header = feature
-		output.write(header + "\n")
-		nbLine = math.ceil( float( len(sequence) ) / 60 )
-		cpt1 = 0
-		cpt2 = 60
-		if strand == "-1" :
-			Sequence = reverseSequence(sequence)
-		for i in range(0,int(nbLine)) :
-			output.write( sequence[cpt1:cpt2] + "\n" )
-			# to have a new line after 60 characters
-			cpt1 += 60
-			cpt2 += 60
+		if 'Sequence' in dicoFeature[feature]:
+			if featureType == 'gene':
+				chromosome = dicoFeature[feature]["Chromosome"]
+				start = dicoFeature[feature]["Start"]
+				end = dicoFeature[feature]["End"]
+				sequence = dicoFeature[feature]["Sequence"]
+				strand = str(dicoFeature[feature]["Strand"])
+				header = '>'+ feature +' ENSG00000000457 chromosome:'+ \
+					dicoFeature[feature]['Assembly'] +':'+ chromosome \
+					+':'+ str(start) +':'+ str(end) +':'+ strand
+				for nucleotide in count:
+					count[nucleotide] += sequence.count(nucleotide)
+			else:
+				strand = feature.split(':')[5]
+				sequence = dicoFeature[feature]["Sequence"]
+				header = feature
+			output.write(header + "\n")
+			nbLine = math.ceil( float( len(sequence) ) / 60 )
+			cpt1 = 0
+			cpt2 = 60
+			if strand == "-1" :
+				Sequence = reverseSequence(sequence)
+			for i in range(0,int(nbLine)) :
+				output.write( sequence[cpt1:cpt2] + "\n" )
+				# to have a new line after 60 characters
+				cpt1 += 60
+				cpt2 += 60
 	output.close()
 	try:
 	  count
@@ -213,15 +216,14 @@ def getJunctionSequences(dicoChromosome, filename):
 	:rtype: dictionary:
 	"""
 	dicoJunction = {}
-	dicoTr, dicoGene = pgtf.importGTF(filename)
-	del dicoGene
+	dicoTr = pgtf.importGTF(filename)
 	dicoTr = pgtf.getIntron(dicoTr)
 	for tr in dicoTr:
 		if 'Intron' in dicoTr[tr]:
 			for intron in dicoTr[tr]['Intron']:
 				if intron != 'Chromosome' and intron != 'Strand':
 					if dicoTr[tr]['Chromosome'] in dicoChromosome:
-						tmp = dicoTr[tr]['Intron']
+						tmp = dicoTr[tr]['Intron'][intron]
 						chrm = dicoTr[tr]['Chromosome']
 						header = '>'+ tr +' ENSG00000000457 chromosome:'+ \
 						dicoTr[tr]['Assembly'] \
@@ -235,7 +237,7 @@ def getJunctionSequences(dicoChromosome, filename):
 								[tmp['End']:tmp['End']+100]
 						if dicoTr[tr]['Intron']['Strand'] == '-1':
 							seq = reverseSequence(seq)
-						dicoJunction[header] = seq
+						dicoJunction[header] = {'Sequence' : seq}
 	return dicoJunction
 
 def main(sp):
