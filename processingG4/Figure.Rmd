@@ -1,0 +1,26 @@
+---
+title: "NbG4"
+author: "Anaïs Vannutelli"
+date: "April 24, 2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+nbG4 <- read.delim("~/Documents/Data/Genomes/All_sp/nbG4.tsv", stringsAsFactors = FALSE)
+label = nbG4[1,]
+nbG4 = nbG4[2:64,]
+tablePlot = data.frame(as.numeric(as.character(nbG4$Density)), as.numeric(as.character(nbG4$GC.content)), nbG4$X.1)
+rownames(tablePlot) = nbG4[,1]
+library(ggplot2)
+#install.packages('ggplot2')
+ggplot(tablePlot, aes(x=tablePlot$as.numeric.as.character.nbG4.Density.., y=tablePlot$as.numeric.as.character.nbG4.GC.content.., color=tablePlot$nbG4.X.1)) + 
+    geom_point(size=5, alpha=0.6) + 
+    labs(title = 'Density of pG4 (pG4/kb) and GC content', x = 'Density of pG4 (pG4/kb)', y = '% of GC in genes', colour = 'Clade', caption = "based on data from genes") + xlim(0, 0.35)
+```
+

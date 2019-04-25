@@ -40,7 +40,7 @@ def createListCodingProtein():
 					'TR_V_gene']
 	return codingProtein
 
-def main(dicoParam, path, dicoTr, dicoGene):
+def main(dicoParam, path):
 	codingProtein = createListCodingProtein()
 	dfpG4 = pd.DataFrame()
 	G4DetectedInJunction = {}
@@ -50,7 +50,7 @@ def main(dicoParam, path, dicoTr, dicoGene):
 		# for each element of the directory to passed
 		for filename in files: # for each files
 			inputfile = directory + '/' + filename
-			if ('gene_unspliced' in filename and '.csv' in filename ):
+			if ('gene_unspliced' in filename):
 				# windows in genes
 				dfpG4 = dfpG4.append(getpG4.main(inputfile,
 						dicoParam, "Gene"))
@@ -59,7 +59,10 @@ def main(dicoParam, path, dicoTr, dicoGene):
 			# 	dfpG4 = dfpG4.append(getpG4.main(inputfile,
 			# 			dicoParam,"Junction"))
 			# 	dfpG4 = dfpG4.reset_index(drop=True)
+	dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
 	print '\t'+str(len(dfpG4))
+	with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+		print(dfpG4)
 	# G4Annotation.main(dicoTr, dicoGene, dfpG4)
 
 def createDicoParam(arg):
@@ -92,11 +95,7 @@ if __name__ == '__main__':
 	path = arg.path + sp
 	dicoParam = createDicoParam(arg)
 	print "Specie : " + sp
-	dicoTr, dicoGene = Parser_gtf.importGTF('/home/anais/Documents/Data/' + \
-		'Genomes/yersinia_pestis_biovar_microtus_str_91001/' + \
-		'yersinia_pestis_biovar_microtus_str_91001.gtf')
-	print "\tImport gtf done"
-	main(dicoParam, path, dicoTr, dicoGene)
+	main(dicoParam, path)
 	print "\tDone"
 
 

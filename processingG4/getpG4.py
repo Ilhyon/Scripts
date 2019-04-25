@@ -15,6 +15,7 @@ Laboratoty CoBiUS and Jean-Pierre Perreault
 """
 
 import pandas as pd
+import numpy as np
 from pprint import pprint
 
 def getChromosomalPositionForwardStrand(position,
@@ -47,15 +48,6 @@ def getChromosomalPositionReverseStrand(position,
 		position = endIntron + junLength - position
 	return position
 
-def mergeOverlappingSequences(dfTmp):
-	seq = str(dfTmp.seqG4.iloc[0])
-	for w in range(1,len(dfTmp)):
-		step = int(dfTmp.wStart.iloc[w] - dfTmp.wStart.iloc[w-1])
-		# convert to int elsewise it's a float
-		wSeq = dfTmp.seqG4.iloc[w]
-		seq += wSeq[-step:]
-	return seq
-
 def getChromosomalCoord(pG4Start, pG4End, geneDesc, junctionLength):
 	"""
 		This function is principaly used for junction.
@@ -86,22 +78,41 @@ def getChromosomalCoord(pG4Start, pG4End, geneDesc, junctionLength):
 		pG4End = tmp
 	return pG4Start, pG4End
 
-def changeCoordByStrand(pG4rStart, pG4rEnd, pG4rSeq, strand,
-						geneStart, geneEnd):
-	if strand == "-1":
-		pG4rStart = geneStart - (pG4rStart - geneEnd)
-		pG4rEnd = pG4rStart - (len(pG4rSeq)) + 1
-	return pG4rStart, pG4rEnd
+def mergeOverlappingSequences(dfTmp):
+	"""Merge the sequences of overlaping windows.
+
+	:param dfTmp: contain overlaping windows.
+	:type dfTmp: dataFrame
+
+	:returns: seq, sequence merged.
+	:rtype: string
+	"""
+	seq = str(dfTmp.seqG4.iloc[0])
+	for w in range(1,len(dfTmp)):
+		step = int(dfTmp.wStart.iloc[w] - dfTmp.wStart.iloc[w-1])
+		# convert to int elsewise it's a float
+		wSeq = dfTmp.seqG4.iloc[w]
+		seq += wSeq[-step:]
+	return seq
 
 def mergeWindows(dfTmp, feature, junctionLength):
+	"""Merge overlaping windows.
+
+	:param dfTmp: contain overlaping windows.
+	:type dfTmp: dataFrame
+	:param feature: junction or gene.
+	:type feature: string
+	:param junctionLength: length of unction, by default it's 100 nt.
+	:type junctionLength: integer
+
+	:returns: pG4, contains the pG4 which is the merge of overlaping windows.
+	:rtype: dictionary
 	"""
-		Merge all widnows from a dataFrame to a unique pG4
-	"""
-	lastRow = len(dfTmp.index) -1
+	lastRow = len(dfTmp.index) - 1
 	geneDesc = dfTmp.geneDesc.iloc[0]
-	geneDescSplit = geneDesc.split("|")
-	geneId = geneDescSplit[0]
-	strand = geneDescSplit[2]
+	geneId = geneDesc.split(' ')[0]
+	geneDescSplit = geneDesc.split(' ')[2].split(':')
+	strand = geneDescSplit[5]
 	geneStart = int(geneDescSplit[3])
 	geneEnd = int(geneDescSplit[4])
 	meancGcC = dfTmp.cGcC.mean()
@@ -110,8 +121,6 @@ def mergeWindows(dfTmp, feature, junctionLength):
 	pG4Start = int(dfTmp.wStart.iloc[0])
 	pG4End = int(dfTmp.wEnd.iloc[lastRow])
 	pG4rSeq = mergeOverlappingSequences(dfTmp)
-	pG4Start, pG4End = changeCoordByStrand(pG4Start, pG4End, pG4rSeq, strand,
-		geneStart, geneEnd)
 	if feature == "Junction":
 		if pG4Start < junctionLength and pG4End > junctionLength :
 			pG4Start, pG4End = getChromosomalCoord(pG4Start, pG4End,
@@ -132,39 +141,99 @@ def mergeWindows(dfTmp, feature, junctionLength):
 	return pG4
 
 def filterOnScores(dicoParam, dfWindows):
-	"""
-		Filters the data frame with all windows, we only keep windiows
-		over all thresholds.
+	"""Filter the windows based on thresholds.
+
+	:param dicoParam: contains all parameters that were given to g4rna screener.
+	:type dicoParam: dictionnary
+	:param dfWindows: contains all windows of all genes from one specie.
+	:type dfWindows: dataframe
+
+	:returns: dfWindows, with only windows upper thresholds.
+	:rtype: dataFrame
 	"""
 	dfWindows = dfWindows[ dfWindows.cGcC >= dicoParam["cGcC"] ].dropna()
 	dfWindows = dfWindows[ dfWindows.G4H >= dicoParam["g4H"] ].dropna()
 	dfWindows = dfWindows[ dfWindows.G4NN >= dicoParam["g4NN"] ].dropna()
 	return dfWindows
 
+def getDFByStrand(df):
+	"""Cut the DF with all windows in two, one for each strand.
+
+	:param df: contains all genes windows from one specie.
+	:type df: dataFrame
+
+	:returns: dicoDF, contains both reverse and forward dataFrame.
+	:rtype: dictionnary of dataFrame
+	"""
+	dfWindowsReverse = df[ df.geneDesc.str.contains(':-1') ]
+	dfWindowsForward = df[ df.geneDesc.str.contains(':[0-9]*:[0-9]*:1', regex=True) ]
+	dfWindowsReverse = dfWindowsReverse.sort_values(by=['wStart'])
+	dfWindowsForward = dfWindowsForward.sort_values(by=['wEnd'])
+	dicoDF = {'Reverse' : dfWindowsReverse,
+	 		'Forward' : dfWindowsForward}
+	return dicoDF
+
+def merge(df, dicoParam, feature):
+	"""Browses all window to find those that are overlapping.
+
+	:param df: contains all windows from one strand.
+	:type df: dataFrame
+	:param dicoParam: contains all parameters that were given to g4rna screener.
+	:type dicoParam: dictionnary
+	:param feature: junction or gene.
+	:type feature: string
+
+	:returns: dfpG4, contain all pG4 for that strand.
+	:rtype: dataFrame
+	"""
+	dfTmp = pd.DataFrame()
+	dfpG4 = pd.DataFrame()
+	dfTmp = dfTmp.append(df[0:1]) # store the first window
+	if len(df) == 1 :
+		dfTmp = pd.DataFrame.from_dict(mergeWindows(dfTmp,
+				feature, dicoParam["junctionLength"]))
+		dfpG4 = dfpG4.append(dfTmp)
+	else:
+		for w in range(1,len(df)): # w for window
+			# browses all windows over thresholds, exept the first one
+			if ((df.wStart.iloc[w] >= df.wStart.iloc[w-1] and
+				df.wStart.iloc[w] <= df.wEnd.iloc[w-1]) or
+				(df.wEnd.iloc[w] >= df.wStart.iloc[w-1] and
+				df.wEnd.iloc[w] <= df.wEnd.iloc[w-1])):
+				# if window overlap, add window at the current pG4
+				dfTmp = dfTmp.append(df[w:w+1])
+				if w == len(df)-1 :
+					dfTmp = pd.DataFrame.from_dict(mergeWindows(dfTmp,
+							feature, dicoParam["junctionLength"]))
+					dfpG4 = dfpG4.append(dfTmp)
+			else: # new pG4
+				dfTmp = pd.DataFrame.from_dict(mergeWindows(dfTmp,
+						feature, dicoParam["junctionLength"]))
+				dfpG4 = dfpG4.append(dfTmp)
+				dfTmp = df.iloc[w:w+1]
+				if w == len(df)-1 :
+					dfTmp = pd.DataFrame.from_dict(mergeWindows(dfTmp,
+							feature, dicoParam["junctionLength"]))
+					dfpG4 = dfpG4.append(dfTmp)
+				# reinitiate the dfTmp with the new pG4
+	return dfpG4
+
 def main(filename, dicoParam, feature):
 	dfpG4 = pd.DataFrame()
-	dfTmp = pd.DataFrame()
-	dfWindows = pd.read_csv(filename, sep='\t', index_col=0)
-	# dataFrame with all windows from G4RNA Screener
-	dfWindows.columns = ['geneDesc','cGcC',
-						'G4H','seqG4','wStart',
-						'wEnd', 'G4NN']
-	dfWindows = filterOnScores(dicoParam, dfWindows)
-	dfTmp = dfTmp.append(dfWindows[0:1]) # store the first window
-	for w in range(1,len(dfWindows)): # w for window
-		# browses all windows over thresholds, exept the first one
-		if (dfWindows.wStart.iloc[w] >= dfWindows.wStart.iloc[w-1] and
-		dfWindows.wStart.iloc[w] <= dfWindows.wEnd.iloc[w-1] and
-		dfWindows.geneDesc.iloc[w] == dfWindows.geneDesc.iloc[w-1]):
-			# if window overlap, add window at the current pG4
-			dfTmp = dfTmp.append(dfWindows[w:w+1])
-		else: # new pG4
-			dfTmp = pd.DataFrame.from_dict(mergeWindows(dfTmp,
-					feature, dicoParam["junctionLength"]))
-			dfpG4 = dfpG4.append(dfTmp)
-			dfTmp = dfWindows.iloc[w:w+1]
-			# reinitiate the dfTmp with the new pG4
-	return dfpG4
+	try:
+		dfWindows = pd.read_csv(filename, sep='\t', index_col=0)
+	except:
+		print 'Buuuuuuug ' +filename
+	else:
+		# dataFrame with all windows from G4RNA Screener
+		dfWindows.columns = ['geneDesc','cGcC',
+							'G4H','seqG4','wStart',
+							'wEnd', 'G4NN']
+		dfWindows = filterOnScores(dicoParam, dfWindows)
+		dfWStrand = getDFByStrand(dfWindows)
+		for strand in dfWStrand:
+			dfpG4 = dfpG4.append(merge(dfWStrand[strand], dicoParam, feature))
+		return dfpG4
 
 if __name__ == '__main__':
 	main(filename, dicoParam, feature)
