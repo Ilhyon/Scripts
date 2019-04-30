@@ -225,14 +225,13 @@ def getJunctionSequences(dicoChromosome, filename):
 					if dicoTr[tr]['Chromosome'] in dicoChromosome:
 						tmp = dicoTr[tr]['Intron'][intron]
 						chrm = dicoTr[tr]['Chromosome']
-						header = '>'+ tr +' ENSG00000000457 chromosome:'+ \
-						dicoTr[tr]['Assembly'] \
+						header = '>chromosome:' +  dicoTr[tr]['Assembly'] \
 						+':'+ chrm \
 						+':'+ str(dicoTr[tr]['Intron'][intron]['Start']) \
 						+':'+ str(dicoTr[tr]['Intron'][intron]['End']) \
 						+':'+ dicoTr[tr]['Strand']
 						seq = dicoChromosome[chrm]\
-								[tmp['Start']-100:tmp['End']]
+								[tmp['Start']-100:tmp['Start']]
 						seq += dicoChromosome[chrm]\
 								[tmp['End']:tmp['End']+100]
 						if dicoTr[tr]['Intron']['Strand'] == '-1':

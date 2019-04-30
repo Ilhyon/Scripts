@@ -55,14 +55,13 @@ def main(dicoParam, path):
 				dfpG4 = dfpG4.append(getpG4.main(inputfile,
 						dicoParam, "Gene"))
 				dfpG4 = dfpG4.reset_index(drop=True)
-			# elif ('transcript_unspliced' in filename and '.csv' in filename): ## for G4 in junction CDS-CDS --> from splicing
-			# 	dfpG4 = dfpG4.append(getpG4.main(inputfile,
-			# 			dicoParam,"Junction"))
-			# 	dfpG4 = dfpG4.reset_index(drop=True)
-	dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
+			elif ('transcript_unspliced' in filename):
+				dfpG4 = dfpG4.append(getpG4.main(inputfile,
+						dicoParam,"Junction"))
+				dfpG4 = dfpG4.reset_index(drop=True)
+	# dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
 	print '\t'+str(len(dfpG4))
-	with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
-		print(dfpG4)
+	print dfpG4
 	# G4Annotation.main(dicoTr, dicoGene, dfpG4)
 
 def createDicoParam(arg):

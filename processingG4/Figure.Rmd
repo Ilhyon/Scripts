@@ -15,12 +15,16 @@ knitr::opts_chunk$set(echo = TRUE)
 nbG4 <- read.delim("~/Documents/Data/Genomes/All_sp/nbG4.tsv", stringsAsFactors = FALSE)
 label = nbG4[1,]
 nbG4 = nbG4[2:64,]
-tablePlot = data.frame(as.numeric(as.character(nbG4$Density)), as.numeric(as.character(nbG4$GC.content)), nbG4$X.1)
+tablePlot = data.frame(as.numeric(as.character(nbG4$Density)), as.numeric(as.character(nbG4$GC.content)), nbG4$X.1, nbG4[,1])
 rownames(tablePlot) = nbG4[,1]
 library(ggplot2)
 #install.packages('ggplot2')
 ggplot(tablePlot, aes(x=tablePlot$as.numeric.as.character.nbG4.Density.., y=tablePlot$as.numeric.as.character.nbG4.GC.content.., color=tablePlot$nbG4.X.1)) + 
     geom_point(size=5, alpha=0.6) + 
+    labs(title = 'Density of pG4 (pG4/kb) and GC content', x = 'Density of pG4 (pG4/kb)', y = '% of GC in genes', colour = 'Clade', caption = "based on data from genes") #+ xlim(0, 0.35)
+
+ggplot(tablePlot, aes(x=tablePlot$as.numeric.as.character.nbG4.Density.., y=tablePlot$as.numeric.as.character.nbG4.GC.content.., color=tablePlot$nbG4.X.1, label = tablePlot$nbG4...1.)) + 
+    geom_point() + geom_text(aes(label = tablePlot$nbG4...1.)) +
     labs(title = 'Density of pG4 (pG4/kb) and GC content', x = 'Density of pG4 (pG4/kb)', y = '% of GC in genes', colour = 'Clade', caption = "based on data from genes") + xlim(0, 0.35)
 ```
 
