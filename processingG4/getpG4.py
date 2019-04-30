@@ -153,12 +153,12 @@ def mergeWindows(df, feature, junctionLength):
 	except:
 		pG4 = {'Strand' : [ dicoInfo['Strand'] ],
 				'Chromosome' : [ dicoInfo['Chromosome'] ],
-				'cGcC' : [ dicoInfo['meancGcC'] ],
-				'G4H' : [ dicoInfo['meanG4H'] ],
-				'G4NN' : [ dicoInfo['meanG4NN'] ],
-				'pG4Start' : [pG4Start], 'pG4End' : [pG4End],
-				'seqG4' : [pG4rSeq],
-				'Feature' : [feature]}
+				"cGcC" : [ dicoInfo['meancGcC'] ],
+				"G4H" : [ dicoInfo['meanG4H'] ],
+				"G4NN" : [ dicoInfo['meanG4NN'] ],
+				"pG4Start" : [pG4Start], "pG4End" : [pG4End],
+				"seqG4" : [pG4rSeq],
+				"Feature" : [feature]}
 	return pG4
 
 def filterOnScores(dicoParam, dfWindows):

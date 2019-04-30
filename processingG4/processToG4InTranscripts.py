@@ -59,8 +59,9 @@ def main(dicoParam, path):
 				dfpG4 = dfpG4.append(getpG4.main(inputfile,
 						dicoParam,"Junction"))
 				dfpG4 = dfpG4.reset_index(drop=True)
-	# dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
-	print '\t'+str(len(dfpG4))
+	dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
+	dfpG4 = dfpG4.reset_index(drop=True)
+	print '\t'+str(dfpG4.shape)
 	print dfpG4
 	# G4Annotation.main(dicoTr, dicoGene, dfpG4)
 
