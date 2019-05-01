@@ -62,7 +62,8 @@ def main(dicoParam, path):
 	dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
 	dfpG4 = dfpG4.reset_index(drop=True)
 	print '\t'+str(dfpG4.shape)
-	print dfpG4
+	output = path + '/pG4.txt'
+	# dfpG4.to_csv(path_or_buf=output, header=True, index=None, sep=' ', mode='a')
 	# G4Annotation.main(dicoTr, dicoGene, dfpG4)
 
 def createDicoParam(arg):

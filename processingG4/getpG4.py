@@ -151,7 +151,8 @@ def mergeWindows(df, feature, junctionLength):
 	try:
 		pG4
 	except:
-		pG4 = {'Strand' : [ dicoInfo['Strand'] ],
+		pG4 = {'id' : [ dicoInfo['geneId'] ],
+				'Strand' : [ dicoInfo['Strand'] ],
 				'Chromosome' : [ dicoInfo['Chromosome'] ],
 				"cGcC" : [ dicoInfo['meancGcC'] ],
 				"G4H" : [ dicoInfo['meanG4H'] ],
@@ -267,9 +268,12 @@ def mergeJunctionG4(df, dicoParam, feature):
 	else:
 		for w in range(1,len(df)): # w for window
 			# browses all windows over thresholds, exept the first one
-			if (df.wStart.iloc[w] >= df.wStart.iloc[w-1] and
-				df.wStart.iloc[w] <= df.wEnd.iloc[w-1] and
-				df.geneDesc.iloc[w] == df.geneDesc.iloc[w-1]):
+			if (df.geneDesc.iloc[w] == df.geneDesc.iloc[w-1] and
+			  (feature == 'Gene' and
+			        ((df.wStart.iloc[w] >= df.wStart.iloc[w-1] and df.wStart.iloc[w] <= df.wEnd.iloc[w-1]) or
+			        (df.wEnd.iloc[w] >= df.wStart.iloc[w-1] and df.wEnd.iloc[w] <= df.wEnd.iloc[w-1])) or
+			  feature == 'Junction' and
+			        (df.wStart.iloc[w] >= df.wStart.iloc[w-1] and df.wStart.iloc[w] <= df.wEnd.iloc[w-1]))):
 				# if window overlap, add window at the current pG4
 				dfTmp = dfTmp.append(df[w:w+1])
 				if w == len(df)-1 :
@@ -300,13 +304,7 @@ def main(filename, dicoParam, feature):
 							'G4H','seqG4','wStart',
 							'wEnd', 'G4NN']
 		dfWindows = filterOnScores(dicoParam, dfWindows)
-		if feature == 'Gene':
-			dfWStrand = getDFByStrand(dfWindows)
-			for strand in dfWStrand:
-				dfpG4 = dfpG4.append(mergeGeneG4(dfWStrand[strand],
-						dicoParam, feature))
-		else:
-			dfpG4 = dfpG4.append(mergeJunctionG4(dfWindows, dicoParam, feature))
+		dfpG4 = dfpG4.append(mergeJunctionG4(dfWindows, dicoParam, feature))
 		return dfpG4
 
 if __name__ == '__main__':

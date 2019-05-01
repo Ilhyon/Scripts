@@ -128,7 +128,7 @@ def importGTFGene(filename):
 		for l in lines: # browse all lines
 			if not l.startswith('#') and l:
 				words = l.split('\t')
-				idGene = words[8].split(';')[0].split('"')[1]
+				geneId = words[8].split(';')[0].split('"')[1]
 				attributes = words[8].split(';')
 				feature = words[2]
 				if feature == "gene" :
@@ -142,12 +142,22 @@ def importGTFGene(filename):
 						strand = '1'
 					elif strand == '-':
 						strand = '-1'
-					dicoGene[idGene] = {'Chromosome' : chrm,
-										'Start' : startFeature,
-										'End' : endFeature,
-										'Strand' : strand,
-										'Biotype' : biotype,
-										'Assembly' : assembly}
+					if geneId not in dicoGene:
+						dicoGene[geneId] = {}
+					dicoGene[geneId].update({'Chromosome' : chrm,
+											'Start' : startFeature,
+											'End' : endFeature,
+											'Strand' : strand,
+											'Biotype' : biotype,
+											'Assembly' : assembly})
+				if feature == 'transcript':
+					geneId = attributes[0].split('"')[1]
+					idTr = retrieveIdTrFronAttributes(attributes)
+					if geneId not in dicoGene:
+						dicoGene[geneId] = {'Transcript' : []}
+					elif 'Transcript' not in dicoGene[geneId]:
+						dicoGene[geneId].update({'Transcript' : []})
+					dicoGene[geneId]['Transcript'].append(idTr)
 			elif re.search('genome-version', l):
 				assembly = l.split(' ')[1]
 	return dicoGene
@@ -445,7 +455,7 @@ if __name__ == '__main__':
 	print sp
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + \
 		"/" + sp + ".gtf"
-	dicoTr, dicoGene = importGTF(filename)
+	dicoTr = importGTF(filename)
 	dicoTr = getIntron(dicoTr)
 	writeIntron(sp, dicoTr)
 	countIntron(dicoTr, sp)

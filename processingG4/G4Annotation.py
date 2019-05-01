@@ -3,6 +3,7 @@
 
 import argparse
 import Parser_gtf
+import numpy as np
 import pandas as pd
 
 def build_arg_parser():
@@ -29,5 +30,6 @@ if __name__ == '__main__':
 	path = arg.path
 	sp = arg.specie
 	filename = path+'/'+sp+'/'+sp+'.gtf'
-	dicoTr, dicoGene = Parser_gtf.importGTF(filename)
+	dicoTr = Parser_gtf.importGTF(filename)
+	dicoGene = Parser_gtf.importGTFGene(filename)
 	main(dicoTr, dicoGene, dfpG4)
