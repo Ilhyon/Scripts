@@ -40,7 +40,7 @@ def createListCodingProtein():
 					'TR_V_gene']
 	return codingProtein
 
-def main(dicoParam, path):
+def main(dicoParam, path, dicoGene, dfTr):
 	codingProtein = createListCodingProtein()
 	dfpG4 = pd.DataFrame()
 	G4DetectedInJunction = {}
@@ -64,7 +64,7 @@ def main(dicoParam, path):
 	print '\t'+str(dfpG4.shape)
 	output = path + '/pG4.txt'
 	# dfpG4.to_csv(path_or_buf=output, header=True, index=None, sep=' ', mode='a')
-	# G4Annotation.main(dicoTr, dicoGene, dfpG4)
+	G4Annotation.main(dfTr, dicoGene, dfpG4)
 
 def createDicoParam(arg):
 	dicoParam = {"g4H" : float(arg.THRESHOLD_G4H),
@@ -95,8 +95,10 @@ if __name__ == '__main__':
 	sp = arg.specie
 	path = arg.path + sp
 	dicoParam = createDicoParam(arg)
+	dfTr = Parser_gtf.importGTFdf(path+'/'+sp+'.gtf')
+	dicoGene = Parser_gtf.importGTFGene(path+'/'+sp+'.gtf')
 	print "Specie : " + sp
-	main(dicoParam, path)
+	main(dicoParam, path, dicoGene, dfTr)
 	print "\tDone"
 
 

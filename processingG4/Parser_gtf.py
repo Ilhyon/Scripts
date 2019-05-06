@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-:v
 
 import re
-import argparse
 import os
+import argparse
+import numpy as np
+import pandas as pd
 from pprint import pprint
 import recurrentFunction as rF
 
@@ -161,6 +163,54 @@ def importGTFGene(filename):
 			elif re.search('genome-version', l):
 				assembly = l.split(' ')[1]
 	return dicoGene
+
+def addTranscript(attributes):
+	attributes = attributes.split(';')
+	return retrieveIdTrFronAttributes(attributes)
+
+def addBiotype(attributes):
+	attributes = attributes.split(';')
+	return retrieveBiotypeFronAttributes('transcript', attributes)
+
+def addTypeTr(biotype):
+	coding = ['IG_C_gene', 'IG_D_gene', 'IG_J_gene',
+			'IG_LV_gene', 'IG_M_gene', 'IG_V_gene',
+			'IG_Z_gene', 'nonsense_mediated_decay',
+			'nontranslating_CDS', 'non_stop_decay',
+			'protein_coding', 'TR_C_gene', 'TR_D_gene',
+			'TR_gene', 'TR_J_gene', 'TR_V_gene']
+	if biotype in coding:
+		return 'Coding'
+	else:
+		return 'Non coding'
+
+def parseDF(df):
+	dfTmp = pd.DataFrame()
+	dfTmp = dfTmp.append(df[ df.Feature.str.contains('exon') ].dropna())
+	dfTmp = dfTmp.append(df[ df.Feature.str.contains('CDS') ].dropna())
+	dfTmp = dfTmp.append(df[ df.Feature.str.contains('five_prime_utr') ].dropna())
+	dfTmp = dfTmp.append(df[ df.Feature.str.contains('three_prime_utr') ].dropna())
+	dfTmp['Transcript'] = dfTmp.Attributes.apply(addTranscript)
+	dfTmp['Biotype'] = dfTmp.Attributes.apply(addBiotype)
+	dfTmp['Type'] = dfTmp.Biotype.apply(addTypeTr)
+	return dfTmp
+
+def importGTFdf(filename):
+	try:
+		df = pd.read_csv(filename, sep='\t', index_col=0, skiprows=5)
+	except:
+		print "This file couldn't be converted in data frame : " + filename
+	else:
+		# dataFrame with all windows from G4RNA Screener
+		df.columns = ['Biotype', 'Feature','Start','End',
+					'NI1', 'Strand', 'NI2', 'Attributes']
+		del df['NI1']
+		del df['NI2']
+		del df['Biotype']
+		df['Chromosome'] = df.index
+		df = parseDF(df)
+		del df['Attributes']
+		return df
 
 def importGTF(filename):
 	"""Imports gtf file.
@@ -455,7 +505,8 @@ if __name__ == '__main__':
 	print sp
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + \
 		"/" + sp + ".gtf"
-	dicoTr = importGTF(filename)
-	dicoTr = getIntron(dicoTr)
-	writeIntron(sp, dicoTr)
-	countIntron(dicoTr, sp)
+	# dicoTr = importGTF(filename)
+	# dicoTr = getIntron(dicoTr)
+	# writeIntron(sp, dicoTr)
+	# countIntron(dicoTr, sp)
+	importGTFdf(filename)
