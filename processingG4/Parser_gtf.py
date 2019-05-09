@@ -1,6 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-:v
 
+"""
+
+Copyright:
+	Copyright Universite of Sherbrooke, departement of biochemistry and
+	departement	of computation.
+
+Date:
+	May 2019
+
+Description:
+	This script is principaly a library containing many methods to import a gtf
+	file. It can be imported as a dictionary or as a dataFrame. While imported
+	as dictionary, intron are computed and added to the dictionnary. An ouput
+	containing introns information can be created.
+
+Data availability:
+	* gtf file via Ensembl ftp.
+
+"""
+
 import re
 import os
 import argparse
@@ -8,11 +28,6 @@ import numpy as np
 import pandas as pd
 from pprint import pprint
 import recurrentFunction as rF
-
-# \file Parser_gtf.py
-# \author Anaïs Vannutelli 18129080
-# \brief This script parse a gtf file to only retrieve informations
-# will use later
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'Parser_gtf')
@@ -165,14 +180,40 @@ def importGTFGene(filename):
 	return dicoGene
 
 def addTranscript(attributes):
+	"""Apply function to retrieve the transcript id of a feature.
+
+	:param attributes: all attributes from the gtf file, corresponds to the
+		ninth column of the file.
+	:type attributes: string
+
+	:returns: transcript id.
+	:rtype: string
+	"""
 	attributes = attributes.split(';')
 	return retrieveIdTrFronAttributes(attributes)
 
 def addBiotype(attributes):
+	"""Apply function to retrieve the biotype of a transcript.
+
+	:param attributes: all attributes from the gtf file, corresponds to the
+		ninth column of the file.
+	:type attributes: string
+
+	:returns: biotype of the transcript.
+	:rtype: string
+	"""
 	attributes = attributes.split(';')
 	return retrieveBiotypeFronAttributes('transcript', attributes)
 
 def addTypeTr(biotype):
+	"""Apply function to retrieve the type of a transcript depending on biotype.
+
+	:param biotype: biotype of a transcript.
+	:type biotype: string
+
+	:returns: type, coding or non coding.
+	:rtype: string
+	"""
 	coding = ['IG_C_gene', 'IG_D_gene', 'IG_J_gene',
 			'IG_LV_gene', 'IG_M_gene', 'IG_V_gene',
 			'IG_Z_gene', 'nonsense_mediated_decay',
@@ -185,6 +226,18 @@ def addTypeTr(biotype):
 		return 'Non coding'
 
 def parseDF(df):
+	"""Parses a dataframe to retrieve only usefull data for me.
+
+	We only kept soem features : exon, CDS, 5UTR and 3UTR. From attributes we
+	only kept : Transcript id, Biotype of the transcript and the type of the
+	transcript (coding or not).
+
+	:param df: contains all transcripts feature for a species but non parsed.
+	:type df: dataFrame
+
+	:returns: dfTmp, parsed df.
+	:rtype: dataFrame
+	"""
 	dfTmp = pd.DataFrame()
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('exon') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('CDS') ].dropna())
@@ -196,6 +249,18 @@ def parseDF(df):
 	return dfTmp
 
 def importGTFdf(filename):
+	"""Imports a gtf file into a dataframe.
+
+	Read the gtf file into a csv, then change the column names. NI goes for
+	'Not Important', it's column I will not use so I delete them. I also
+	retrieve only what I need from attributes and then dilate it.
+
+	:param filename: name of the gtf file.
+	:type filename: string
+
+	:returns: df, contains all transcripts feature for a species.
+	:rtype: dataFrame
+	"""
 	try:
 		df = pd.read_csv(filename, sep='\t', index_col=0, skiprows=5)
 	except:
@@ -505,8 +570,4 @@ if __name__ == '__main__':
 	print sp
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + \
 		"/" + sp + ".gtf"
-	# dicoTr = importGTF(filename)
-	# dicoTr = getIntron(dicoTr)
-	# writeIntron(sp, dicoTr)
-	# countIntron(dicoTr, sp)
-	importGTFdf(filename)
+	print importGTFdf(filename)

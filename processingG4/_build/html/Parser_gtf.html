@@ -1,0 +1,605 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Parser_gtf &mdash; pG4r prediction and annotation  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to pG4r prediction and annotation’s documentation!" href="Readme.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="Readme.html" class="icon icon-home"> pG4r prediction and annotation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Parser_gtf</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="Readme.html">pG4r prediction and annotation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="Readme.html">Docs</a> &raquo;</li>
+        
+      <li>Parser_gtf</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/Parser_gtf.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-Parser_gtf">
+<span id="parser-gtf"></span><h1>Parser_gtf<a class="headerlink" href="#module-Parser_gtf" title="Permalink to this headline">¶</a></h1>
+<dl class="docutils">
+<dt>Copyright:</dt>
+<dd>Copyright Universite of Sherbrooke, departement of biochemistry and
+departement     of computation.</dd>
+<dt>Date:</dt>
+<dd>May 2019</dd>
+<dt>Description:</dt>
+<dd>This script is principaly a library containing many methods to import a gtf
+file. It can be imported as a dictionary or as a dataFrame. While imported
+as dictionary, intron are computed and added to the dictionnary. An ouput
+containing introns information can be created.</dd>
+<dt>Data availability:</dt>
+<dd><ul class="first last simple">
+<li>gtf file via Ensembl ftp.</li>
+</ul>
+</dd>
+</dl>
+<dl class="function">
+<dt id="Parser_gtf.addBiotype">
+<code class="descclassname">Parser_gtf.</code><code class="descname">addBiotype</code><span class="sig-paren">(</span><em>attributes</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.addBiotype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply function to retrieve the biotype of a transcript.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>attributes</strong> (<em>string</em>) – all attributes from the gtf file, corresponds to the
+ninth column of the file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">biotype of the transcript.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.addTranscript">
+<code class="descclassname">Parser_gtf.</code><code class="descname">addTranscript</code><span class="sig-paren">(</span><em>attributes</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.addTranscript" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply function to retrieve the transcript id of a feature.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>attributes</strong> (<em>string</em>) – all attributes from the gtf file, corresponds to the
+ninth column of the file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">transcript id.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.addTypeTr">
+<code class="descclassname">Parser_gtf.</code><code class="descname">addTypeTr</code><span class="sig-paren">(</span><em>biotype</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.addTypeTr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply function to retrieve the type of a transcript depending on biotype.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>biotype</strong> (<em>string</em>) – biotype of a transcript.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type, coding or non coding.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.changeStrandFormat">
+<code class="descclassname">Parser_gtf.</code><code class="descname">changeStrandFormat</code><span class="sig-paren">(</span><em>strand</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.changeStrandFormat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes the format of the strand from +/- to 1/-1.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.computesCoordLastRank">
+<code class="descclassname">Parser_gtf.</code><code class="descname">computesCoordLastRank</code><span class="sig-paren">(</span><em>strand</em>, <em>start</em>, <em>end</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.computesCoordLastRank" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the coordinates of the last intron of a transcript.</p>
+<p>Depending of the strand, the end of the last intron is computed. It
+corresponds to the nucleotids before the last exon start.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>strand</strong> (<em>string</em>) – strand of a transcript.</li>
+<li><strong>start</strong> (<em>integer</em>) – chromosomal start of the exon.</li>
+<li><strong>end</strong> (<em>integer</em>) – chromosomal end of the exon.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">intronEnd, end of the last exon</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">integer</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.computesCoordOther">
+<code class="descclassname">Parser_gtf.</code><code class="descname">computesCoordOther</code><span class="sig-paren">(</span><em>strand</em>, <em>start</em>, <em>end</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.computesCoordOther" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the coordinates of midle intron of a transcript.</p>
+<p>With the coordinates of a “midle” exon we can compute the end of the
+previous exon and then the start of the next intron.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>strand</strong> (<em>string</em>) – strand of a transcript.</li>
+<li><strong>start</strong> (<em>integer</em>) – chromosomal start of the exon.</li>
+<li><strong>end</strong> (<em>integer</em>) – chromosomal end of the exon.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">intronStart and intronEnd, end of the previous intron and start
+of the next intron.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">integer</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.computesCoordRank1">
+<code class="descclassname">Parser_gtf.</code><code class="descname">computesCoordRank1</code><span class="sig-paren">(</span><em>strand</em>, <em>start</em>, <em>end</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.computesCoordRank1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the coordinates of the first intron of a transcript.</p>
+<p>Depending of the strand, the start of the first intron is computed. It
+corresponds to the nucleotids next to the first exon end.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>strand</strong> (<em>string</em>) – strand of a transcript.</li>
+<li><strong>start</strong> (<em>integer</em>) – chromosomal start of the exon.</li>
+<li><strong>end</strong> (<em>integer</em>) – chromosomal end of the exon.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">intronStart, start of the first exon</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">integer</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.countIntron">
+<code class="descclassname">Parser_gtf.</code><code class="descname">countIntron</code><span class="sig-paren">(</span><em>dicoTr</em>, <em>sp</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.countIntron" title="Permalink to this definition">¶</a></dt>
+<dd><p>Counts the length of intron and write them in a file.</p>
+<p>Some transcript have intron of 1 nucleotides. We computes the length of
+introns to see for each species what’s the range of the intron length.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>dicoTr</strong> (<em>dictionnary</em>) – contains all transcript of a specie and all features in it
+(exon, utr, intron and coords).</li>
+<li><strong>sp</strong> (<em>string</em>) – name of the specie.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.getIntron">
+<code class="descclassname">Parser_gtf.</code><code class="descname">getIntron</code><span class="sig-paren">(</span><em>dicoTr</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.getIntron" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets all intron of a specie transcriptom.</p>
+<p>We browse all transcripts of a specie and computes all intron coordinates.
+Coordinates will be stored as chromosomal coordinates. This mean that the
+start will always be inferior compare to the end.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dicoTr</strong> (<em>dictionary</em>) – contains all transcripts from a psecie and all features
+linked to it : UTR, exon, intron.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dicoTr, updated with introns.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dictionary</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.importGTF">
+<code class="descclassname">Parser_gtf.</code><code class="descname">importGTF</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.importGTF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports gtf file.</p>
+<p>This function aims to retrieve as more as possible informations contained
+in the gtf file related to transcripts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filelame</strong> – name of the gtf file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dicoTr, contains all transcripts from a psecie and all features
+linked to it : UTR, exon, intron.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dictionary</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.importGTFGene">
+<code class="descclassname">Parser_gtf.</code><code class="descname">importGTFGene</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.importGTFGene" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports genes features from the gtf file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>string</em>) – name of the gtf file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dicoGene, contains all informations abotu genes.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dictionary</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.importGTFdf">
+<code class="descclassname">Parser_gtf.</code><code class="descname">importGTFdf</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.importGTFdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports a gtf file into a dataframe.</p>
+<p>Read the gtf file into a csv, then change the column names. NI goes for
+‘Not Important’, it’s column I will not use so I delete them. I also
+retrieve only what I need from attributes and then dilate it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>string</em>) – name of the gtf file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">df, contains all transcripts feature for a species.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dataFrame</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.parseDF">
+<code class="descclassname">Parser_gtf.</code><code class="descname">parseDF</code><span class="sig-paren">(</span><em>df</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.parseDF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a dataframe to retrieve only usefull data for me.</p>
+<p>We only kept soem features : exon, CDS, 5UTR and 3UTR. From attributes we
+only kept : Transcript id, Biotype of the transcript and the type of the
+transcript (coding or not).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>df</strong> (<em>dataFrame</em>) – contains all transcripts feature for a species but non parsed.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dfTmp, parsed df.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dataFrame</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.retrieveBiotypeFronAttributes">
+<code class="descclassname">Parser_gtf.</code><code class="descname">retrieveBiotypeFronAttributes</code><span class="sig-paren">(</span><em>feature</em>, <em>attributes</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.retrieveBiotypeFronAttributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the biotype from attributes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>feature</strong> (<em>string</em>) – transcript, gene, exon, or utr.</li>
+<li><strong>attributes</strong> (<em>list</em>) – last colons of gtf file, contains a lot of informations
+but is different depending on the feature.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">biotype of the feature. The biotype of a gene can be different
+compared to the transcript biotype.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">string</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.retrieveIdTrFronAttributes">
+<code class="descclassname">Parser_gtf.</code><code class="descname">retrieveIdTrFronAttributes</code><span class="sig-paren">(</span><em>attributes</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.retrieveIdTrFronAttributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the id transcript from attributes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>attributes</strong> (<em>list</em>) – last colons of gtf file, contains a lot of informations
+but is different depending on the feature.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">idTr, transctipt identifier.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.retrieveInfoExonFronAttributes">
+<code class="descclassname">Parser_gtf.</code><code class="descname">retrieveInfoExonFronAttributes</code><span class="sig-paren">(</span><em>attributes</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.retrieveInfoExonFronAttributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets rank and exon number from attributes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>attributes</strong> (<em>list</em>) – last colons of gtf file, contains a lot of informations
+but is different depending on the feature.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">rank, idExon of an exon.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">strings</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.retrieveUTRFromDico">
+<code class="descclassname">Parser_gtf.</code><code class="descname">retrieveUTRFromDico</code><span class="sig-paren">(</span><em>dico</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.retrieveUTRFromDico" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets UTR coords if they exist.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dico</strong> (<em>dictionary</em>) – contains all transcripts and their features.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">start5UTR, end5UTR, start3UTR, end3UTR.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Rtypes:</th><td class="field-body">strings</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.setCoordReverseStrand">
+<code class="descclassname">Parser_gtf.</code><code class="descname">setCoordReverseStrand</code><span class="sig-paren">(</span><em>dico</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.setCoordReverseStrand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the coords depending on the strand.</p>
+<p>I choosed to get chromosomal coords on my file. It will always be the
+smaller coords before the superior one. So for a reverse feature
+the start and the end are inversed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dicoTr</strong> (<em>dictionary</em>) – contains all transcript and its feature.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dicoTr, updated with good coordinates.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dictionary</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Parser_gtf.writeIntron">
+<code class="descclassname">Parser_gtf.</code><code class="descname">writeIntron</code><span class="sig-paren">(</span><em>sp</em>, <em>dico</em><span class="sig-paren">)</span><a class="headerlink" href="#Parser_gtf.writeIntron" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a file with all intron coords.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sp</strong> (<em>string</em>) – name of the specie.</li>
+<li><strong>dico</strong> (<em>dictionary</em>) – contains all transcript and its features (utr, exon, intron).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="Readme.html" class="btn btn-neutral float-left" title="Welcome to pG4r prediction and annotation’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Anaïs Vannutelli
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

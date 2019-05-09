@@ -20,28 +20,20 @@ import argparse
 import Parser_gtf
 import G4Annotation
 import pandas as pd
+import recurrentFunction as rF
 
-def createListCodingProtein():
-	codingProtein=['IG_C_gene',
-					'IG_D_gene',
-					'IG_J_gene',
-					'IG_LV_gene',
-					'IG_M_gene',
-					'IG_V_gene',
-					'IG_Z_gene',
-					'nonsense_mediated_decay',
-					'nontranslating_CDS',
-					'non_stop_decay',
-					'protein_coding',
-					'TR_C_gene',
-					'TR_D_gene',
-					'TR_gene',
-					'TR_J_gene',
-					'TR_V_gene']
-	return codingProtein
+def importIntron(filename):
+	try:
+		df = pd.read_csv(filename, sep='\t')
+	except:
+		print "This file couldn't be converted in data frame : " + filename
+	else:
+		# dataFrame with all windows from G4RNA Screener
+		df.columns = ['Transcript', 'Chromosome','Start','End', 'Strand']
+		df['Id'] = df['Start'].map(str) +':'+ df['End'].map(str)
+		return df
 
-def main(dicoParam, path, dicoGene, dfTr):
-	codingProtein = createListCodingProtein()
+def main(dicoParam, path, dicoGene, dfTr, dfIntron):
 	dfpG4 = pd.DataFrame()
 	G4DetectedInJunction = {}
 	directory = path + '/CSVFile'
@@ -62,11 +54,20 @@ def main(dicoParam, path, dicoGene, dfTr):
 	dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
 	dfpG4 = dfpG4.reset_index(drop=True)
 	print '\t'+str(dfpG4.shape)
-	output = path + '/pG4.txt'
+	# output = path + '/pG4.txt'
+	pG4Anno = G4Annotation.main(dfTr, dicoGene, dfpG4, dfIntron)
 	# dfpG4.to_csv(path_or_buf=output, header=True, index=None, sep=' ', mode='a')
-	G4Annotation.main(dfTr, dicoGene, dfpG4)
 
 def createDicoParam(arg):
+	"""Retrieves arguments and put them in a dictionary.
+
+	:param arg: contains all arguments given to the script, those are principaly
+		parameters from G4RNA Screener.
+	:type arg: arg_parser
+
+	:returns: dicoParam, contains all arguments given to the script.
+	:rtype: dictionary
+	"""
 	dicoParam = {"g4H" : float(arg.THRESHOLD_G4H),
 				"cGcC" : float(arg.THRESHOLD_CGCC),
 				"g4NN" : float(arg.THRESHOLD_G4NN),
@@ -93,14 +94,12 @@ if __name__ == '__main__':
 	parser = build_arg_parser()
 	arg = parser.parse_args()
 	sp = arg.specie
+	ini = rF.setUpperLetter(sp)
 	path = arg.path + sp
-	dicoParam = createDicoParam(arg)
-	dfTr = Parser_gtf.importGTFdf(path+'/'+sp+'.gtf')
-	dicoGene = Parser_gtf.importGTFGene(path+'/'+sp+'.gtf')
 	print "Specie : " + sp
-	main(dicoParam, path, dicoGene, dfTr)
+	dicoParam = createDicoParam(arg)
+	dfTr = Parser_gtf.importGTFdf(path +'/'+ sp +'.gtf')
+	dicoGene = Parser_gtf.importGTFGene(path +'/'+ sp +'.gtf')
+	dfIntron = importIntron(path +'/'+ ini +'_intron.txt')
+	main(dicoParam, path, dicoGene, dfTr, dfIntron)
 	print "\tDone"
-
-
-	# ~ listeG4InGeneEntire={}
-	# ~ listeG4InGeneJunction={}

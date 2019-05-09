@@ -18,57 +18,6 @@ import pandas as pd
 import numpy as np
 from pprint import pprint
 
-def getChromosomalPositionForwardStrand(position,
-									junLength,
-									startIntron,
-									endIntron):
-	"""
-		Give chromosomal positions of G4 around a junction,
-		in a forward gene.
-	"""
-	if position <= junLength:	# upstream sequence
-		upstreamLength = junLength - position
-		position = startIntron - 1 - upstreamLength
-	else:	# downstream sequence
-		downstreamLength = position - junLength
-		position = endIntron + 1 + downstreamLength - 1
-	return position
-
-def getChromosomalPositionReverseStrand(position,
-									junLength,
-									startIntron,
-									endIntron):
-	"""
-		Give chromosomal positions of G4 around a junction,
-		in a reverse gene.
-	"""
-	if position <= junLength + 1:	# because strart G4 classifier from 0
-		position = endIntron + 1 + junLength + 1 - position
-	else:	# if from sequence aval
-		position = startIntron + junLength - position
-	return position
-
-def getChromosomalCoord(pG4Start, pG4End, strand,
-						intronStart, intronEnd, junctionLength):
-	"""
-		This function is principaly used for junction.
-	"""
-	if strand == '1':
-		pG4Start = getChromosomalPositionForwardStrand(pG4Start,
-					junctionLength, intronStart, intronEnd)
-		pG4End = getChromosomalPositionForwardStrand(pG4End,
-					junctionLength, intronStart,intronEnd)
-
-	else:
-		pG4Start = getChromosomalPositionReverseStrand(pG4Start,
-					junctionLength, intronStart, intronEnd)
-		pG4End = getChromosomalPositionReverseStrand(pG4End,
-					junctionLength, intronStart, intronEnd)
-		tmp = pG4Start
-		pG4Start = pG4End
-		pG4End = tmp
-	return pG4Start, pG4End
-
 def mergeOverlappingSequences(dfTmp):
 	"""Merge the sequences of overlaping windows.
 
@@ -107,7 +56,8 @@ def getInfo(df, feature):
 		dico = {'geneId' : geneDesc.split(' ')[0]}
 	else:
 		geneDescSplit = geneDesc.split(':')
-		dico = {'geneId' : 'No geneId'}
+		id = geneDescSplit[3] +':'+ geneDescSplit[4]
+		dico = {'geneId' : id}
 	dico.update({'Strand' : geneDescSplit[5],
 				'Chromosome' : geneDescSplit[2],
 				'geneStart' : int(geneDescSplit[3]), #for junction it's the
@@ -139,10 +89,7 @@ def mergeWindows(df, feature, junctionLength):
 	if feature == "Junction":
 		if (dicoInfo['pG4Start'] < junctionLength and
 			dicoInfo['pG4End'] > junctionLength):
-			pG4Start, pG4End = getChromosomalCoord(dicoInfo['pG4Start'],
-								dicoInfo['pG4End'], dicoInfo['Strand'],
-								dicoInfo['geneStart'], dicoInfo['geneEnd'],
-								junctionLength)
+			pG4Start, pG4End = dicoInfo['pG4Start'], dicoInfo['pG4End']
 		else:
 			pG4 = None
 	else:
