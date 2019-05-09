@@ -1,0 +1,142 @@
+(
+(
+'Chlamydia trachomatis D/UW-3/CX':4,
+'Borreliella burgdorferi B31':4,
+'Aquifex aeolicus VF5':4,
+(
+'Chloroflexus aurantiacus J-10-fl':4,
+'Thermus thermophilus HB8':4,
+'Mycoplasma pneumoniae M129':4,
+(
+(
+'Enterococcus faecalis V583':4,
+'Streptococcus pneumoniae TIGR4':4
+)Lactobacillales:4,
+(
+'Bacillus subtilis subsp. subtilis str. 168':4,
+'Staphylococcus aureus subsp. aureus N315':4
+)Bacillales:4
+)Bacilli:4,
+'Mycobacterium tuberculosis H37Rv':4
+)'Terrabacteria group':4,
+(
+(
+(
+'Myxococcus xanthus DK 1622':4,
+'Geobacter sulfurreducens PCA':4
+)Deltaproteobacteria:4,
+'Campylobacter jejuni subsp. jejuni NCTC 11168 = ATCC 700819':4
+)'delta/epsilon subdivisions':4,
+(
+'Brucella abortus bv. 1 str. 9-941':4,
+(
+'Anaplasma phagocytophilum str. HZ':4,
+'Wolbachia endosymbiont of Drosophila melanogaster':4
+)Anaplasmataceae:4
+)Alphaproteobacteria:4,
+'Neisseria meningitidis Z2491':4,
+(
+'Legionella pneumophila str. Paris':4,
+'Vibrio cholerae O1 biovar El Tor str. N16961':4,
+(
+'Escherichia coli str. K-12 substr. MG1655':4,
+'Yersinia pestis biovar Microtus str. 91001':4
+)Enterobacterales:4,
+'Francisella tularensis subsp. tularensis SCHU S4':4,
+'Haemophilus influenzae Rd KW20':4
+)Gammaproteobacteria:4
+)Proteobacteria:4
+)Bacteria:4,
+(
+'Nanoarchaeum equitans Kin4-M':4,
+(
+'Cenarchaeum symbiosum A':4,
+'Candidatus Korarchaeum cryptofilum OPF8':4,
+(
+'Hyperthermus butylicus DSM 5456':4,
+'Saccharolobus solfataricus P2':4,
+'Pyrobaculum aerophilum str. IM2':4
+)Thermoprotei:4
+)'TACK group':4,
+(
+'Methanobrevibacter smithii ATCC 35061':4,
+'Thermoplasma acidophilum DSM 1728':4,
+'Archaeoglobus fulgidus DSM 4304':4,
+(
+'Halobacterium salinarum R1':4,
+'Methanosarcina acetivorans C2A':4
+)'Stenosarchaea group':4,
+'Pyrococcus horikoshii OT3':4
+)Euryarchaeota:4
+)Archaea:4,
+(
+'Dictyostelium discoideum':4,
+'Leishmania major':4,
+(
+(
+(
+(
+(
+(
+'Monodelphis domestica':4,
+(
+'Mus musculus':4,
+(
+'Pongo abelii':4,
+(
+'Homo sapiens':4,
+'Pan troglodytes':4
+)Homininae:4
+)Hominidae:4
+)Euarchontoglires:4
+)Theria:4,
+'Ornithorhynchus anatinus':4
+)Mammalia:4,
+(
+'Anolis carolinensis':4,
+'Gallus gallus':4
+)Sauria:4
+)Amniota:4,
+(
+'Gasterosteus aculeatus':4,
+'Danio rerio':4
+)Clupeocephala:4
+)Euteleostomi:4,
+(
+(
+'Apis mellifera':4,
+'Drosophila melanogaster':4
+)Holometabola:4,
+'Caenorhabditis elegans':4
+)Ecdysozoa:4
+)Bilateria:4,
+(
+(
+(
+'Aspergillus nidulans':4,
+'Neurospora crassa':4
+)leotiomyceta:4,
+'Saccharomyces cerevisiae':4
+)saccharomyceta:4,
+'Schizosaccharomyces pombe':4
+)Ascomycota:4
+)Opisthokonta:4,
+(
+(
+(
+'Oryza sativa':4,
+(
+'Solanum lycopersicum':4,
+(
+'Vitis vinifera':4,
+'Arabidopsis thaliana':4
+)rosids:4
+)Pentapetalae:4
+)Mesangiospermae:4,
+'Physcomitrella patens':4
+)Embryophyta:4,
+'Chlamydomonas reinhardtii':4
+)Viridiplantae:4,
+'Emiliania huxleyi':4
+)Eukaryota:4
+)'cellular organisms':4;
