@@ -90,14 +90,14 @@ def mergeWindows(df, feature, junctionLength):
 		if (dicoInfo['pG4Start'] < junctionLength and
 			dicoInfo['pG4End'] > junctionLength):
 			pG4Start, pG4End = dicoInfo['pG4Start'], dicoInfo['pG4End']
+			pG4 = True
 		else:
 			pG4 = None
 	else:
 		pG4Start = dicoInfo['pG4Start']
 		pG4End = dicoInfo['pG4End']
-	try:
-		pG4
-	except:
+		pG4 = True
+	if pG4:
 		pG4 = {'id' : [ dicoInfo['geneId'] ],
 				'Strand' : [ dicoInfo['Strand'] ],
 				'Chromosome' : [ dicoInfo['Chromosome'] ],
@@ -143,52 +143,7 @@ def getDFByStrand(df):
 	 		'Forward' : dfWindowsForward}
 	return dicoDF
 
-def mergeGeneG4(df, dicoParam, feature):
-	"""Browses all window to find those that are overlapping.
-
-	:param df: contains all windows from one strand.
-	:type df: dataFrame
-	:param dicoParam: contains all parameters that were given to g4rna screener.
-	:type dicoParam: dictionnary
-	:param feature: junction or gene.
-	:type feature: string
-
-	:returns: dfpG4, contain all pG4 for that strand.
-	:rtype: dataFrame
-	"""
-	dfTmp = pd.DataFrame()
-	dfpG4 = pd.DataFrame()
-	dfTmp = dfTmp.append(df[0:1]) # store the first window
-	if len(df) == 1:
-		dfTmp = pd.DataFrame.from_dict(mergeWindows(dfTmp,
-				feature, dicoParam["junctionLength"]))
-		dfpG4 = dfpG4.append(dfTmp)
-	else:
-		for w in range(1,len(df)): # w for window
-			# browses all windows over thresholds, exept the first one
-			if ((df.wStart.iloc[w] >= df.wStart.iloc[w-1] and
-				df.wStart.iloc[w] <= df.wEnd.iloc[w-1]) or
-				(df.wEnd.iloc[w] >= df.wStart.iloc[w-1] and
-				df.wEnd.iloc[w] <= df.wEnd.iloc[w-1])):
-				# if window overlap, add window at the current pG4
-				dfTmp = dfTmp.append(df[w:w+1])
-				if w == len(df)-1 :
-					dfTmp = pd.DataFrame.from_dict(mergeWindows(dfTmp,
-							feature, dicoParam["junctionLength"]))
-					dfpG4 = dfpG4.append(dfTmp)
-			else: # new pG4
-				dfTmp = pd.DataFrame.from_dict(mergeWindows(dfTmp,
-						feature, dicoParam["junctionLength"]))
-				dfpG4 = dfpG4.append(dfTmp)
-				dfTmp = df.iloc[w:w+1]
-				if w == len(df)-1 :
-					dfTmp = pd.DataFrame.from_dict(mergeWindows(dfTmp,
-							feature, dicoParam["junctionLength"]))
-					dfpG4 = dfpG4.append(dfTmp)
-				# reinitiate the dfTmp with the new pG4
-	return dfpG4
-
-def mergeJunctionG4(df, dicoParam, feature):
+def mergeG4(df, dicoParam, feature):
 	"""Browses all junction window to find those that are overlapping.
 
 	Here we browse all junctions windows. We will only kept those that overlap
@@ -244,14 +199,14 @@ def main(filename, dicoParam, feature):
 	try:
 		dfWindows = pd.read_csv(filename, sep='\t', index_col=0)
 	except:
-		print "This file couldn't be converted in data frame : " + filename
+		print("This file couldn't be converted in data frame : " + filename)
 	else:
 		# dataFrame with all windows from G4RNA Screener
 		dfWindows.columns = ['geneDesc','cGcC',
 							'G4H','seqG4','wStart',
 							'wEnd', 'G4NN']
 		dfWindows = filterOnScores(dicoParam, dfWindows)
-		dfpG4 = dfpG4.append(mergeJunctionG4(dfWindows, dicoParam, feature))
+		dfpG4 = dfpG4.append(mergeG4(dfWindows, dicoParam, feature))
 		return dfpG4
 
 if __name__ == '__main__':

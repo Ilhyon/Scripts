@@ -26,17 +26,16 @@ def importIntron(filename):
 	try:
 		df = pd.read_csv(filename, sep='\t')
 	except:
-		print "This file couldn't be converted in data frame : " + filename
+		print("This file couldn't be converted in data frame : " + filename)
 	else:
 		# dataFrame with all windows from G4RNA Screener
 		df.columns = ['Transcript', 'Chromosome','Start','End', 'Strand']
 		df['Id'] = df['Start'].map(str) +':'+ df['End'].map(str)
 		return df
 
-def main(dicoParam, path, dicoGene, dfTr, dfIntron):
-	dfpG4 = pd.DataFrame()
-	G4DetectedInJunction = {}
+def mergeWindow(path, dicoParam):
 	directory = path + '/CSVFile'
+	dfpG4 = pd.DataFrame()
 	# directory containing data for a specie
 	for path, dirs, files in os.walk(directory):
 		# for each element of the directory to passed
@@ -53,10 +52,14 @@ def main(dicoParam, path, dicoGene, dfTr, dfIntron):
 				dfpG4 = dfpG4.reset_index(drop=True)
 	dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
 	dfpG4 = dfpG4.reset_index(drop=True)
-	print '\t'+str(dfpG4.shape)
-	# output = path + '/pG4.txt'
+	return dfpG4
+
+def main(dicoParam, path, dicoGene, dfTr, dfIntron):
+	output = path + '/pG4.txt'
+	dfpG4 = mergeWindow(path, dicoParam)
+	print ('\t'+str(dfpG4.shape))
 	pG4Anno = G4Annotation.main(dfTr, dicoGene, dfpG4, dfIntron)
-	# dfpG4.to_csv(path_or_buf=output, header=True, index=None, sep=' ', mode='a')
+	pG4Anno.to_csv(path_or_buf=output, header=True, index=None, sep='\t', mode='a')
 
 def createDicoParam(arg):
 	"""Retrieves arguments and put them in a dictionary.
@@ -96,10 +99,10 @@ if __name__ == '__main__':
 	sp = arg.specie
 	ini = rF.setUpperLetter(sp)
 	path = arg.path + sp
-	print "Specie : " + sp
+	print("Specie : " + sp)
 	dicoParam = createDicoParam(arg)
 	dfTr = Parser_gtf.importGTFdf(path +'/'+ sp +'.gtf')
 	dicoGene = Parser_gtf.importGTFGene(path +'/'+ sp +'.gtf')
 	dfIntron = importIntron(path +'/'+ ini +'_intron.txt')
 	main(dicoParam, path, dicoGene, dfTr, dfIntron)
-	print "\tDone"
+	print("\tDone")

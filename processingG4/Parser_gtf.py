@@ -264,7 +264,7 @@ def importGTFdf(filename):
 	try:
 		df = pd.read_csv(filename, sep='\t', index_col=0, skiprows=5)
 	except:
-		print "This file couldn't be converted in data frame : " + filename
+		print("This file couldn't be converted in data frame : " + filename)
 	else:
 		# dataFrame with all windows from G4RNA Screener
 		df.columns = ['Biotype', 'Feature','Start','End',
@@ -348,7 +348,7 @@ def importGTF(filename):
 				elif re.search('genome-version', l):
 					assembly = l.split(' ')[1]
 	else:
-		print "This file don't exist : " + filename
+		print("This file don't exist : " + filename)
 	return dicoTr
 
 def computesCoordRank1(strand, start, end):
@@ -567,7 +567,7 @@ if __name__ == '__main__':
 	parser = build_arg_parser()
 	arg = parser.parse_args()
 	sp = arg.specie	# specie to parse
-	print sp
+	print(sp)
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + \
 		"/" + sp + ".gtf"
-	print importGTFdf(filename)
+	print(importGTFdf(filename))

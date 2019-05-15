@@ -19,3 +19,21 @@ def setUpperLetter(words):
     ini = "".join(letters)
     ini = ini.upper()
     return ini
+
+def createDicoParam(arg):
+	"""Retrieves arguments and put them in a dictionary.
+
+	:param arg: contains all arguments given to the script, those are principaly
+		parameters from G4RNA Screener.
+	:type arg: arg_parser
+
+	:returns: dicoParam, contains all arguments given to the script.
+	:rtype: dictionary
+	"""
+	dicoParam = {"g4H" : float(arg.THRESHOLD_G4H),
+				"cGcC" : float(arg.THRESHOLD_CGCC),
+				"g4NN" : float(arg.THRESHOLD_G4NN),
+				"junctionLength" : int(arg.EXTENSION),
+				"windowLength" : int(arg.EXTENSION),
+				"step" : int(arg.STEP)}
+	return dicoParam

@@ -79,10 +79,10 @@ def importFastaChromosome(sp) :
 				dicoChromosome.update({chrm : sequence})
 				for nucleotide in count:
 					count[nucleotide] += sequence.count(nucleotide)
-	print "\tDictionnary fasta done"
+	print("\tDictionnary fasta done")
 	GCcontent = float(count['G'] + count['C']) / \
 		(count['G'] + count['C'] + count['A'] + count['T']) * 100
-	print '\tGC content in genome is: ' + str(GCcontent) + '.'
+	print('\tGC content in genome is: ' + str(GCcontent) + '.')
 	return dicoChromosome
 
 def getGeneSequence(sp, dicoChromosome) :
@@ -133,7 +133,7 @@ def getGeneSequence(sp, dicoChromosome) :
 					geneSequence = negSeq + posSeq
 				dicoGene[geneId].update({"Sequence" : geneSequence})
 	else:
-		print 'gtf do not exist'
+		print('gtf do not exist')
 	return dicoGene
 
 def createFasta(sp, dicoFeature, featureType):
@@ -197,7 +197,7 @@ def createFasta(sp, dicoFeature, featureType):
 	else:
 		GCcontent = float(count['G'] + count['C']) / \
 			(count['G'] + count['C'] + count['A'] + count['T']) * 100
-		print '\tGC content in genes is: ' + str(GCcontent) + '.'
+		print('\tGC content in genes is: ' + str(GCcontent) + '.')
 
 def getJunctionSequences(dicoChromosome, filename):
 	"""Gets junction sequence.
@@ -240,14 +240,14 @@ def getJunctionSequences(dicoChromosome, filename):
 	return dicoJunction
 
 def main(sp):
-	print "Fasta for " + sp
+	print("Fasta for " + sp)
 	filename = '/home/anais/Documents/Data/Genomes/' + sp + '/' + sp + '.gtf'
 	dicoChromosome = importFastaChromosome(sp)
 	dicoGene = getGeneSequence(sp, dicoChromosome)
 	createFasta(sp, dicoGene, 'gene')
 	dicoJunction = getJunctionSequences(dicoChromosome, filename)
 	createFasta(sp, dicoJunction, 'junction')
-	print "\tDone"
+	print("\tDone")
 
 if __name__ == '__main__':
 	parser = build_arg_parser()

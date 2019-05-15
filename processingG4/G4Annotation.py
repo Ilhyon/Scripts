@@ -117,7 +117,6 @@ def main(dfTr, dicoGene, dfpG4, dfIntron):
 	dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
 	dfpG4Annotation = removeG4OnBadTr(dfpG4Annotation, trRemove)
 	dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
-	print trRemove
 	return dfpG4Annotation
 
 if __name__ == '__main__':
