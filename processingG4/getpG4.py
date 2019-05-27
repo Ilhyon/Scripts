@@ -210,4 +210,11 @@ def main(filename, dicoParam, feature):
 		return dfpG4
 
 if __name__ == '__main__':
-	main(filename, dicoParam, feature)
+	filename = '/home/anais/Documents/Data/Test/pG4.csv'
+	dicoParam = {'g4NN' : 0.5, 'cGcC' : 4.5, 'g4H' : 0.9,
+				"junctionLength" : 100,
+				"windowLength" : 60,
+				"step" : 10}
+	feature = 'Gene'
+	df = main(filename, dicoParam, feature)
+	print df.reset_index(drop=True)

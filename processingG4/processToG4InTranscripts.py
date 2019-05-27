@@ -61,24 +61,6 @@ def main(dicoParam, path, dicoGene, dfTr, dfIntron):
 	pG4Anno = G4Annotation.main(dfTr, dicoGene, dfpG4, dfIntron)
 	pG4Anno.to_csv(path_or_buf=output, header=True, index=None, sep='\t', mode='a')
 
-def createDicoParam(arg):
-	"""Retrieves arguments and put them in a dictionary.
-
-	:param arg: contains all arguments given to the script, those are principaly
-		parameters from G4RNA Screener.
-	:type arg: arg_parser
-
-	:returns: dicoParam, contains all arguments given to the script.
-	:rtype: dictionary
-	"""
-	dicoParam = {"g4H" : float(arg.THRESHOLD_G4H),
-				"cGcC" : float(arg.THRESHOLD_CGCC),
-				"g4NN" : float(arg.THRESHOLD_G4NN),
-				"junctionLength" : int(arg.EXTENSION),
-				"windowLength" : int(arg.EXTENSION),
-				"step" : int(arg.STEP)}
-	return dicoParam
-
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
 	GITDIR = os.getcwd()+'/'
@@ -100,7 +82,7 @@ if __name__ == '__main__':
 	ini = rF.setUpperLetter(sp)
 	path = arg.path + sp
 	print("Specie : " + sp)
-	dicoParam = createDicoParam(arg)
+	dicoParam = rF.createDicoParam(arg)
 	dfTr = Parser_gtf.importGTFdf(path +'/'+ sp +'.gtf')
 	dicoGene = Parser_gtf.importGTFGene(path +'/'+ sp +'.gtf')
 	dfIntron = importIntron(path +'/'+ ini +'_intron.txt')

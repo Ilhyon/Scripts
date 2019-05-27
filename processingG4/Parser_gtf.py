@@ -216,8 +216,7 @@ def addTypeTr(biotype):
 	"""
 	coding = ['IG_C_gene', 'IG_D_gene', 'IG_J_gene',
 			'IG_LV_gene', 'IG_M_gene', 'IG_V_gene',
-			'IG_Z_gene', 'nonsense_mediated_decay',
-			'nontranslating_CDS', 'non_stop_decay',
+			'IG_Z_gene', 'nonsense_mediated_decay', 'non_stop_decay',
 			'protein_coding', 'TR_C_gene', 'TR_D_gene',
 			'TR_gene', 'TR_J_gene', 'TR_V_gene']
 	if biotype in coding:
