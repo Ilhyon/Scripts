@@ -1,0 +1,165 @@
+#library(compare)
+#install.packages("compare")
+library(gsubfn)
+library(proto)
+library(RSQLite)
+library(sqldf)
+#install.packages("sqldf")
+G4_all_score <- read.delim("~/Documents/Data/G4RNA/G4_all_score", header=FALSE)
+G4_G4nn <- read.delim("~/Documents/Data/G4RNA/G4_G4nn", header=FALSE)
+a2NotIna1 <- sqldf('SELECT * FROM G4_G4nn EXCEPT SELECT * FROM G4_all_score')
+a2NotIna1
+View(a2NotIna1)
+write.table(a2NotIna1, file='~/Documents/Data/G4RNA/diff_score.tsv', quote=FALSE, sep='\t', col.names = NA)
+View(G4_all_score)
+View(G4_G4nn)
+GAAACGUCCCGUGUGGGAGGGGCGGGUCUGGGUGCGGCCUGCCGCAUGACUCGUGGUUCGGAGGCCCACGUGGCCGGGGCGGGGACUCAGGCGCCUGGGGCGCCGACUGAUUACGUAGCGGGCGGGGCCGGAAGUGCCGCUCCUUGGUGGGGGCUGUUCAUGGCGGUUCCGGGGUCUCCAACAUUUUUCCCGGCUGUGGUCCUAAAUCUGUCCAAAGCAGAGGCAGUGGAGCUUGAGGUUCUUGCUGGUGUGAACAGGUAUACAUAGUUGGAAUG
+#library(compare)
+#install.packages("compare")
+library(gsubfn)
+library(proto)
+library(RSQLite)
+library(sqldf)
+#install.packages("sqldf")
+pG4_all_score <- read.delim("~/Documents/Data/G4RNA/pG4_all_score", header=FALSE)
+#install.packages("sqldf")
+pG4_all_score <- read.delim("~/Documents/Data/G4RNA/pG4_all_score.txt", header=FALSE)
+pG4_G4nn <- read.delim("~/Documents/Data/G4RNA/pG4_g4nn.txt", header=FALSE)
+pG4nnNotInpG4all <- sqldf('SELECT * FROM pG4_g4nn EXCEPT SELECT * FROM pG4_all_score')
+pG4nnNotInpG4all <- sqldf('SELECT * FROM pG4_G4nn EXCEPT SELECT * FROM pG4_all_score')
+View(pG4nnNotInpG4all)
+write.table(pG4nnNotInpG4all, file='~/Documents/Data/G4RNA/pG4_diff_score.tsv', quote=FALSE, sep='\t', col.names = NA)
+write.table(pG4nnNotInpG4all, file='~/Documents/Data/G4RNA/pG4_diff_score.tsv', quote=FALSE, sep='\t', col.names = NA, header = FALSE)
+nbG4 <- read.delim("~/Documents/Data/Genomes/All_sp/nbG4.tsv", stringsAsFactors = FALSE)
+label = nbG4[1,]
+nbG4 = nbG4[2:64,]
+tablePlot = data.frame(as.numeric(as.character(nbG4$Density)), as.numeric(as.character(nbG4$GC.content)), nbG4$X.1, nbG4[,1])
+rownames(tablePlot) = nbG4[,1]
+library(ggplot2)
+#install.packages('ggplot2')
+ggplot(tablePlot, aes(x=tablePlot$as.numeric.as.character.nbG4.Density.., y=tablePlot$as.numeric.as.character.nbG4.GC.content.., color=tablePlot$nbG4.X.1)) +
+geom_point(size=5, alpha=0.6) +
+labs(title = 'Density of pG4 (pG4/kb) and GC content', x = 'Density of pG4 (pG4/kb)', y = '% of GC in genes', colour = 'Clade', caption = "based on data from genes") #+ xlim(0, 0.35)
+#install.packages('ggplot2')
+ggplot(tablePlot, aes(x=tablePlot$as.numeric.as.character.nbG4.Density.., y=tablePlot$as.numeric.as.character.nbG4.GC.content.., color=tablePlot$nbG4.X.1)) +
+geom_point(size=5, alpha=0.6) +
+labs(title = 'Density of pG4 (pG4/kb) and GC content', x = 'Density of pG4 (pG4/kb)', y = '% of GC in genes', colour = 'Clade', caption = "based on data from genes") + xlim(0, 0.35)
+ggplot(tablePlot, aes(x=tablePlot$as.numeric.as.character.nbG4.Density.., y=tablePlot$as.numeric.as.character.nbG4.GC.content.., color=tablePlot$nbG4.X.1, label = tablePlot$nbG4...1.)) +
+geom_point() + geom_text(aes(label = tablePlot$nbG4...1.)) +
+labs(title = 'Density of pG4 (pG4/kb) and GC content', x = 'Density of pG4 (pG4/kb)', y = '% of GC in genes', colour = 'Clade', caption = "based on data from genes") + xlim(0, 0.35)
+head(mpg)
+load(mpg)
+mpg
+data(mpg)
+data(mtcars)
+head(mtcars)
+View(mtcars)
+data(diamonds)
+library(ggplot2)
+head(mpg)
+ggplot(diamonds, aes(x=carat, y=price)) +
+geom_boxplot(fill="skyblue", aes(group = cut_width(carat, 0.5)))
+View(mpg)
+read.table("<FileName>.txt", 
+header = TRUE)
+read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron.xlsx", header = TRUE)
+read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron.csv", header = TRUE, sep = "\t")
+read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron_allsp.csv", header = TRUE, sep = "\t")
+introns <- read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron_allsp.csv", header = TRUE, sep = "\t", fill = TRUE)
+(introns)
+introns +1
+introns <- introns +1
+library(ggplot2)
+p  <- ggplot(introns, aes(, colour=Location, fill=Location))
+head(t(introns))
+cities <- c("Canberra", "Darwin", "Melbourne", "Sydney")
+cities
+ds <- subset(weatherAUS, Location %in% cities & ! is.na(Temp3pm))
+library(rattle)
+install.package('rattle')
+install.packages('rattle')
+library(rattle)
+install.packages('XML')
+install.packages('rattle')
+library(rattle)
+ds <- subset(weatherAUS, Location %in% cities & ! is.na(Temp3pm))
+ds
+head(ds)
+p  <- ggplot(ds, aes(Temp3pm, colour=Location, fill=Location))
+p
+p  <- p + geom_density(alpha=0.55)
+p
+introns <- read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron_length.csv", header = FALSE, sep = "\t")
+introns <- read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron_length.csv", header = FALSE, sep = "\t")
+introns <- read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron_length.csv", header = FALSE, sep = "\t")
+introns <- read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron_length.csv", header = FALSE, sep = "\t")
+introns <- read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron_length.csv", header = FALSE, sep = "\t")
+introns <- read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron_length.csv", header = FALSE, sep = "\t")
+introns <- introns +1
+head(introns)
+introns <- introns[,1] +1
+head(introns)
+introns <- read.table("/home/anais/Documents/Data/Genomes/All_sp/Intron_length.csv", header = FALSE, sep = "\t")
+head(introns)
+colnames(introns) <- c("specie", "length")
+head(introns)
+introns$length <- introns$length +1
+head(introns)
+p  <- ggplot(ds, aes(length, colour=specie, fill=specie))
+p  <- p + geom_density(alpha=0.55)
+p
+p  <- ggplot(ds, aes(introns$length, colour=introns$specie, fill=introns$specie))
+p  <- p + geom_density(alpha=0.55)
+p
+introns[12765,]
+introns[12760:12769,]
+p  <- ggplot(introns, aes(introns$length, colour=introns$specie, fill=introns$specie))
+p  <- p + geom_density(alpha=0.55)
+p
+ensembl <- introns[introns$specie == 'homo_sapiens']
+ensembl <- introns$specie[introns$specie == 'homo_sapiens']
+head(ensembl)
+ensembl <- introns[which(introns$specie == 'homo_sapiens')]
+ensembl <- introns[which(introns$specie == 'homo_sapiens'),]
+head(ensembl)
+ensembl <- rbind(introns[which(introns$specie == 'pan_troglodytes'),])
+head(ensembl)
+tail(ensembl)
+ensembl <- ensembl.rbind(introns[which(introns$specie == 'homo_sapiens'),])
+head(ensembl)
+ensembl <- rbind(ensembl, introns[which(introns$specie == 'homo_sapiens'),])
+head(ensembl)
+tail(ensembl)
+ensembl <- rbind(ensembl, introns[which(introns$specie == 'pongo_abelii'),])
+ensembl <- rbind(ensembl, introns[which(introns$specie == 'mus_musculus'),])
+ensembl <- rbind(ensembl, introns[which(introns$specie == 'monodelphis_domestica'),])
+ensembl <- rbind(ensembl, introns[which(introns$specie == 'anolis_carolinensis'),])
+ensembl <- rbind(ensembl, introns[which(introns$specie == 'ornithorhynchus_anatinus'),])
+ensembl <- rbind(ensembl, introns[which(introns$specie == 'gallus_gallus'),])
+ensembl <- rbind(ensembl, introns[which(introns$specie == 'danio_rerio'),])
+ensembl <- rbind(ensembl, introns[which(introns$specie == 'gasterosteus_aculeatus'),])
+p  <- ggplot(ensembl, aes(ensembl$length, colour=ensembl$specie, fill=ensembl$specie))
+p  <- p + geom_density(alpha=0.55)
+p
+p  <- p + geom_density(alpha=0.55) + xlim(0, 50000)
+p
+p  <- p + geom_density(alpha=0.55) + xlim(0, 20000)
+p  <- ggplot(ensembl, aes(ensembl$length, colour=ensembl$specie, fill=ensembl$specie))
+p  <- p + geom_density(alpha=0.55) + xlim(0, 20000)
+p
+p  <- ggplot(ensembl, aes(ensembl$length, colour=ensembl$specie, fill=ensembl$specie))
+p  <- p + geom_density(alpha=0.55) + xlim(0, 5000)
+p
+p  <- ggplot(ensembl, aes(ensembl$length, colour=ensembl$specie, fill=ensembl$specie))
+p  <- p + geom_density(alpha=0.55) + xlim(0, 1500)
+p
+p  <- ggplot(ensembl, aes(ensembl$length, colour=ensembl$specie, fill=ensembl$specie))
+p  <- p + geom_density(alpha=0.55) + xlim(0, 500)
+p
+p  <- ggplot(ensembl, aes(ensembl$length, colour=ensembl$specie, fill=ensembl$specie))
+p  <- p + geom_density(alpha=0.55) + xlim(0, 150)
+p
+ggsave(file="test.svg", plot=p, width=10, height=8)
+install.packages('svglite')
+install.packages('svglite')
+savehistory(file="Aaaaaaaaaaaa")

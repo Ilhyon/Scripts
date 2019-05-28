@@ -18,15 +18,39 @@ Laboratoty CoBiUS and Jean-Pierre Perreault
 import re
 import os
 import math
+import random
 import argparse
+from Bio import SeqIO
 from pprint import pprint
 import Parser_gtf as pgtf
 import recurrentFunction as rF
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'Parser_Fasta')
-	parser.add_argument ('-sp', '--specie', default = 'MM')
+	parser.add_argument ('-sp', '--specie',
+		default = 'yersinia_pestis_biovar_microtus_str_91001')
 	return parser
+
+def importGeneFasta(filename, path):
+	fastaOrigin = SeqIO.parse(open(filename),'fasta')
+	fastaRandom = {}
+	for fasta in fastaOrigin:
+		name, sequence = fasta.id, str(fasta.seq)
+		sequence = list(sequence)
+		random.shuffle(sequence)
+		fastaRandom[name] = ''.join(sequence)
+	output = open(path + 'Random.fas', "w")
+	for id in fastaRandom:
+		output.write(">" + id + "\n")
+		nbLine = math.ceil( float( len(fastaRandom[id]) ) / 60 )
+		cpt1 = 0
+		cpt2 = 60
+		for i in range(0,int(nbLine)) :
+			output.write( fastaRandom[id][cpt1:cpt2] + "\n" )
+			# to have a new line after 60 characters
+			cpt1 += 60
+			cpt2 += 60
+	output.close()
 
 def reverseSequence(Sequence) :
 	""" Reverse complement a DNA sequence.
@@ -253,4 +277,7 @@ if __name__ == '__main__':
 	parser = build_arg_parser()
 	arg = parser.parse_args()
 	sp = arg.specie # specie to analyse
-	main(sp)
+	ini = rF.setUpperLetter(sp)
+	path = '/home/anais/Documents/Data/Genomes/' + sp + '/'
+	filename = path + ini + '_gene_unspliced.txt'
+	importGeneFasta(filename, path)
