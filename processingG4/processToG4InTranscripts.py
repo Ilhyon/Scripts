@@ -33,8 +33,11 @@ def importIntron(filename):
 		df['Id'] = df['Start'].map(str) +':'+ df['End'].map(str)
 		return df
 
-def mergeWindow(path, dicoParam):
-	directory = path + '/CSVFile'
+def mergeWindow(path, dicoParam, option):
+	if option == 'Annotation':
+		directory = path + '/CSVFile'
+	elif option == 'Random':
+		directory = path + '/randomCSV'
 	dfpG4 = pd.DataFrame()
 	# directory containing data for a specie
 	for path, dirs, files in os.walk(directory):
@@ -44,22 +47,33 @@ def mergeWindow(path, dicoParam):
 			if ('gene_unspliced' in filename):
 				# windows in genes
 				dfpG4 = dfpG4.append(getpG4.main(inputfile,
-						dicoParam, "Gene"))
+						dicoParam, "Gene", option))
 				dfpG4 = dfpG4.reset_index(drop=True)
 			elif ('transcript_unspliced' in filename):
 				dfpG4 = dfpG4.append(getpG4.main(inputfile,
-						dicoParam,"Junction"))
+						dicoParam,"Junction", option))
 				dfpG4 = dfpG4.reset_index(drop=True)
-	dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
-	dfpG4 = dfpG4.reset_index(drop=True)
+			elif ('Random' in filename):
+				dfpG4 = dfpG4.append(getpG4.main(inputfile,
+						dicoParam,"Gene", option))
+				dfpG4 = dfpG4.reset_index(drop=True)
+	if len(dfpG4) > 0:
+		dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
+		dfpG4 = dfpG4.reset_index(drop=True)
 	return dfpG4
 
-def main(dicoParam, path, dicoGene, dfTr, dfIntron):
-	output = path + '/pG4.txt'
-	dfpG4 = mergeWindow(path, dicoParam)
-	print ('\t'+str(dfpG4.shape))
-	pG4Anno = G4Annotation.main(dfTr, dicoGene, dfpG4, dfIntron)
-	pG4Anno.to_csv(path_or_buf=output, header=True, index=None, sep='\t', mode='a')
+def main(dicoParam, path, dicoGene, dfTr, dfIntron, option):
+	if option == 'Annotation':
+		output = path + '/pG4.txt'
+		dfpG4 = mergeWindow(path, dicoParam, option)
+		print ('\t'+str(dfpG4.shape))
+		pG4Anno = G4Annotation.main(dfTr, dicoGene, dfpG4, dfIntron)
+		print ('\t'+str(pG4Anno.shape))
+		pG4Anno.to_csv(path_or_buf=output, header=True, index=None, sep='\t', mode='a')
+	elif option == 'Random':
+		dfpG4 = mergeWindow(path, dicoParam, option)
+		print ('\t'+str(dfpG4.shape))
+		print dfpG4
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
@@ -67,6 +81,7 @@ def build_arg_parser():
 	parser.add_argument ('-p', '--path', default = GITDIR)
 	parser.add_argument ('-sp', '--specie', default = \
 		'yersinia_pestis_biovar_microtus_str_91001')
+	parser.add_argument ('-o', '--option', default = 'Annotation')
 	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
 	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 4.5)
 	parser.add_argument ('-G4NN', '--THRESHOLD_G4NN', default = 0.5)
@@ -79,6 +94,7 @@ if __name__ == '__main__':
 	parser = build_arg_parser()
 	arg = parser.parse_args()
 	sp = arg.specie
+	option = arg.option
 	ini = rF.setUpperLetter(sp)
 	path = arg.path + sp
 	print("Specie : " + sp)
@@ -86,5 +102,5 @@ if __name__ == '__main__':
 	dfTr = Parser_gtf.importGTFdf(path +'/'+ sp +'.gtf')
 	dicoGene = Parser_gtf.importGTFGene(path +'/'+ sp +'.gtf')
 	dfIntron = importIntron(path +'/'+ ini +'_intron.txt')
-	main(dicoParam, path, dicoGene, dfTr, dfIntron)
+	main(dicoParam, path, dicoGene, dfTr, dfIntron, option)
 	print("\tDone")

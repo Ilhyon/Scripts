@@ -76,6 +76,7 @@ def mapG4onJunction(pG4r, dfIntron, dfTr):
 
 def removeG4OnBadTr(dfpG4Annotation, trRemove):
 	for pG4 in range(0,len(dfpG4Annotation)):
+		print pG4
 		tr = dfpG4Annotation.id[pG4]
 		if tr in trRemove:
 			dfpG4Annotation = dfpG4Annotation[dfpG4Annotation.id != tr]
@@ -115,6 +116,7 @@ def main(dfTr, dicoGene, dfpG4, dfIntron):
 			pG4rtmp = mapG4onJunction(pG4rtmp, dftmpIntron, dfTr)
 			dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
 	dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
+	print len(dfpG4Annotation)
 	dfpG4Annotation = removeG4OnBadTr(dfpG4Annotation, trRemove)
 	dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
 	return dfpG4Annotation
