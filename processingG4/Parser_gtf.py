@@ -27,6 +27,7 @@ import argparse
 import numpy as np
 import pandas as pd
 from pprint import pprint
+from collections import Counter
 import recurrentFunction as rF
 
 def build_arg_parser():
@@ -562,6 +563,31 @@ def writeIntron(sp, dico):
 					output.write(line)
 	output.close()
 
+def computeLength(filename):
+	dicoGene = importGTFGene(filename)
+	geneLength = 0
+	dfTr = importGTFdf(filename)
+	trLength = 0
+	for gene in dicoGene:
+		geneLength += dicoGene[gene]['End'] - dicoGene[gene]['Start'] +1
+	transcripts = list(set(dfTr['Transcript']))
+	for tr in transcripts:
+		dfTmp = dfTr[ dfTr.Transcript == tr ].dropna().reset_index(drop=True)
+		if (dfTmp['Type'][0] == 'Non Coding' and
+			('five_prime_utr' in dfTmp['Feature'] or
+			'three_prime_utr' in dfTmp['Feature'])):
+			pass
+		else:
+			start = min(dfTmp['Start'])
+			end = max(dfTmp['End'])
+			trLength += end - start +1
+	# dfTmp = dfTr[ dfTr.Feature == 'Exon' ].dropna()
+	# starts = dfTmp['End']
+	# counts = Counter(starts)
+	# dupids = [id for id in starts if counts[id] > 1]
+	# print dupids
+	return geneLength, trLength
+
 if __name__ == '__main__':
 	parser = build_arg_parser()
 	arg = parser.parse_args()
@@ -569,4 +595,6 @@ if __name__ == '__main__':
 	print(sp)
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + \
 		"/" + sp + ".gtf"
-	print(importGTFdf(filename))
+	gene, tr = computeLength(filename)
+	print 'Gene length : ' + str(gene)
+	print 'Transcript length : ' + str(tr)
