@@ -69,7 +69,8 @@ def main(dicoParam, path, dicoGene, dfTr, dfIntron, option):
 		print ('\t'+str(dfpG4.shape))
 		pG4Anno = G4Annotation.main(dfTr, dicoGene, dfpG4, dfIntron)
 		print ('\t'+str(pG4Anno.shape))
-		pG4Anno.to_csv(path_or_buf=output, header=True, index=None, sep='\t', mode='a')
+		pG4Anno = pG4Anno.drop_duplicates(subset=None, keep='first', inplace=False)
+		pG4Anno.to_csv(path_or_buf=output, header=True, index=None, sep='\t')
 	elif option == 'Random':
 		dfpG4 = mergeWindow(path, dicoParam, option)
 		print ('\t'+str(dfpG4.shape))

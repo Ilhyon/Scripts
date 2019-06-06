@@ -28,6 +28,7 @@ def mergeOverlappingSequences(dfTmp):
 	:rtype: string
 	"""
 	seq = str(dfTmp.seqG4.iloc[0])
+	dfTmp = dfTmp.sort_values(by=['wStart'])
 	for w in range(1,len(dfTmp)):
 		step = int(dfTmp.wStart.iloc[w] - dfTmp.wStart.iloc[w-1])
 		# convert to int elsewise it's a float
@@ -50,7 +51,6 @@ def getInfo(df, feature, option):
 	:rtype: dictionary
 	"""
 	geneDesc = df.geneDesc.iloc[0]
-	lastRow = len(df.index) - 1
 	if option == 'Annotation':
 		if feature == 'Gene':
 			geneDescSplit = geneDesc.split(' ')[2].split(':')
@@ -68,8 +68,8 @@ def getInfo(df, feature, option):
 					'meancGcC' : df.cGcC.mean(),
 					'meanG4H' : df.G4H.mean(),
 					'meanG4NN' : df.G4NN.mean(),
-					'pG4Start' : int(df.wStart.iloc[0]),
-					'pG4End' : int(df.wEnd.iloc[lastRow])})
+					'pG4Start' : min(df.wStart),
+					'pG4End' : max(df.wEnd)})
 	elif option == 'Random':
 		dico = {'geneId' : geneDesc,
 				'lastRow' : len(df.index) - 1,
