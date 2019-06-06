@@ -33,50 +33,51 @@ def mapG4OnTr(dfTr, pG4):
 	if len(dfTr) == 1:
 		location = dfTr.Feature[0]
 	else:
-		for feature in range(1,len(dfTr)):
-			if (dfTr.Start.iloc[feature -1] <= pG4.Start[0] and
-				pG4.Start[0] <= dfTr.End.iloc[feature -1] and
-				dfTr.Start.iloc[feature -1] <= pG4.End[0] and
-				pG4.End[0] <= dfTr.End.iloc[feature -1]):
-				#pG4 in the last location
-				location = dfTr.Feature.iloc[feature -1]
-				break
-			elif (dfTr.End.iloc[feature -1] >= pG4.Start[0] and
-				pG4.End[0] >= dfTr.Start.iloc[feature]):
-				location = 'overlap_'+ str(dfTr.Feature.iloc[feature -1]) \
-							+'_'+ str(dfTr.Feature.iloc[feature])
-				break
-			elif (pG4.Start[0] > dfTr.End.iloc[feature -1] and
-				pG4.End[0] < dfTr.Start.iloc[feature]):
-				location = 'intron'
-				break
-			elif (pG4.Start[0] <= dfTr.End.iloc[feature -1] and
-				pG4.End[0] > dfTr.End.iloc[feature -1] and
-				pG4.End[0] < dfTr.Start.iloc[feature]):
-				location = 'overlap_'+ str(dfTr.Feature.iloc[feature -1]) \
-							+'_intron'
-				break
-			elif (pG4.Start[0] > dfTr.End.iloc[feature -1] and
-				pG4.Start[0] < dfTr.Start.iloc[feature] and
-				pG4.End[0] >= dfTr.Start.iloc[feature]):
-				location = 'overlap_intron_' + str(dfTr.Feature.iloc[feature])
-				break
+		for index, row in dfTr.iterrows():
+			if index != 0:
+				if (dfTr.Start[index -1] <= pG4.Start and
+					pG4.Start <= dfTr.End[index -1] and
+					dfTr.Start[index -1] <= pG4.End and
+					pG4.End <= dfTr.End[index -1]):
+					#pG4 in the last location
+					location = dfTr.Feature[index -1]
+					break
+				elif (dfTr.End.iloc[index -1] >= pG4.Start and
+					pG4.End >= dfTr.Start[index]):
+					location = 'overlap_'+ str(dfTr.Feature[index -1]) \
+								+'_'+ str(dfTr.Feature[index])
+					break
+				elif (pG4.Start > dfTr.End[index -1] and
+					pG4.End < dfTr.Start[index]):
+					location = 'intron'
+					break
+				elif (pG4.Start <= dfTr.End[index -1] and
+					pG4.End > dfTr.End[index -1] and
+					pG4.End < dfTr.Start[index]):
+					location = 'overlap_'+ str(dfTr.Feature[index -1]) \
+								+'_intron'
+					break
+				elif (pG4.Start > dfTr.End[index -1] and
+					pG4.Start < dfTr.Start[index] and
+					pG4.End >= dfTr.Start[index]):
+					location = 'overlap_intron_' + str(dfTr.Feature.iloc[index])
+					break
 	return location
 
 def mapG4onJunction(pG4r, dfIntron, dfTr):
 	dfpG4Jun = pd.DataFrame()
-	for intron in range(0,len(dfIntron)):
+	for index, row in dfIntron.iterrows():
 		dftmp = pG4r
 		dftmp['Location'] = 'junction'
-		tr = dfTr[ dfTr.Transcript == dfIntron.Transcript[intron] ]
+		tr = dfTr[dfTr.Transcript == row.Transcript]
 		tr = tr.reset_index(drop=True)
 		dftmp['Biotype'] = tr.Biotype[0]
 		dfpG4Jun = dfpG4Jun.append(dftmp)
 	return dfpG4Jun
 
 def removeG4OnBadTr(dfpG4Annotation, trRemove):
-	for pG4 in range(0,len(dfpG4Annotation)):
-		tr = dfpG4Annotation.id[pG4]
+	for index, row in dfpG4Annotation.iterrows():
+		tr = row.id
 		if tr in trRemove:
 			dfpG4Annotation = dfpG4Annotation[dfpG4Annotation.id != tr]
 	return dfpG4Annotation
@@ -84,39 +85,39 @@ def removeG4OnBadTr(dfpG4Annotation, trRemove):
 def main(dfTr, dicoGene, dfpG4, dfIntron):
 	dfpG4Annotation = pd.DataFrame()
 	trRemove = []
-	for pG4 in range(0,len(dfpG4)):
-		geneId = dfpG4.id.iloc[pG4]
-		if dfpG4.Feature[pG4] == 'Gene':
-			if geneId in dicoGene:
-				if 'Transcript' in dicoGene[geneId]:
-					for tr in dicoGene[geneId]['Transcript']:
-						pG4r = dfpG4.iloc[pG4:pG4+1]
-						pG4r = pG4r.reset_index(drop=True)
-						dftmp =  dfTr[ dfTr.Transcript == tr ].dropna()
-						if dftmp.Type.iloc[0] == 'Coding':
-							dftmp = dftmp[dftmp.Feature != 'exon']
-						else:
-							if len(dftmp[ dftmp.Feature.str.contains('utr') ]) > 0:
-								# tr with bad annotation
-								trRemove.append(tr)
-						dftmp = dftmp.sort_values(by=['Start'])
-						dftmp = dftmp.reset_index(drop=True)
-						location = mapG4OnTr(dftmp, pG4r)
-						pG4rtmp = pG4r
-						pG4rtmp['Location'] = location
-						pG4rtmp['Biotype'] = dftmp.Biotype[0]
-						pG4rtmp.id[0] = tr
-						dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
-		else:
-			pG4rtmp = dfpG4.iloc[pG4]
-			id = pG4rtmp.id
-			dftmpIntron = dfIntron[ dfIntron.Id == id ]
-			dftmpIntron = dftmpIntron.reset_index(drop=True)
-			pG4rtmp = mapG4onJunction(pG4rtmp, dftmpIntron, dfTr)
-			dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
+	dfpG4Gene =  dfpG4[ dfpG4.Feature == 'Gene' ]
+	dfpG4Junction =  dfpG4[ dfpG4.Feature == 'Junction' ]
+	for index, row in dfpG4Gene.iterrows():
+		geneId = row.id
+		if geneId in dicoGene:
+			if 'Transcript' in dicoGene[geneId]:
+				for tr in dicoGene[geneId]['Transcript']:
+					dftmp =  dfTr[ dfTr.Transcript == tr ].dropna()
+					if dftmp.Type.iloc[0] == 'Coding':
+						dftmp = dftmp[dftmp.Feature != 'exon']
+					else:
+						if len(dftmp[ dftmp.Feature.str.contains('utr') ]) > 0:
+							# tr with bad annotation
+							trRemove.append(tr)
+					dftmp = dftmp.sort_values(by=['Start'])
+					dftmp = dftmp.reset_index(drop=True)
+					location = mapG4OnTr(dftmp, row)
+					pG4rtmp = row
+					pG4rtmp['Location'] = location
+					pG4rtmp['Biotype'] = dftmp.Biotype[0]
+					pG4rtmp.id = tr
+					dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
+	for index, row in dfpG4Junction.iterrows():
+		pG4rtmp = row
+		id = pG4rtmp.id
+		dftmpIntron = dfIntron[ dfIntron.Id == id ]
+		dftmpIntron = dftmpIntron.reset_index(drop=True)
+		pG4rtmp = mapG4onJunction(pG4rtmp, dftmpIntron, dfTr)
+	dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
 	dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
 	dfpG4Annotation = removeG4OnBadTr(dfpG4Annotation, trRemove)
 	dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
+	# print dfpG4Annotation
 	return dfpG4Annotation
 
 if __name__ == '__main__':
