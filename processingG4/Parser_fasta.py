@@ -31,7 +31,19 @@ def build_arg_parser():
 		default = 'yersinia_pestis_biovar_microtus_str_91001')
 	return parser
 
-def importGeneFasta(filename, path):
+def RandomFasta(filename, path):
+	"""Shuffle a fasta sequence.
+
+	This function aims to shuffle a fasta sequence to randomize its sequence.
+	The fasta sequence is imported from a fasta file, then converted into a
+	list (one element corrresponds to one nucleotide), the list is shuffled and
+	tehn joined with nothing to recreate the sequence.
+
+	:param filename: name of the fasta file to shuffle.
+	:type filename: string
+	:param path: path of the output file.
+	:type path: string
+	"""
 	fastaOrigin = SeqIO.parse(open(filename),'fasta')
 	fastaRandom = {}
 	for fasta in fastaOrigin:
@@ -280,4 +292,4 @@ if __name__ == '__main__':
 	ini = rF.setUpperLetter(sp)
 	path = '/home/anais/Documents/Data/Genomes/' + sp + '/'
 	filename = path + ini + '_gene_unspliced.txt'
-	importGeneFasta(filename, path)
+	RandomFasta(filename, path)

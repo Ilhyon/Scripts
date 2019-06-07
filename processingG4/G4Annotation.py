@@ -68,7 +68,6 @@ def mapG4onJunction(pG4r, dfIntron, dfTr):
 	dfpG4Jun = pd.DataFrame()
 	for index, row in dfIntron.iterrows():
 		dftmp = pG4r
-		dftmp['Location'] = 'junction'
 		tr = dfTr[dfTr.Transcript == row.Transcript]
 		tr = tr.reset_index(drop=True)
 		dftmp['Biotype'] = tr.Biotype[0]
@@ -76,6 +75,19 @@ def mapG4onJunction(pG4r, dfIntron, dfTr):
 	return dfpG4Jun
 
 def removeG4OnBadTr(dfpG4Annotation, trRemove):
+	""" Remove from a dataFrame row given by a list.
+
+	Some transcript get a bad annotation (UTR in non coding), so we need to
+	remove them from our data.
+
+	:param dfpG4Annotation: all pG4r annotated.
+	:type dfpG4Annotation: dataFrame
+	:param trRemove: all transcript we need to remove.
+	:type trRemove: list
+
+	:returns: dfpG4Annotation, filtered dataFrame with all pG4r.
+	:rtype: dataFrame
+	"""
 	for index, row in dfpG4Annotation.iterrows():
 		tr = row.id
 		if tr in trRemove:
@@ -107,14 +119,19 @@ def main(dfTr, dicoGene, dfpG4, dfIntron):
 					pG4rtmp['Biotype'] = dftmp.Biotype[0]
 					pG4rtmp.id = tr
 					dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
+	pG4rtmp = pd.DataFrame()
 	for index, row in dfpG4Junction.iterrows():
-		pG4rtmp = row
-		id = pG4rtmp.id
+		id = row.id
 		dftmpIntron = dfIntron[ dfIntron.Id == id ]
+		# print dftmpIntron
 		dftmpIntron = dftmpIntron.reset_index(drop=True)
-		pG4rtmp = mapG4onJunction(pG4rtmp, dftmpIntron, dfTr)
-	dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
-	dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
+		pG4rtmp = pG4rtmp.append(mapG4onJunction(dfpG4Junction, dftmpIntron, dfTr))
+	if len(pG4rtmp) > 0:
+		pG4rtmp = pG4rtmp.drop_duplicates(subset=None, keep='first', inplace=False)
+		print pG4rtmp
+		pG4rtmp['Location'] = 'junction'
+		dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
+		dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
 	dfpG4Annotation = removeG4OnBadTr(dfpG4Annotation, trRemove)
 	dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
 	# print dfpG4Annotation
