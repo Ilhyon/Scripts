@@ -193,6 +193,20 @@ def addTranscript(attributes):
 	attributes = attributes.split(';')
 	return retrieveIdTrFronAttributes(attributes)
 
+def addGene(attributes):
+	"""Apply function to retrieve the transcript id of a feature.
+
+	:param attributes: all attributes from the gtf file, corresponds to the
+		ninth column of the file.
+	:type attributes: string
+
+	:returns: transcript id.
+	:rtype: string
+	"""
+	attributes = attributes.split(';')
+	geneID = attributes[0].split('"')[1]
+	return geneID
+
 def addBiotype(attributes):
 	"""Apply function to retrieve the biotype of a transcript.
 
@@ -244,6 +258,7 @@ def parseDF(df):
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('five_prime_utr') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('three_prime_utr') ].dropna())
 	dfTmp['Transcript'] = dfTmp.Attributes.apply(addTranscript)
+	dfTmp['Gene'] = dfTmp.Attributes.apply(addGene)
 	dfTmp['Biotype'] = dfTmp.Attributes.apply(addBiotype)
 	dfTmp['Type'] = dfTmp.Biotype.apply(addTypeTr)
 	return dfTmp

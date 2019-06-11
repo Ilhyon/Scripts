@@ -101,24 +101,25 @@ def main(dfTr, dicoGene, dfpG4, dfIntron):
 	dfpG4Junction =  dfpG4[ dfpG4.Feature == 'Junction' ]
 	for index, row in dfpG4Gene.iterrows():
 		geneId = row.id
-		if geneId in dicoGene:
-			if 'Transcript' in dicoGene[geneId]:
-				for tr in dicoGene[geneId]['Transcript']:
-					dftmp =  dfTr[ dfTr.Transcript == tr ].dropna()
-					if dftmp.Type.iloc[0] == 'Coding':
-						dftmp = dftmp[dftmp.Feature != 'exon']
-					else:
-						if len(dftmp[ dftmp.Feature.str.contains('utr') ]) > 0:
-							# tr with bad annotation
-							trRemove.append(tr)
-					dftmp = dftmp.sort_values(by=['Start'])
-					dftmp = dftmp.reset_index(drop=True)
-					location = mapG4OnTr(dftmp, row)
-					pG4rtmp = row
-					pG4rtmp['Location'] = location
-					pG4rtmp['Biotype'] = dftmp.Biotype[0]
-					pG4rtmp.id = tr
-					dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
+		dftmpGene =  dfTr[ dfTr.Gene == geneId ]
+		transcripts = list(set(dftmpGene.Transcript))
+		if row.Start >= min(dftmpGene.Start) and row.End <= max(dftmpGene.End):
+			for tr in transcripts:
+				dftmp =  dftmpGene[ dftmpGene.Transcript == tr ].dropna()
+				if dftmp.Type.iloc[0] == 'Coding':
+					dftmp = dftmp[dftmp.Feature != 'exon']
+				else:
+					if len(dftmp[ dftmp.Feature.str.contains('utr') ]) > 0:
+						# tr with bad annotation
+						trRemove.append(tr)
+				dftmp = dftmp.sort_values(by=['Start'])
+				dftmp = dftmp.reset_index(drop=True)
+				location = mapG4OnTr(dftmp, row)
+				pG4rtmp = row
+				pG4rtmp['Location'] = location
+				pG4rtmp['Biotype'] = dftmp.Biotype[0]
+				pG4rtmp.id = tr
+				dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
 	pG4rtmp = pd.DataFrame()
 	for index, row in dfpG4Junction.iterrows():
 		id = row.id
