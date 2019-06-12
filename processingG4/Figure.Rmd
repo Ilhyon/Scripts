@@ -44,3 +44,59 @@ ggplot(diamonds, aes(x=carat, y=price)) +
   geom_boxplot(fill="skyblue", aes(group = cut_width(carat, 0.5)))
 ```
 
+
+# line plot
+```{r}
+library(ggplot2)
+Density_random <- read_delim("Documents/Data/Genomes/All_sp/Density_random.tsv", "\t", escape_double = FALSE, trim_ws = TRUE)
+
+colnames(Density_random) <- c("Specie", "Value", "Type")
+density = Density_random[1:124,]
+GC = Density_random[125:186,]
+attach(density)
+
+density$Specie=factor(density$Specie, levels=unique(density$Specie))
+
+p1 <- ggplot(density, aes(x=Specie, y=Value, group=Type)) +
+      geom_line(aes(color=Type)) +
+      geom_point(aes(color=Type)) +
+      ggtitle("Density\n")+
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+      xlab("")
+p1
+
+p2 <- ggplot(GC, aes(x=Specie, y=Value, group=Type)) +
+      geom_line(aes(color=Type)) +
+      geom_point(aes(color=Type)) +
+      ggtitle("GC content\n")
+p2
+
+# make gtable objects from ggplot objects
+# gtable object shows how grobs are put together to form a ggplot
+g1 <- ggplot_gtable(ggplot_build(p1))
+g2 <- ggplot_gtable(ggplot_build(p2))
+
+# get the location of the panel of p1 
+# so that the panel of p2 is positioned correctly on top of it
+pp <- c(subset(g1$layout, name == "panel", se = t:r))
+
+# superimpose p2 (the panel) on p1
+g <- gtable_add_grob(g1, g2$grobs[[which(g2$layout$name == "panel")]], pp$t, 
+pp$l, pp$b, pp$l)
+
+# extract the y-axis of p2
+ia <- which(g2$layout$name == "axis-l")
+ga <- g2$grobs[[ia]]
+ax <- ga$children[[2]]
+
+# flip it horizontally
+ax$widths <- rev(ax$widths)
+ax$grobs <- rev(ax$grobs)
+
+# add the flipped y-axis to the right
+g <- gtable_add_cols(g, g2$widths[g2$layout[ia, ]$l], length(g$widths) - 1)
+g <- gtable_add_grob(g, ax, pp$t, length(g$widths) - 1, pp$b)
+
+grid.draw(g)
+```
+

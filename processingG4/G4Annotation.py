@@ -30,6 +30,8 @@ def mapG4OnTr(dfTr, pG4):
 	:rtype: string
 	"""
 	location = ' '
+	dfTr = dfTr.sort_values(by=['Start'])
+	dfTr = dfTr.reset_index(drop=True)
 	if len(dfTr) == 1:
 		location = dfTr.Feature[0]
 	else:
@@ -112,8 +114,6 @@ def main(dfTr, dicoGene, dfpG4, dfIntron):
 					if len(dftmp[ dftmp.Feature.str.contains('utr') ]) > 0:
 						# tr with bad annotation
 						trRemove.append(tr)
-				dftmp = dftmp.sort_values(by=['Start'])
-				dftmp = dftmp.reset_index(drop=True)
 				location = mapG4OnTr(dftmp, row)
 				pG4rtmp = row
 				pG4rtmp['Location'] = location
