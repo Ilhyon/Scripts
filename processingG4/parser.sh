@@ -9,4 +9,4 @@
 
 source /project/6003961/vana2406/bin/virtenv/bin/activate
 
-python /project/6003961/vana2406/Scripts/processingG4/Parser_Fasta $1
+python /project/6003961/vana2406/Scripts/processingG4/Parser_Fasta.py $1
