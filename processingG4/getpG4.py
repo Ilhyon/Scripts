@@ -17,6 +17,7 @@ Laboratoty CoBiUS and Jean-Pierre Perreault
 import pandas as pd
 import numpy as np
 from pprint import pprint
+import recurrentFunction as rF
 
 def mergeOverlappingSequences(dfTmp):
 	"""Merge the sequences of overlaping windows.
@@ -51,7 +52,7 @@ def getInfo(df, feature, option):
 	:rtype: dictionary
 	"""
 	geneDesc = df.geneDesc.iloc[0]
-	if option == 'Annotation':
+	if option == 'Annotation' or option == 'venn':
 		if feature == 'Gene':
 			geneDescSplit = geneDesc.split(' ')[2].split(':')
 			dico = {'geneId' : geneDesc.split(' ')[0]}
@@ -107,7 +108,7 @@ def mergeWindows(df, feature, junctionLength, option):
 		pG4End = dicoInfo['pG4End']
 		pG4 = True
 	if pG4:
-		if option == 'Annotation':
+		if option == 'Annotation' or option == 'venn':
 			pG4 = {'id' : [ dicoInfo['geneId'] ],
 					'Strand' : [ dicoInfo['Strand'] ],
 					'Chromosome' : [ dicoInfo['Chromosome'] ],
@@ -138,8 +139,8 @@ def filterOnScores(dicoParam, dfWindows):
 	:rtype: dataFrame
 	"""
 	dfWindows = dfWindows[ dfWindows.cGcC >= dicoParam["cGcC"] ].dropna()
-	dfWindows = dfWindows[ dfWindows.G4H >= dicoParam["g4H"] ].dropna()
-	dfWindows = dfWindows[ dfWindows.G4NN >= dicoParam["g4NN"] ].dropna()
+	dfWindows = dfWindows[ dfWindows.G4H >= dicoParam["G4H"] ].dropna()
+	dfWindows = dfWindows[ dfWindows.G4NN >= dicoParam["G4NN"] ].dropna()
 	return dfWindows
 
 def getDFByStrand(df):
@@ -226,12 +227,35 @@ def main(filename, dicoParam, feature, option):
 		dfpG4 = dfpG4.append(mergeG4(dfWindows, dicoParam, feature, option))
 		return dfpG4
 
+def mainControl(filename, dicoParam, feature, option):
+	dfpG4 = pd.DataFrame()
+	dicoResults = {}
+	try:
+		dfWindows = pd.read_csv(filename, sep='\t', index_col=0)
+	except:
+		print("This file couldn't be converted in data frame : " + filename)
+	else:
+		# dataFrame with all windows from G4RNA Screener
+		dfWindows.columns = ['geneDesc','cGcC',
+							'G4H','seqG4','wStart',
+							'wEnd', 'G4NN']
+		dicoScore = rF.createScoreDico()
+		for score in dicoScore:
+			dicoParam.update(dicoScore[score])
+			dfWindows = filterOnScores(dicoParam, dfWindows)
+			dfpG4 = dfpG4.append(mergeG4(dfWindows, dicoParam, feature, option))
+			dicoResults[score] = list(dfpG4[score])
+			dfpG4 = pd.DataFrame()
+		return dicoResults
+
 if __name__ == '__main__':
-	filename = '/home/anais/Documents/Data/Test/pG4.csv'
-	dicoParam = {'g4NN' : 0.5, 'cGcC' : 4.5, 'g4H' : 0.9,
+	filename = '/home/anais/Documents/Data/Genomes/yersinia_pestis_biovar_microtus_str_91001/CSVFile/YPBMS9_gene_unspliced_00001.fas'
+	dicoParam = {'G4NN' : 0.5, 'cGcC' : 4.5, 'G4H' : 0.9,
 				"junctionLength" : 100,
 				"windowLength" : 60,
 				"step" : 10}
 	feature = 'Gene'
-	df = main(filename, dicoParam, feature)
-	print df.reset_index(drop=True)
+	option = 'Annotation'
+	# main(filename, dicoParam, feature, option)
+	test = mainControl(filename, dicoParam, feature, option)
+	pprint(test)

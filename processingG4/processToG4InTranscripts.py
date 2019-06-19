@@ -20,6 +20,7 @@ import argparse
 import Parser_gtf
 import G4Annotation
 import pandas as pd
+from pprint import pprint
 import recurrentFunction as rF
 
 def importIntron(filename):
@@ -34,33 +35,48 @@ def importIntron(filename):
 		return df
 
 def mergeWindow(path, dicoParam, option):
-	if option == 'Annotation':
+	if option == 'Annotation' or option == 'venn':
 		directory = path + '/CSVFile'
 	elif option == 'Random':
 		directory = path + '/randomCSV'
 	dfpG4 = pd.DataFrame()
+	dicoVenn = {}
 	# directory containing data for a specie
 	for path, dirs, files in os.walk(directory):
 		# for each element of the directory to passed
 		for filename in files: # for each files
 			inputfile = directory + '/' + filename
-			if ('gene_unspliced' in filename):
-				# windows in genes
-				dfpG4 = dfpG4.append(getpG4.main(inputfile,
-						dicoParam, "Gene", option))
-				dfpG4 = dfpG4.reset_index(drop=True)
-			elif ('transcript_unspliced' in filename):
-				dfpG4 = dfpG4.append(getpG4.main(inputfile,
-						dicoParam,"Junction", option))
-				dfpG4 = dfpG4.reset_index(drop=True)
-			elif ('Random' in filename):
-				dfpG4 = dfpG4.append(getpG4.main(inputfile,
-						dicoParam,"Gene", option))
-				dfpG4 = dfpG4.reset_index(drop=True)
+			if option == 'Random' or option == 'Annotation':
+				if ('gene_unspliced' in filename):
+					# windows in genes
+					dfpG4 = dfpG4.append(getpG4.main(inputfile,
+							dicoParam, "Gene", option))
+					dfpG4 = dfpG4.reset_index(drop=True)
+				elif ('transcript_unspliced' in filename):
+					dfpG4 = dfpG4.append(getpG4.main(inputfile,
+							dicoParam,"Junction", option))
+					dfpG4 = dfpG4.reset_index(drop=True)
+				elif ('Random' in filename):
+					dfpG4 = dfpG4.append(getpG4.main(inputfile,
+							dicoParam,"Gene", option))
+					dfpG4 = dfpG4.reset_index(drop=True)
+			elif option == 'venn':
+				if ('gene_unspliced' in filename):
+					dicoTmp = getpG4.mainControl(inputfile, dicoParam, 'Gene', option)
+				else:
+					dicoTmp = {}
+				for score in dicoTmp:
+					if score in dicoVenn:
+						dicoVenn[score].extend(dicoTmp[score])
+					else:
+						dicoVenn[score] = dicoTmp[score]
 	if len(dfpG4) > 0:
 		dfpG4 = dfpG4.drop_duplicates(subset=None, keep='first', inplace=False)
 		dfpG4 = dfpG4.reset_index(drop=True)
-	return dfpG4
+	if option == 'Random' or option == 'Annotation':
+		return dfpG4
+	elif option == 'venn':
+		return dicoVenn
 
 def main(dicoParam, path, dicoGene, dfTr, dfIntron, option):
 	if option == 'Annotation':
@@ -74,7 +90,7 @@ def main(dicoParam, path, dicoGene, dfTr, dfIntron, option):
 	elif option == 'Random':
 		dfpG4 = mergeWindow(path, dicoParam, option)
 		print ('\t'+str(dfpG4.shape))
-		print dfpG4
+		print(dfpG4)
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')

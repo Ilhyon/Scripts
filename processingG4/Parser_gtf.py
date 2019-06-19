@@ -611,5 +611,5 @@ if __name__ == '__main__':
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + \
 		"/" + sp + ".gtf"
 	gene, tr = computeLength(filename)
-	print 'Gene length : ' + str(gene)
-	print 'Transcript length : ' + str(tr)
+	print('Gene length : ' + str(gene))
+	print('Transcript length : ' + str(tr))

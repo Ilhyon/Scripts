@@ -124,18 +124,16 @@ def main(dfTr, dicoGene, dfpG4, dfIntron):
 	for index, row in dfpG4Junction.iterrows():
 		id = row.id
 		dftmpIntron = dfIntron[ dfIntron.Id == id ]
-		# print dftmpIntron
 		dftmpIntron = dftmpIntron.reset_index(drop=True)
 		pG4rtmp = pG4rtmp.append(mapG4onJunction(dfpG4Junction, dftmpIntron, dfTr))
 	if len(pG4rtmp) > 0:
 		pG4rtmp = pG4rtmp.drop_duplicates(subset=None, keep='first', inplace=False)
-		print pG4rtmp
+		print(pG4rtmp)
 		pG4rtmp['Location'] = 'junction'
 		dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
 		dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
 	dfpG4Annotation = removeG4OnBadTr(dfpG4Annotation, trRemove)
 	dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
-	# print dfpG4Annotation
 	return dfpG4Annotation
 
 if __name__ == '__main__':

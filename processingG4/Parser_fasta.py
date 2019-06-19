@@ -292,4 +292,5 @@ if __name__ == '__main__':
 	ini = rF.setUpperLetter(sp)
 	path = '/home/anais/Documents/Data/Genomes/' + sp + '/'
 	filename = path + ini + '_gene_unspliced.txt'
-	RandomFasta(filename, path)
+	# RandomFasta(filename, path)
+	main(sp)
