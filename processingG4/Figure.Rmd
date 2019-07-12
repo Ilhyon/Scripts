@@ -23,7 +23,7 @@ library(ggplot2)
 #install.packages('ggplot2')
 ggplot(tablePlot, aes(x=tablePlot$as.numeric.as.character.nbG4.GC.content.., y=tablePlot$as.numeric.as.character.nbG4.Density.., color=tablePlot$nbG4.X.1)) + 
     geom_point(size=5, alpha=0.6) + 
-    labs(title = 'Densité de pG4 (pG4/kb) en fonction du contenu en GC (%) ', x = 'Contenu en GC', y = 'Densité de pG4 (pG4/kb)', colour = 'Clade', caption = "Données des gènes") + ylim(0, 0.35)
+    labs(title = 'pG4 density (pG4/kb) by GC content (%) ', x = 'GC content', y = 'pG4 density (pG4/kb)', colour = 'Clade', caption = "Gene dataset") + ylim(0, 0.35)+scale_color_manual(values=c('#80cbc4ff','#c876a9fe','#c83737fe','#b4a7d6fe','#924f25fe','#009647ff','#e1b100ff'))
 
 ggplot(tablePlot, aes(x=tablePlot$as.numeric.as.character.nbG4.Density.., y=tablePlot$as.numeric.as.character.nbG4.GC.content.., color=tablePlot$nbG4.X.1, label = tablePlot$nbG4...1.)) + 
     geom_point() + geom_text(aes(label = tablePlot$nbG4...1.)) +

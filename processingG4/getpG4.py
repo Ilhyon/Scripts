@@ -242,9 +242,10 @@ def mainControl(filename, dicoParam, feature, option):
 		dicoScore = rF.createScoreDico()
 		for score in dicoScore:
 			dicoParam.update(dicoScore[score])
-			dfWindows = filterOnScores(dicoParam, dfWindows)
-			dfpG4 = dfpG4.append(mergeG4(dfWindows, dicoParam, feature, option))
-			dicoResults[score] = list(dfpG4[score])
+			dfTmp = filterOnScores(dicoParam, dfWindows)
+			dfpG4 = dfpG4.append(mergeG4(dfTmp, dicoParam, feature, option))
+			if len(dfpG4) > 0:
+				dicoResults[score] = list(dfpG4[score])
 			dfpG4 = pd.DataFrame()
 		return dicoResults
 
