@@ -76,50 +76,51 @@ def mapG4onJunction(pG4r, dfIntron, dfTr):
 		dfpG4Jun = dfpG4Jun.append(dftmp)
 	return dfpG4Jun
 
-def removeG4OnBadTr(dfpG4Annotation, trRemove):
+def removeG4OnBadTr(dfpG4Tr, trRemove):
 	""" Remove from a dataFrame row given by a list.
 
 	Some transcript get a bad annotation (UTR in non coding), so we need to
 	remove them from our data.
 
-	:param dfpG4Annotation: all pG4r annotated.
-	:type dfpG4Annotation: dataFrame
+	:param dfpG4Tr: all pG4r annotated.
+	:type dfpG4Tr: dataFrame
 	:param trRemove: all transcript we need to remove.
 	:type trRemove: list
 
-	:returns: dfpG4Annotation, filtered dataFrame with all pG4r.
+	:returns: dfpG4Tr, filtered dataFrame with all pG4r.
 	:rtype: dataFrame
 	"""
-	for index, row in dfpG4Annotation.iterrows():
+	for index, row in dfpG4Tr.iterrows():
 		tr = row.id
 		if tr in trRemove:
-			dfpG4Annotation = dfpG4Annotation[dfpG4Annotation.id != tr]
-	return dfpG4Annotation
+			dfpG4Tr = dfpG4Tr[dfpG4Tr.id != tr]
+	return dfpG4Tr
 
 def main(dfTr, dicoGene, dfpG4, dfIntron):
-	dfpG4Annotation = pd.DataFrame()
+	dfpG4Tr = pd.DataFrame()
 	trRemove = []
 	dfpG4Gene =  dfpG4[ dfpG4.Feature == 'Gene' ]
 	dfpG4Junction =  dfpG4[ dfpG4.Feature == 'Junction' ]
 	for index, row in dfpG4Gene.iterrows():
 		geneId = row.id
-		dftmpGene =  dfTr[ dfTr.Gene == geneId ]
-		transcripts = list(set(dftmpGene.Transcript))
-		if row.Start >= min(dftmpGene.Start) and row.End <= max(dftmpGene.End):
-			for tr in transcripts:
-				dftmp =  dftmpGene[ dftmpGene.Transcript == tr ].dropna()
-				if dftmp.Type.iloc[0] == 'Coding':
-					dftmp = dftmp[dftmp.Feature != 'exon']
+		dfGtfGene =  dfTr[ dfTr.Gene == geneId ]
+		transcripts = list(set(dfGtfGene.Transcript))
+		for tr in transcripts:
+			dfGtfTr =  dfGtfGene[ dfGtfGene.Transcript == tr ].dropna()
+			if row.Start >= min(dfGtfTr.Start) and row.End <= max(dfGtfTr.End):
+				# the pG4 is in this transcript
+				if dfGtfTr.Type.iloc[0] == 'Coding':
+					dfGtfTr = dfGtfTr[dfGtfTr.Feature != 'exon']
 				else:
-					if len(dftmp[ dftmp.Feature.str.contains('utr') ]) > 0:
+					if len(dfGtfTr[ dfGtfTr.Feature.str.contains('utr') ]) > 0:
 						# tr with bad annotation
 						trRemove.append(tr)
-				location = mapG4OnTr(dftmp, row)
+				location = mapG4OnTr(dfGtfTr, row)
 				pG4rtmp = row
 				pG4rtmp['Location'] = location
-				pG4rtmp['Biotype'] = dftmp.Biotype[0]
+				pG4rtmp['Biotype'] = list(set(dfGtfTr.Biotype))[0]
 				pG4rtmp.id = tr
-				dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
+				dfpG4Tr = dfpG4Tr.append(pG4rtmp)
 	pG4rtmp = pd.DataFrame()
 	for index, row in dfpG4Junction.iterrows():
 		id = row.id
@@ -130,11 +131,11 @@ def main(dfTr, dicoGene, dfpG4, dfIntron):
 		pG4rtmp = pG4rtmp.drop_duplicates(subset=None, keep='first', inplace=False)
 		print(pG4rtmp)
 		pG4rtmp['Location'] = 'junction'
-		dfpG4Annotation = dfpG4Annotation.append(pG4rtmp)
-		dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
-	dfpG4Annotation = removeG4OnBadTr(dfpG4Annotation, trRemove)
-	dfpG4Annotation = dfpG4Annotation.reset_index(drop=True)
-	return dfpG4Annotation
+		dfpG4Tr = dfpG4Tr.append(pG4rtmp)
+		dfpG4Tr = dfpG4Tr.reset_index(drop=True)
+	dfpG4Tr = removeG4OnBadTr(dfpG4Tr, trRemove)
+	dfpG4Tr = dfpG4Tr.reset_index(drop=True)
+	return dfpG4Tr
 
 if __name__ == '__main__':
 	parser = build_arg_parser()
