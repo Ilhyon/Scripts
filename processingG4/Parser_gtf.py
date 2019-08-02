@@ -180,6 +180,25 @@ def importGTFGene(filename):
 				assembly = l.split(' ')[1]
 	return dicoGene
 
+def extractDicoGeneTr(filename):
+	dicoGene = {}
+	with open(filename) as f: # file opening
+		content = f.read()
+		lines = content.split('\n')
+		for l in lines: # browse all lines
+			if not l.startswith('#') and l:
+				words = l.split('\t')
+				geneId = words[8].split(';')[0].split('"')[1]
+				attributes = words[8].split(';')
+				feature = words[2]
+				if feature == 'transcript':
+					geneId = attributes[0].split('"')[1]
+					idTr = retrieveIdTrFronAttributes(attributes)
+					if geneId not in dicoGene:
+						dicoGene[geneId] = []
+					dicoGene[geneId].append(idTr)
+	return(dicoGene)
+
 def addTranscript(attributes):
 	"""Apply function to retrieve the transcript id of a feature.
 
@@ -257,6 +276,8 @@ def parseDF(df):
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('CDS') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('five_prime_utr') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('three_prime_utr') ].dropna())
+	dfTmp = dfTmp.reset_index(drop=True)
+	dfTmp['Coords'] = [ [dfTmp.Start[x], dfTmp.End[x]] for x in range(0,len(dfTmp))]
 	dfTmp['Transcript'] = dfTmp.Attributes.apply(addTranscript)
 	dfTmp['Gene'] = dfTmp.Attributes.apply(addGene)
 	dfTmp['Biotype'] = dfTmp.Attributes.apply(addBiotype)

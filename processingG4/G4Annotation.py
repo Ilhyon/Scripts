@@ -5,6 +5,8 @@ import argparse
 import Parser_gtf
 import numpy as np
 import pandas as pd
+import timeit as ti
+from pprint import pprint
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
@@ -13,68 +15,37 @@ def build_arg_parser():
 	parser.add_argument ('-sp', '--specie', default = 'yersinia_pestis_biovar_microtus_str_91001')
 	return parser
 
-def mapG4OnTr(dfTr, pG4):
-	"""Finds the location of a pG4r in a transcript.
+def overlaps(interval1, interval2):
+    """Compute the distance or overlap between two interval.
 
-	Browses all feature of a transcript to find the location of a pG4r. Possible
-	locations are : intron, CDS for coding transcript, exon for non coding
-	transcript, 3UTR, 5UTR, junction (between two exon), overlap between one
-	of these location except junction.
+    Compute : min(ends) - max(starts). If > 0, return the number of bp of
+    overlap, if 0, they are book-ended and if < 0 return the distance in
+    bp between them.
 
-	:param dfTr: contains all feature of a transcript.
-	:type dfTr: dataFrame
-	:param pG4: contain one pG4r, the one we are checking.
-	:type pG4: dataFrame
+    :param interval1: contain the start and the end of a OQs.
+	:type interval1: list of int
+    :param interval2: contain the start and the end of a gff feature.
+	:type interval2: list of int
 
-	:returns: location, location of the pG4 in the transcript.
-	:rtype: string
-	"""
-	location = ' '
-	dfTr = dfTr.sort_values(by=['Start'])
-	dfTr = dfTr.reset_index(drop=True)
-	if len(dfTr) == 1:
-		location = dfTr.Feature[0]
+    :returns: min(ends) - max(starts)
+    :rtype: int
+    """
+    return min(interval1[1], interval2[1]) - max(interval1[0], interval2[0])
+
+def mapPremRNA(coordExon, coordpG4):
+	o = overlaps(coordExon, coordpG4)
+	if o > 0:
+		# the pG4 overlap the exon
+		if o >= (coordpG4[1] - coordpG4[0]):
+			# the entire pG4 is overlaping the exon
+			location = 'Exon'
+		elif coordpG4[0] < coordExon[0]:
+			location = 'Overlap_Intron_Exon'
+		else:
+			location = 'Overlap_Exon_Intron'
 	else:
-		for index, row in dfTr.iterrows():
-			if index != 0:
-				if (dfTr.Start[index -1] <= pG4.Start and
-					pG4.Start <= dfTr.End[index -1] and
-					dfTr.Start[index -1] <= pG4.End and
-					pG4.End <= dfTr.End[index -1]):
-					#pG4 in the last location
-					location = dfTr.Feature[index -1]
-					break
-				elif (dfTr.End.iloc[index -1] >= pG4.Start and
-					pG4.End >= dfTr.Start[index]):
-					location = 'overlap_'+ str(dfTr.Feature[index -1]) \
-								+'_'+ str(dfTr.Feature[index])
-					break
-				elif (pG4.Start > dfTr.End[index -1] and
-					pG4.End < dfTr.Start[index]):
-					location = 'intron'
-					break
-				elif (pG4.Start <= dfTr.End[index -1] and
-					pG4.End > dfTr.End[index -1] and
-					pG4.End < dfTr.Start[index]):
-					location = 'overlap_'+ str(dfTr.Feature[index -1]) \
-								+'_intron'
-					break
-				elif (pG4.Start > dfTr.End[index -1] and
-					pG4.Start < dfTr.Start[index] and
-					pG4.End >= dfTr.Start[index]):
-					location = 'overlap_intron_' + str(dfTr.Feature.iloc[index])
-					break
+		location = 'Intron'
 	return location
-
-def mapG4onJunction(pG4r, dfIntron, dfTr):
-	dfpG4Jun = pd.DataFrame()
-	for index, row in dfIntron.iterrows():
-		dftmp = pG4r
-		tr = dfTr[dfTr.Transcript == row.Transcript]
-		tr = tr.reset_index(drop=True)
-		dftmp['Biotype'] = tr.Biotype[0]
-		dfpG4Jun = dfpG4Jun.append(dftmp)
-	return dfpG4Jun
 
 def removeG4OnBadTr(dfpG4Tr, trRemove):
 	""" Remove from a dataFrame row given by a list.
@@ -96,45 +67,58 @@ def removeG4OnBadTr(dfpG4Tr, trRemove):
 			dfpG4Tr = dfpG4Tr[dfpG4Tr.id != tr]
 	return dfpG4Tr
 
-def main(dfTr, dicoGene, dfpG4, dfIntron):
+def mapOnTr(dfpG4gene, dfGTF, dicoGene):
 	dfpG4Tr = pd.DataFrame()
-	trRemove = []
-	dfpG4Gene =  dfpG4[ dfpG4.Feature == 'Gene' ]
-	dfpG4Junction =  dfpG4[ dfpG4.Feature == 'Junction' ]
-	for index, row in dfpG4Gene.iterrows():
-		geneId = row.id
-		dfGtfGene =  dfTr[ dfTr.Gene == geneId ]
-		transcripts = list(set(dfGtfGene.Transcript))
+	# retrieve gene with G4 and then there transcripts
+	geneWithpG4 = list(set(dfpG4gene.id))
+	transcripts = [tr for g in geneWithpG4 for tr in dicoGene[g]]
+	for tr in transcripts:
+		# retrieve tr exons
+		dfTr =  dfGTF[ dfGTF.Transcript == tr ].dropna()
+		dfTrexon = dfTr[ dfTr.Feature == 'exon'].dropna()
+		gene = list(set(dfTr.Gene))[0]
+		biotype =  list(set(dfTrexon.Biotype))
+		type = list(set(dfTrexon.Type))
+		# retrieve all pG4 in the current gene
+		pG4inGene = dfpG4gene[ dfpG4gene.id == gene]
+		for index, row in pG4inGene.iterrows():
+			if row.Start >= min(dfTr.Start) and row.End <= max(dfTr.End):
+				# the current pG4 is in the transcripts
+				coordpG4 = [row.Start, row.End]
+				location = [mapPremRNA(coordExon, coordpG4) for coordExon in dfTrexon.Coords][0]
+				dfTmp = pd.DataFrame.from_dict({'Transcript' : tr,
+						'Location' : location, 'Sequence' : row.seqG4,
+						'cGcC' : row.cGcC, 'G4H' : row.G4H, 'G4NN' : row.G4NN,
+						'Biotype' : biotype, 'Type' : type})
+				dfpG4Tr = dfpG4Tr.append(dfTmp)
+	return dfpG4Tr
+
+def mapOnJunction(dfpG4Junction, dfGTF, dfIntron):
+	dfpG4Tr = pd.DataFrame()
+	# retrieve introns that have pG4
+	introns = list(set(dfpG4Junction.id))
+	for i in introns:
+		# get all transcript that get this intron (thus the junction E-E)
+		transcripts = list(set(dfIntron[dfIntron.Id == i].Transcript))
 		for tr in transcripts:
-			dfGtfTr =  dfGtfGene[ dfGtfGene.Transcript == tr ].dropna()
-			if row.Start >= min(dfGtfTr.Start) and row.End <= max(dfGtfTr.End):
-				# the pG4 is in this transcript
-				if dfGtfTr.Type.iloc[0] == 'Coding':
-					dfGtfTr = dfGtfTr[dfGtfTr.Feature != 'exon']
-				else:
-					if len(dfGtfTr[ dfGtfTr.Feature.str.contains('utr') ]) > 0:
-						# tr with bad annotation
-						trRemove.append(tr)
-				location = mapG4OnTr(dfGtfTr, row)
-				pG4rtmp = row
-				pG4rtmp['Location'] = location
-				pG4rtmp['Biotype'] = list(set(dfGtfTr.Biotype))[0]
-				pG4rtmp.id = tr
-				dfpG4Tr = dfpG4Tr.append(pG4rtmp)
-	pG4rtmp = pd.DataFrame()
-	for index, row in dfpG4Junction.iterrows():
-		id = row.id
-		dftmpIntron = dfIntron[ dfIntron.Id == id ]
-		dftmpIntron = dftmpIntron.reset_index(drop=True)
-		pG4rtmp = pG4rtmp.append(mapG4onJunction(dfpG4Junction, dftmpIntron, dfTr))
-	if len(pG4rtmp) > 0:
-		pG4rtmp = pG4rtmp.drop_duplicates(subset=None, keep='first', inplace=False)
-		print(pG4rtmp)
-		pG4rtmp['Location'] = 'junction'
-		dfpG4Tr = dfpG4Tr.append(pG4rtmp)
-		dfpG4Tr = dfpG4Tr.reset_index(drop=True)
-	dfpG4Tr = removeG4OnBadTr(dfpG4Tr, trRemove)
-	dfpG4Tr = dfpG4Tr.reset_index(drop=True)
+			biotype = list(set(dfGTF[ dfGTF.Transcript == tr].Biotype))[0]
+			type = list(set(dfGTF[ dfGTF.Transcript == tr].Type))[0]
+			pG4 = dfpG4Junction[ dfpG4Junction.id == i]
+			dfTmp = pd.DataFrame.from_dict({'Transcript' : tr,
+					'Location' : 'Junction', 'Sequence' : pG4.seqG4,
+					'cGcC' : pG4.cGcC, 'G4H' : pG4.G4H, 'G4NN' : pG4.G4NN,
+					'Biotype' : biotype, 'Type' : type})
+			dfpG4Tr = dfpG4Tr.append(dfTmp)
+	return dfpG4Tr
+
+
+def main(dfGTF, dicoGene, dfpG4, dfIntron):
+	dfpG4Tr = pd.DataFrame()
+	# split G4 in gene from G4 in junction
+	dfpG4gene =  dfpG4[ dfpG4.Feature == 'Gene' ]
+	dfpG4Junction =  dfpG4[ dfpG4.Feature == 'Junction' ]
+	dfpG4Tr = dfpG4Tr.append(mapOnTr(dfpG4gene, dfGTF, dicoGene))
+	dfpG4Tr = dfpG4Tr.append(mapOnJunction(dfpG4Junction, dfGTF, dfIntron))
 	return dfpG4Tr
 
 if __name__ == '__main__':

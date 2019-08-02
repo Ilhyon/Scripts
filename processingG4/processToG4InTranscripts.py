@@ -20,6 +20,7 @@ import argparse
 import Parser_gtf
 import G4Annotation
 import pandas as pd
+import timeit as ti
 from pprint import pprint
 import recurrentFunction as rF
 
@@ -92,6 +93,7 @@ def main(dicoParam, path, dicoGene, dfTr, dfIntron, option):
 		print ('\t'+str(dfpG4.shape))
 		print(dfpG4)
 
+
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
 	GITDIR = os.getcwd()+'/'
@@ -117,7 +119,7 @@ if __name__ == '__main__':
 	print("Specie : " + sp)
 	dicoParam = rF.createDicoParam(arg)
 	dfTr = Parser_gtf.importGTFdf(path +'/'+ sp +'.gtf')
-	dicoGene = Parser_gtf.importGTFGene(path +'/'+ sp +'.gtf')
+	dicoGene = Parser_gtf.extractDicoGeneTr(path +'/'+ sp +'.gtf')
 	dfIntron = importIntron(path +'/'+ ini +'_intron.txt')
 	main(dicoParam, path, dicoGene, dfTr, dfIntron, option)
 	print("\tDone")
