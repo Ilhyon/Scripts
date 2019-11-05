@@ -68,6 +68,10 @@ def importGff(gff):
         df = df[ df.Chromosome != '###']
         df = df.reset_index(drop=True)
         df['Coords'] = [ [df.Start[x], df.End[x]] for x in range(0,len(df))]
+        dfFilter = pd.DataFrame()
+        features = ['CDS', 'exon', 'five_prime_UTR', 'gene', 'intron', 'mRNA',
+                    'ncRNA', 'pseudogene', 'three_prime_UTR']
+        dfFilter = dfFilter.append([ df[ df.Feature == f ] for f in features ])
         return df
 
 def getCommonElem(fasta, df):
@@ -89,10 +93,12 @@ def getCommonElem(fasta, df):
     fastaOrigin = SeqIO.parse(open(fasta),'fasta')
     for f in fastaOrigin:
         name, sequence = f.id, str(f.seq)
-        chr = name.split(':')[0].split('r')[1]
+        # chr = name.split(':')[0].split('r')[1]
+        chr = name.split(':')[0]
         coordSeq = name.split(':')[1].split('(')[0].split('-')
         coordSeq = [ int(coordSeq[0]), int(coordSeq[1]) ]
         strand = name.split('(')[1].split(')')[0]
+        print(strand)
         dfTmp = df[ df.Strand == strand ]
         dfTmp = dfTmp[ dfTmp.Chromosome == chr ]
         listCommon = [overlapSeqFeature(coordSeq, c) for c in dfTmp.Coords]
@@ -136,6 +142,7 @@ def main(fasta, gff):
     df = importGff(gff)
     dicoCoord = getCoordDico(df)
     dicoCommon = getCommonElem(fasta, df)
+    # pprint(dicoCommon)
     for coordSeq in dicoCommon:
         [print(coordSeq, x, dicoCoord[tuple(x)]) for x in dicoCommon[coordSeq] if tuple(x) in dicoCoord]
 
@@ -149,7 +156,8 @@ if __name__ == '__main__':
     parser = build_arg_parser()
     arg = parser.parse_args()
     path = arg.path
-    gffFile = path+'Saccharomyces_cerevisiae.R64-1-1.87.gff3'
-    # fastaFile = path+'GSM3003553_Saccaromyces_all_w15_th-1_minus.hits.max.K.w50.35.fasta'
-    fastaFile = path+'GSM3003553_Saccaromyces_all_w15_th-1_plus.hits.max.K.w50.35.fasta'
+    gffFile = path+'Cele.gff'
+    fastaFile = path+'Cele_all_reverse.fasta'
+    # gffFile = path+'Saccharomyces_cerevisiae.R64-1-1.87.gff3'
+    # fastaFile = path+'Homo_all_reverse.fasta'
     main(fastaFile, gffFile)
