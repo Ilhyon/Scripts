@@ -44,7 +44,7 @@ def changeStrandFormat(strand):
 		strand = '-1'
 	return strand
 
-def retrieveBiotypeFronAttributes(feature, attributes):
+def retrieveBiotypeFronAttributes(attributes, feature):
 	"""Gets the biotype from attributes.
 
 	:param feature: transcript, gene, exon, or utr.
@@ -129,6 +129,46 @@ def createKeyTranscript(dico, idGene, idTr, feature):
 	if feature not in dico[idTr] :
 		dico[idTr].update({feature : {}})
 	return dico
+
+def importTranscriptFromGTF(filename):
+	dicoTr = {}
+	with open(filename) as f: # file opening
+		content = f.read()
+		lines = content.split('\n')
+		for l in lines: # browse all lines
+			if not l.startswith('#') and l:
+				words=l.split('\t')
+				attributes = words[8].split(';')
+				idGene = attributes[0].split('"')[1]
+				feature = words[2]
+				chrm = words[0]
+				startFeature = words[3]
+				endFeature = words[4]
+				strand = words[6]
+				strand = changeStrandFormat(strand)
+				biotype = retrieveBiotypeFronAttributes(attributes, feature)
+				if feature == "exon" :
+					idTr = retrieveIdTrFronAttributes(attributes)
+					rank, idExon = retrieveInfoExonFronAttributes(attributes)
+					dicoTr.update(createKeyTranscript(dicoTr, idGene, idTr, "Exon"))
+					dicoTr[idTr]["Exon"].update({idExon : {"Chromosome" : chrm,
+															"Start" : int(startFeature),
+															"End" :int(endFeature),
+															"Biotype" : biotype,
+															"Strand" : strand,
+															"Rank" : rank}})
+				elif feature == "transcript":
+					idTr = retrieveIdTrFronAttributes(attributes)
+					if idTr not in dicoTr:
+						dicoTr.update({idTr : {}})
+					dicoTr[idTr].update({"Gene" : idGene,
+										"Chromosome" : chrm,
+										"Start" : int(startFeature),
+										"End" : int(endFeature),
+										"Biotype" : biotype,
+										"Strand" : strand,
+										"Type" : addTypeTr(biotype)})
+	return dicoTr
 
 def importGTFGene(filename):
 	"""Imports genes features from the gtf file.

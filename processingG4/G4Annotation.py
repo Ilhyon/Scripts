@@ -5,6 +5,7 @@ import argparse
 import Parser_gtf
 import numpy as np
 import pandas as pd
+from pprint import pprint
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
@@ -59,7 +60,7 @@ def mapPremRNA(coordExon, coordpG4):
 		location = None
 	return location
 
-def mapOnTr(dfpG4gene, dfGTF, dicoGene):
+def mapOnTr(dfpG4gene, dicoTr, dicoGene):
 	"""Maps all pG4 that are in gene on transcript and location.
 
 	All gene's transcript that contain pG4 are browse to find the pG4 location.
@@ -81,19 +82,18 @@ def mapOnTr(dfpG4gene, dfGTF, dicoGene):
 	geneWithpG4 = list(set(dfpG4gene.id))
 	transcripts = [tr for g in geneWithpG4 for tr in dicoGene[g]]
 	for tr in transcripts:
-		# retrieve tr exons
-		dfTr =  dfGTF[ dfGTF.Transcript == tr ].dropna()
-		dfTrexon = dfTr[ dfTr.Feature == 'exon'].dropna()
-		gene = list(set(dfTr.Gene))[0]
-		biotype =  list(set(dfTrexon.Biotype))
-		type = list(set(dfTrexon.Type))
+		gene = dicoTr[tr]["Gene"]
 		# retrieve all pG4 in the current gene
 		pG4inGene = dfpG4gene[ dfpG4gene.id == gene]
 		for index, row in pG4inGene.iterrows():
-			if row.Start >= min(dfTr.Start) and row.End <= max(dfTr.End):
+			if (row.Start >= min(dicoTr[tr]["Start"], dicoTr[tr]["End"]) and
+				row.End <= max(dicoTr[tr]["Start"], dicoTr[tr]["End"])):
 				# the current pG4 is in the transcripts
 				coordpG4 = [row.Start, row.End]
-				location = [mapPremRNA(coordExon, coordpG4) for coordExon in dfTrexon.Coords]
+				location = []
+				for exon in dicoTr[tr]["Exon"]:
+					location.append(mapPremRNA([ dicoTr[tr]["Exon"][exon]["Start"], \
+						dicoTr[tr]["Exon"][exon]['End'] ], coordpG4))
 				if len(list(set(location))) == 1 and location[0] == None:
 					location = 'Intron'
 				elif len(list(set(location))) > 1:
@@ -103,11 +103,11 @@ def mapOnTr(dfpG4gene, dfGTF, dicoGene):
 				dfTmp = pd.DataFrame.from_dict({'Transcript' : tr,
 						'Location' : location, 'Sequence' : row.seqG4,
 						'cGcC' : row.cGcC, 'G4H' : row.G4H, 'G4NN' : row.G4NN,
-						'Biotype' : biotype, 'Type' : type})
+						'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']})
 				dfpG4Tr = dfpG4Tr.append(dfTmp)
 	return dfpG4Tr
 
-def mapOnJunction(dfpG4Junction, dfGTF, dfIntron):
+def mapOnJunction(dfpG4Junction, dicoTr, dfIntron):
 	"""Maps all pG4 that are in junctions on transcript.
 
 	Initialy pG4 on junction are uniq, because they are only identified by their
@@ -131,18 +131,16 @@ def mapOnJunction(dfpG4Junction, dfGTF, dfIntron):
 		# get all transcript that get this intron (thus the junction E-E)
 		transcripts = list(set(dfIntron[dfIntron.Id == i].Transcript))
 		for tr in transcripts:
-			biotype = list(set(dfGTF[ dfGTF.Transcript == tr].Biotype))[0]
-			type = list(set(dfGTF[ dfGTF.Transcript == tr].Type))[0]
 			pG4 = dfpG4Junction[ dfpG4Junction.id == i]
 			dfTmp = pd.DataFrame.from_dict({'Transcript' : tr,
 					'Location' : 'Junction', 'Sequence' : pG4.seqG4,
 					'cGcC' : pG4.cGcC, 'G4H' : pG4.G4H, 'G4NN' : pG4.G4NN,
-					'Biotype' : biotype, 'Type' : type})
+					'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']})
 			dfpG4Tr = dfpG4Tr.append(dfTmp)
 	return dfpG4Tr
 
 
-def main(dfGTF, dicoGene, dfpG4, dfIntron):
+def main(dicoTr, dicoGene, dfpG4, dfIntron):
 	"""Finds location and transcript of G4 predicted in genes.
 
 	We starts by pG4 in genes and then in junction. They are only mapped at the
@@ -160,10 +158,11 @@ def main(dfGTF, dicoGene, dfpG4, dfIntron):
 	"""
 	dfpG4Tr = pd.DataFrame()
 	# split G4 in gene from G4 in junction
+	print(list(dfpG4.columns.values))
 	dfpG4gene =  dfpG4[ dfpG4.Feature == 'Gene' ]
 	dfpG4Junction =  dfpG4[ dfpG4.Feature == 'Junction' ]
-	dfpG4Tr = dfpG4Tr.append(mapOnTr(dfpG4gene, dfGTF, dicoGene))
-	dfpG4Tr = dfpG4Tr.append(mapOnJunction(dfpG4Junction, dfGTF, dfIntron))
+	dfpG4Tr = dfpG4Tr.append(mapOnTr(dfpG4gene, dicoTr, dicoGene))
+	dfpG4Tr = dfpG4Tr.append(mapOnJunction(dfpG4Junction, dicoTr, dfIntron))
 	return dfpG4Tr
 
 if __name__ == '__main__':

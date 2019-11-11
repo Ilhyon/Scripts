@@ -20,7 +20,6 @@ import argparse
 import Parser_gtf
 import G4Annotation
 import pandas as pd
-import timeit as ti
 from pprint import pprint
 import recurrentFunction as rF
 
@@ -79,12 +78,12 @@ def mergeWindow(path, dicoParam, option):
 	elif option == 'venn':
 		return dicoVenn
 
-def main(dicoParam, path, dicoGene, dfTr, dfIntron, option):
+def main(dicoParam, path, dicoGene, dicoTr, dfIntron, option):
 	if option == 'Annotation':
 		output = path + '/pG4.txt'
 		dfpG4 = mergeWindow(path, dicoParam, option)
 		print ('\t'+str(dfpG4.shape))
-		pG4Anno = G4Annotation.main(dfTr, dicoGene, dfpG4, dfIntron)
+		pG4Anno = G4Annotation.main(dicoTr, dicoGene, dfpG4, dfIntron)
 		print ('\t'+str(pG4Anno.shape))
 		pG4Anno = pG4Anno.drop_duplicates(subset=None, keep='first', inplace=False)
 		pG4Anno.to_csv(path_or_buf=output, header=True, index=None, sep='\t')
@@ -118,8 +117,9 @@ if __name__ == '__main__':
 	path = arg.path + sp
 	print("Specie : " + sp)
 	dicoParam = rF.createDicoParam(arg)
-	dfTr = Parser_gtf.importGTFdf(path +'/'+ sp +'.gtf')
+	# dfTr = Parser_gtf.importGTFdf(path +'/'+ sp +'.gtf')
+	dicoTr = Parser_gtf.importTranscriptFromGTF(path +'/'+ sp +'.gtf')
 	dicoGene = Parser_gtf.extractDicoGeneTr(path +'/'+ sp +'.gtf')
 	dfIntron = importIntron(path +'/'+ ini +'_intron.txt')
-	main(dicoParam, path, dicoGene, dfTr, dfIntron, option)
+	main(dicoParam, path, dicoGene, dicoTr, dfIntron, option)
 	print("\tDone")
