@@ -219,7 +219,7 @@ def createFasta(sp, dicoFeature, featureType):
 			cpt1 = 0
 			cpt2 = 60
 			if strand == "-1" :
-				Sequence = reverseSequence(sequence)
+				sequence = reverseSequence(sequence)
 			for i in range(0,int(nbLine)) :
 				output.write( sequence[cpt1:cpt2] + "\n" )
 				# to have a new line after 60 characters

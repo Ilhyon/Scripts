@@ -194,8 +194,7 @@ def importGTFGene(filename):
 					startFeature = int(words[3])
 					endFeature = int(words[4])
 					strand = words[6]
-					biotype = retrieveBiotypeFronAttributes(feature,
-						attributes)
+					biotype = retrieveBiotypeFronAttributes(attributes, feature)
 					if strand == '+':
 						strand = '1'
 					elif strand == '-':
@@ -353,6 +352,59 @@ def importGTFdf(filename):
 		del df['Attributes']
 		return df
 
+def importUTRFromGTF(filename):
+	"""Imports gtf file.
+
+	This function aims to retrieve as more as possible informations contained
+	in the gtf file related to transcripts.
+
+	:param filelame: name of the gtf file.
+	:type filename: string
+
+	:returns: dicoTr, contains all transcripts from a psecie and all features
+		linked to it : UTR, exon, intron.
+	:rtype: dictionary
+	"""
+	exists = os.path.isfile(filename)
+	if exists :
+		dicoTr = {}
+		with open(filename) as f: # file opening
+			content = f.read()
+			lines = content.split('\n')
+			for l in lines: # browse all lines
+				if not l.startswith('#') and l:
+					words = l.split('\t')
+					attributes = words[8].split(';')
+					idGene = attributes[0].split('"')[1]
+					feature = words[2]
+					chrm = words[0]
+					startFeature = int(words[3])
+					endFeature = int(words[4])
+					strand = words[6]
+					strand = changeStrandFormat(strand)
+					biotype = retrieveBiotypeFronAttributes(attributes, feature)
+					if feature == 'five_prime_utr' :
+						idTr = retrieveIdTrFronAttributes(attributes)
+						dicoTr.update(createKeyTranscript(dicoTr, idGene, idTr, '5UTR'))
+						dicoTr[idTr]['5UTR'].update({'Chromosome' : chrm,
+													'Start' : startFeature,
+													'End' :endFeature,
+													'Biotype' : biotype,
+													'Strand' : strand})
+					elif feature == 'three_prime_utr' :
+						idTr = retrieveIdTrFronAttributes(attributes)
+						dicoTr.update(createKeyTranscript(dicoTr, idGene, idTr, '3UTR'))
+						dicoTr[idTr]['3UTR'].update({'Chromosome' : chrm,
+													'Start' : startFeature,
+													'End' :endFeature,
+													'Biotype' : biotype,
+													'Strand' : strand})
+				elif re.search('genome-version', l):
+					assembly = l.split(' ')[1]
+	else:
+		print("This file don't exist : " + filename)
+	return dicoTr
+
 def importGTF(filename):
 	"""Imports gtf file.
 
@@ -383,7 +435,7 @@ def importGTF(filename):
 					endFeature = int(words[4])
 					strand = words[6]
 					strand = changeStrandFormat(strand)
-					biotype = retrieveBiotypeFronAttributes(feature, attributes)
+					biotype = retrieveBiotypeFronAttributes(attributes, feature)
 					if feature == 'exon' :
 						idTr = retrieveIdTrFronAttributes(attributes)
 						rank, idExon = retrieveInfoExonFronAttributes(attributes)

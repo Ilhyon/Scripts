@@ -31,7 +31,7 @@ def overlaps(interval1, interval2):
     """
     return min(interval1[1], interval2[1]) - max(interval1[0], interval2[0])
 
-def mapPremRNA(coordExon, coordpG4):
+def mapPremRNA(coordExon, coordpG4, strand):
 	"""Gets the location of the pG4 in a transcript.
 
 	We compute the overlap between an exon and a pG4. If there is an overlap,
@@ -52,15 +52,31 @@ def mapPremRNA(coordExon, coordpG4):
 		if o >= (coordpG4[1] - coordpG4[0]):
 			# the entire pG4 is overlaping the exon
 			location = 'Exon'
-		elif coordpG4[0] < coordExon[0]:
-			location = 'Overlap_Intron_Exon'
+		elif (coordpG4[0] < coordExon[0] and strand == '1') or \
+			(coordpG4[0] > coordExon[0] and strand == '-1'):
+			location = 'Junction_acceptor'
 		else:
-			location = 'Overlap_Exon_Intron'
+			location = 'Junction_donor'
 	else:
 		location = None
 	return location
 
-def mapOnTr(dfpG4gene, dicoTr, dicoGene):
+def mapMatureRNA(coordUTR, coordpG4, utr):
+	o = overlaps(coordUTR, coordpG4)
+	if o > 0:
+		# the pG4 overlap the exon
+		if o >= (coordpG4[1] - coordpG4[0]):
+			# the entire pG4 is overlaping the UTR
+			location = utr
+		elif utr == '3UTR':
+			location = 'StopCodon'
+		elif utr == '5UTR':
+			location = 'Junction_donor'
+	else:
+		location = None
+	return location
+
+def mapOnTr(dfpG4gene, dicoTr, dicoGene, dicoUTR):
 	"""Maps all pG4 that are in gene on transcript and location.
 
 	All gene's transcript that contain pG4 are browse to find the pG4 location.
@@ -78,6 +94,7 @@ def mapOnTr(dfpG4gene, dicoTr, dicoGene):
 	:rtype: dataFrame
 	"""
 	dfpG4Tr = pd.DataFrame()
+	dfpG4MatureTr = pd.DataFrame()
 	# retrieve gene with G4 and then there transcripts
 	geneWithpG4 = list(set(dfpG4gene.id))
 	transcripts = [tr for g in geneWithpG4 for tr in dicoGene[g]]
@@ -93,19 +110,43 @@ def mapOnTr(dfpG4gene, dicoTr, dicoGene):
 				location = []
 				for exon in dicoTr[tr]["Exon"]:
 					location.append(mapPremRNA([ dicoTr[tr]["Exon"][exon]["Start"], \
-						dicoTr[tr]["Exon"][exon]['End'] ], coordpG4))
+						dicoTr[tr]["Exon"][exon]['End'] ], coordpG4, row.Strand))
 				if len(list(set(location))) == 1 and location[0] == None:
-					location = 'Intron'
-				elif len(list(set(location))) > 1:
-					location = 'Multi_overlap'
+					location = ['Intron']
+				elif (len(list(set(location))) == 2 and None not in list(set(location))) \
+					or len(list(set(location))) > 2:
+					location = ['Multi_overlap']
 				else:
 					location = list(set([ loc for loc in location if loc != None]))
-				dfTmp = pd.DataFrame.from_dict({'Transcript' : tr,
+				dicoTmp = {'Transcript' : tr,
 						'Location' : location, 'Sequence' : row.seqG4,
+						'Start' : coordpG4[0], 'End' : coordpG4[1],
 						'cGcC' : row.cGcC, 'G4H' : row.G4H, 'G4NN' : row.G4NN,
-						'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']})
+						'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']}
+				dfTmp = pd.DataFrame.from_dict(dicoTmp)
 				dfpG4Tr = dfpG4Tr.append(dfTmp)
-	return dfpG4Tr
+				if location[0] == 'Exon' and dicoTr[tr]['Type'] == 'Coding':
+					location = []
+					if tr in dicoUTR:
+						if '3UTR' in dicoUTR[tr]:
+							location.append( mapMatureRNA([dicoUTR[tr]['3UTR']\
+								['Start'], dicoUTR[tr]['3UTR']['End']], coordpG4, '3UTR') )
+						elif '5UTR' in dicoUTR[tr]:
+							location.append( mapMatureRNA([dicoUTR[tr]['5UTR']\
+								['Start'], dicoUTR[tr]['5UTR']['End']], coordpG4, '5UTR') )
+						if len(list(set(location))) == 1 and location[0] == None:
+							location = ['CDS']
+						elif len(list(set(location))) > 1:
+							location = ['PATATE']
+						else:
+							location = list(set([ loc for loc in location if loc != None]))
+						dfTmp = pd.DataFrame.from_dict({'Transcript' : tr,
+								'Location' : location, 'Sequence' : row.seqG4,
+								'Start' : coordpG4[0], 'End' : coordpG4[1],
+								'cGcC' : row.cGcC, 'G4H' : row.G4H, 'G4NN' : row.G4NN,
+								'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']})
+						dfpG4MatureTr = dfpG4MatureTr.append(dfTmp)
+	return dfpG4Tr, dfpG4MatureTr
 
 def mapOnJunction(dfpG4Junction, dicoTr, dfIntron):
 	"""Maps all pG4 that are in junctions on transcript.
@@ -133,14 +174,15 @@ def mapOnJunction(dfpG4Junction, dicoTr, dfIntron):
 		for tr in transcripts:
 			pG4 = dfpG4Junction[ dfpG4Junction.id == i]
 			dfTmp = pd.DataFrame.from_dict({'Transcript' : tr,
-					'Location' : 'Junction', 'Sequence' : pG4.seqG4,
+					'Location' : ['Junction'], 'Sequence' : pG4.seqG4,
+					'Start' : pG4.Start, 'End' : pG4.End,
 					'cGcC' : pG4.cGcC, 'G4H' : pG4.G4H, 'G4NN' : pG4.G4NN,
 					'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']})
 			dfpG4Tr = dfpG4Tr.append(dfTmp)
 	return dfpG4Tr
 
 
-def main(dicoTr, dicoGene, dfpG4, dfIntron):
+def main(dicoTr, dicoGene, dicoUTR, dfpG4, dfIntron):
 	"""Finds location and transcript of G4 predicted in genes.
 
 	We starts by pG4 in genes and then in junction. They are only mapped at the
@@ -157,13 +199,13 @@ def main(dicoTr, dicoGene, dfpG4, dfIntron):
 	:type dfIntron: dataFrame
 	"""
 	dfpG4Tr = pd.DataFrame()
+	dfpG4MatureTr = pd.DataFrame()
 	# split G4 in gene from G4 in junction
-	print(list(dfpG4.columns.values))
 	dfpG4gene =  dfpG4[ dfpG4.Feature == 'Gene' ]
 	dfpG4Junction =  dfpG4[ dfpG4.Feature == 'Junction' ]
-	dfpG4Tr = dfpG4Tr.append(mapOnTr(dfpG4gene, dicoTr, dicoGene))
+	dfpG4Tr, dfpG4MatureTr = mapOnTr(dfpG4gene, dicoTr, dicoGene, dicoUTR)
 	dfpG4Tr = dfpG4Tr.append(mapOnJunction(dfpG4Junction, dicoTr, dfIntron))
-	return dfpG4Tr
+	return dfpG4Tr, dfpG4MatureTr
 
 if __name__ == '__main__':
 	parser = build_arg_parser()
