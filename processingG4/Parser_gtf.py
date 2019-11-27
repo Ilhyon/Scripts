@@ -276,7 +276,7 @@ def addBiotype(attributes):
 	:rtype: string
 	"""
 	attributes = attributes.split(';')
-	return retrieveBiotypeFronAttributes('transcript', attributes)
+	return retrieveBiotypeFronAttributes(attributes, 'transcript')
 
 def addTypeTr(biotype):
 	"""Apply function to retrieve the type of a transcript depending on biotype.
@@ -297,6 +297,33 @@ def addTypeTr(biotype):
 	else:
 		return 'Non coding'
 
+def mapUTRonCDS(coordUTR, coordCDS, strand):
+	if ( (coordUTR[1] < coordCDS[0] and strand == '+') or
+		(coordUTR[1] > coordCDS[0] and strand == '-') ):
+		return 'five_prime_utr'
+	else:
+		return 'three_prime_utr'
+
+def getUTR(df):
+	dicoUTR = {}
+	dfUTR = pd.DataFrame()
+	dfCDS = pd.DataFrame()
+	dfUTR = dfUTR.append( df[ df.Feature == 'UTR' ] )
+	dfCDS = dfCDS.append( df[ df.Feature == 'CDS'])
+	dicoTmp = dfUTR[['index1', 'Coords', 'Transcript', 'Strand']]
+	dicoTmp = dicoTmp.set_index('index1').to_dict()
+	dicoCDS = dfCDS[['Transcript', 'Coords']]
+	dicoCDS = dicoCDS.set_index('Transcript').to_dict()
+	for index in dicoTmp['Transcript']:
+		CDScoords = pd.DataFrame()
+		tr = dicoTmp['Transcript'][index]
+		utr = mapUTRonCDS(dicoTmp['Coords'][index], dicoCDS['Coords'][tr], \
+			dicoTmp['Strand'][index])
+		dicoUTR[index] = utr
+	df = df.replace({'index1' : dicoUTR})
+	print(df)
+	return df
+
 def parseDF(df):
 	"""Parses a dataframe to retrieve only usefull data for me.
 
@@ -315,15 +342,28 @@ def parseDF(df):
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('CDS') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('five_prime_utr') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('three_prime_utr') ].dropna())
+	dfTmp = dfTmp.append(df[ df.Feature.str.contains('UTR') ].dropna())
 	dfTmp = dfTmp.reset_index(drop=True)
 	dfTmp['Coords'] = [ [dfTmp.Start[x], dfTmp.End[x]] for x in range(0,len(dfTmp))]
 	dfTmp['Transcript'] = dfTmp.Attributes.apply(addTranscript)
 	dfTmp['Gene'] = dfTmp.Attributes.apply(addGene)
-	dfTmp['Biotype'] = dfTmp.Attributes.apply(addBiotype)
+	dfTmp['index1'] = dfTmp.index
+	if 'Biotype' not in df.columns.values:
+		dfTmp['Biotype'] = dfTmp.Attributes.apply(addBiotype)
+	else:
+		dfTmp2 = pd.DataFrame()
+		dfTmp2 = dfTmp2.append(df)
+		dfTmp2['Transcript'] = dfTmp2.Attributes.apply(addTranscript)
+		dfTmp2 = dfTmp2[['Transcript', 'Biotype']]
+		dicoTmp = dfTmp2.set_index('Transcript').to_dict()
+		dfTmp['Biotype'] = dfTmp['Transcript'].map(dicoTmp['Biotype'])
+	if ('five_prime_utr' not in set(df.Feature) and
+		'three_prime_utr' not in set(df.Feature)):
+		dfTmp = getUTR(dfTmp)
 	dfTmp['Type'] = dfTmp.Biotype.apply(addTypeTr)
 	return dfTmp
 
-def importGTFdf(filename):
+def importGTFdf(filename, sp):
 	"""Imports a gtf file into a dataframe.
 
 	Read the gtf file into a csv, then change the column names. NI goes for
@@ -346,7 +386,8 @@ def importGTFdf(filename):
 					'NI1', 'Strand', 'NI2', 'Attributes']
 		del df['NI1']
 		del df['NI2']
-		del df['Biotype']
+		if sp not in ['homo_sapiens', 'pan_troglodytes', 'mus_musculus', 'gallus_gallus']:
+			del df['Biotype']
 		df['Chromosome'] = df.index
 		df = parseDF(df)
 		del df['Attributes']
@@ -723,6 +764,21 @@ if __name__ == '__main__':
 	print(sp)
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + \
 		"/" + sp + ".gtf"
-	gene, tr = computeLength(filename)
-	print('Gene length : ' + str(gene))
-	print('Transcript length : ' + str(tr))
+	df = importGTFdf(filename, sp)
+	print(len(list(set(df.Gene))))
+	print(len(list(set(df.Transcript))))
+	dfTmp = pd.DataFrame()
+	dfTmp = dfTmp.append(df[ df.Type == 'Coding'])
+	print(len(list(set(dfTmp.Transcript))))
+	dfTmp = pd.DataFrame()
+	dfTmp = dfTmp.append(df[ df.Type == 'Non coding'])
+	print(len(list(set(dfTmp.Transcript))))
+	dfTmp = pd.DataFrame()
+	dfTmp = dfTmp.append(df[ df.Feature == 'five_prime_utr'])
+	print(len(list(set(dfTmp.Transcript))))
+	dfTmp = pd.DataFrame()
+	dfTmp = dfTmp.append(df[ df.Feature == 'three_prime_utr'])
+	print(len(list(set(dfTmp.Transcript))))
+	# gene, tr = computeLength(filename)
+	# print('Gene length : ' + str(gene))
+	# print('Transcript length : ' + str(tr))

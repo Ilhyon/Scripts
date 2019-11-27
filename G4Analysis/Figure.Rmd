@@ -14,14 +14,43 @@ knitr::opts_chunk$set(echo = TRUE)
 # Densité de G4 par CG content
 
 ```{r}
-nbG4 <- read.delim("~/Documents/Data/Genomes/All_sp/nbG4.tsv", stringsAsFactors = FALSE)
-label = nbG4[1,]
-nbG4 = nbG4[2:62,]
-tablePlot = data.frame(as.numeric(as.character(nbG4$Density)), as.numeric(as.character(nbG4$GC.content)), nbG4$X.1, nbG4[,1])
-rownames(tablePlot) = nbG4[,1]
+nbG4 <- read.delim("~/Documents/Data/Genomes/Allsp/pG4Gene.csv", stringsAsFactors = FALSE)
 library(ggplot2)
 #install.packages('ggplot2')
-ggplot(tablePlot, aes(x=tablePlot$as.numeric.as.character.nbG4.GC.content.., y=tablePlot$as.numeric.as.character.nbG4.Density.., color=tablePlot$nbG4.X.1)) + 
+nbG4 = nbG4[nbG4$Type == 'Wt',]
+
+ggplot(nbG4, aes(x=nbG4$GC.in.genes., y=nbG4$Density, color=nbG4$Clade)) + 
+   geom_point(size=5, alpha=0.6) + 
+    labs(x = 'GC content', y = 'pG4 density (pG4/kb)', colour = 'Clade', caption = "Gene dataset") + ylim(0,0.35)+scale_color_manual(values=c('#80cbc4ff','#c876a9fe','#b4a7d6fe','#924f25fe','#009647ff','#e1b100ff','#c83737fe'))
+
+#Only vertebrate
+ggplot(nbG4, aes(x=nbG4$GC.in.genes., y=nbG4$Density, color=nbG4$Clade)) + 
+   geom_point(size=5, alpha=0.6) + 
+    labs(x = 'GC content', y = 'pG4 density (pG4/kb)', colour = 'Clade', caption = "Gene dataset") + ylim(0,0.35)+scale_color_manual(values=c('#BAB9B9','#BAB9B9','#BAB9B9','#BAB9B9','#BAB9B9','#BAB9B9','#c83737fe'))
+
+#eukaryote
+ggplot(nbG4, aes(x=nbG4$GC.in.genes., y=nbG4$Density, color=nbG4$Clade)) + 
+   geom_point(size=5, alpha=0.6) + 
+    labs(x = 'GC content', y = 'pG4 density (pG4/kb)', colour = 'Clade', caption = "Gene dataset") + ylim(0,0.35)+scale_color_manual(values=c('#BAB9B9','#BAB9B9','#b4a7d6fe','#e1b100ff','#009647ff','#924f25fe','#c83737fe'))
+
+#bacteria
+ggplot(nbG4, aes(x=nbG4$GC.in.genes., y=nbG4$Density, color=nbG4$Clade)) + 
+   geom_point(size=5, alpha=0.6) + 
+    labs(x = 'GC content', y = 'pG4 density (pG4/kb)', colour = 'Clade', caption = "Gene dataset") + ylim(0,0.35)+scale_color_manual(values=c('#BAB9B9','#c876a9fe','#BAB9B9','#BAB9B9','#BAB9B9','#BAB9B9','#BAB9B9'))
+
+
+
+
+
+```
+
+```{r}
+#Old
+label = nbG4[1,]
+nbG4 = nbG4[2:61,]
+tablePlot = data.frame(as.numeric(nbG4$Density), as.numeric(as.character(nbG4$GC.in.genes.)), nbG4$Nom.espèce, nbG4$Clade)
+rownames(tablePlot) = nbG4[,1]
+ggplot(tablePlot, aes(x=tablePlot$as.numeric.as.character.nbG4.GC.., y=tablePlot$as.numeric.as.character.nbG4.pG4.Gene.., color=tablePlot$nbG4.)) + 
     geom_point(size=5, alpha=0.6) + 
     labs(title = 'pG4 density (pG4/kb) by GC content (%) ', x = 'GC content', y = 'pG4 density (pG4/kb)', colour = 'Clade', caption = "Gene dataset") + ylim(0, 0.35)+scale_color_manual(values=c('#80cbc4ff','#c876a9fe','#c83737fe','#b4a7d6fe','#924f25fe','#009647ff','#e1b100ff'))
 
@@ -50,7 +79,8 @@ ggplot(diamonds, aes(x=carat, y=price)) +
 library(gridExtra)
 library(ggplot2)
 library(grid)
-Density_random <- read_delim("Documents/Data/Genomes/All_sp/Density_random.tsv", "\t", escape_double = FALSE, trim_ws = TRUE)
+Density_random <- read.csv("Documents/Data/Genomes/Allsp/pG4Gene.csv", sep="\t")
+Density_random$Nom.espèce=factor(Density_random$Nom.espèce, levels=unique(Density_random$Nom.espèce))
 
 colnames(Density_random) <- c("Specie", "Value", "Type", "sd")
 density = Density_random[1:122,]
@@ -61,6 +91,34 @@ attach(density)
 Density_random$Specie=factor(Density_random$Specie, levels=unique(Density_random$Specie))
 density$Specie=factor(density$Specie, levels=unique(density$Specie))
 GC$Specie=factor(GC$Specie, levels=unique(GC$Specie))
+
+
+## Create the top plot (with negative bottom margins)
+g.top <- ggplot(Density_random, aes(x=Density_random$Nom.espèce, y=Density_random$GC.in.genes., group=Type, color="#E69F00")) +
+  theme_bw() +
+  theme(plot.margin = unit(c(1,5,-30,6),units="points"),
+        axis.title.y = element_text(vjust =0.25)) +
+  theme(legend.position="bottom")+
+  geom_point(color="#E69F00") +
+  geom_line(color="#E69F00", size=1) +
+  #scale_color_manual(values="#E69F00")+
+  labs(y = "GC content", main="pG4 density for each species, and the GC content of each specie.")
+
+## Create the bottome plot (with no top margins)
+g.bottom <- ggplot(Density_random, aes(x=Density_random$Nom.espèce, y=Density_random$Density, group=Density_random$Type)) +
+  theme_bw() +
+  theme(plot.margin = unit(c(0,5,1,1),units="points")) +
+  theme(legend.position="bottom")+
+  #geom_errorbar(aes(ymin=Value-sd, ymax=Value+sd,color=Type), width=.1) +
+  geom_point(aes(color=Type)) +
+  geom_line(aes(color=Type)) +
+  labs(y = "Density of pG4 (pG4/kb)")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+## Plot graphs and set relative heights
+grid.arrange(g.top,g.bottom, heights = c(1/5, 4/5))
+
+
 
 p1 <- ggplot(density, aes(x=Specie, y=Value, group=Type)) +
       geom_errorbar(aes(ymin=Value-sd, ymax=Value+sd,color=Type), width=.1) +
