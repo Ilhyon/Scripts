@@ -534,93 +534,40 @@ def importLocationFronGTF(filename):
 	:rtype: dictionary
 	"""
 	exists = os.path.isfile(filename)
+	dico = {}
 	if exists :
-		dicoTr = {'Exon' : {}, '5UTR' : {}, '3UTR' : {}, 'CDS' : {},
-					'StartCodon' : {}, 'StopCodon': {}}
 		with open(filename) as f: # file opening
 			content = f.read()
 			lines = content.split('\n')
+			listLoc = ['exon', 'CDS', 'five_prime_utr', 'start_codon',
+				'stop_codon', 'three_prime_utr']
 			for l in lines: # browse all lines
 				if not l.startswith('#') and l:
 					words = l.split('\t')
 					attributes = words[8].split(';')
-					idGene = attributes[0].split('"')[1]
+					gene = attributes[0].split('"')[1]
 					feature = words[2]
 					chrm = words[0]
 					startFeature = int(words[3])
 					endFeature = int(words[4])
 					strand = words[6]
 					strand = changeStrandFormat(strand)
-					biotype = retrieveBiotypeFronAttributes(attributes, feature)
-					if feature == 'exon' :
+					biotype = retrieveBiotypeFronAttributes(attributes, 'transcript')
+					if feature in listLoc:
 						idTr = retrieveIdTrFronAttributes(attributes)
-						rank, idExon = retrieveInfoExonFronAttributes(attributes)
-						dicoTr['Exon'].update({idExon : {'Chromosome' : chrm,
-														'tr' : idTr,
-														'gene' : idGene,
-														'Start' : startFeature,
-														'End' : endFeature,
-														'Biotype' : biotype,
-														'Strand' : strand,
-														'Rank' : rank}})
-					elif feature == 'five_prime_utr' :
-						idTr = retrieveIdTrFronAttributes(attributes)
-						idLocation = idTr +':'+ str(startFeature) +'-'+ str(endFeature)
-						dicoTr['5UTR'][idLocation] = {'Chromosome' : chrm,
-											'tr' : idTr,
-											'gene' : idGene,
-											'Start' : startFeature,
-											'End' :endFeature,
-											'Biotype' : biotype,
-											'Strand' : strand}
-					elif feature == 'three_prime_utr' :
-						idTr = retrieveIdTrFronAttributes(attributes)
-						idLocation = idTr +':'+ str(startFeature) +'-'+ str(endFeature)
-						dicoTr['3UTR'][idLocation] = {'Chromosome' : chrm,
-											'tr' : idTr,
-											'gene' : idGene,
-											'Start' : startFeature,
-											'End' :endFeature,
-											'Biotype' : biotype,
-											'Strand' : strand}
-					elif feature == 'start_codon':
-						idTr = retrieveIdTrFronAttributes(attributes)
-						idLocation = idTr +':'+ str(startFeature) +'-'+ str(endFeature)
-						dicoTr['StartCodon'][idLocation] = {'Gene' : idGene,
-											'tr' : idTr,
-											'gene' : idGene,
-											'Chromosome' : chrm,
-											'Start' : startFeature,
-											'End' : endFeature,
-											'Biotype' : biotype,
-											'Strand' : strand}
-					elif feature == 'stop_codon':
-						idTr = retrieveIdTrFronAttributes(attributes)
-						idLocation = idTr +':'+ str(startFeature) +'-'+ str(endFeature)
-						dicoTr['StopCodon'][idLocation] = {'Gene' : idGene,
-											'tr' : idTr,
-											'gene' : idGene,
-											'Chromosome' : chrm,
-											'Start' : startFeature,
-											'End' : endFeature,
-											'Biotype' : biotype,
-											'Strand' : strand}
-					elif feature == 'CDS':
-						idTr = retrieveIdTrFronAttributes(attributes)
-						idLocation = idTr +':'+ str(startFeature) +'-'+ str(endFeature)
-						dicoTr['CDS'][idLocation] = {'Gene' : idGene,
-											'tr' : idTr,
-											'gene' : idGene,
-											'Chromosome' : chrm,
-											'Start' : startFeature,
-											'End' : endFeature,
-											'Biotype' : biotype,
-											'Strand' : strand}
-				elif re.search('genome-version', l):
-					assembly = l.split(' ')[1]
+						idLoc = chrm +':'+ str(startFeature) +'-'+ \
+							str(endFeature) +':'+ strand
+						if gene not in dico:
+							dico[gene] = { feature : {idLoc : []} }
+						if feature not in dico[gene]:
+							dico[gene][feature] = {idLoc : []}
+						if idLoc not in dico[gene][feature] :
+							dico[gene][feature][idLoc] = []
+						dico[gene][feature][idLoc].append( [idTr, biotype] )
 	else:
 		print("This file don't exist : " + filename)
-	return dicoTr
+	pprint(dico)
+	return dico
 
 def computesCoordRank1(strand, start, end):
 	"""Computes the coordinates of the first intron of a transcript.

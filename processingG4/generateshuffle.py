@@ -40,7 +40,7 @@ import argparse
 from Bio import SeqIO
 from pprint import pprint
 import Parser_gtf as pGTF
-import recurentFunction as rF
+import recurrentFunction as rF
 
 def createFasta(dico, fastaFile, chr, outputDir):
     """Create fasta file from the index of location.
@@ -184,7 +184,7 @@ def reverseSequence(Sequence):
     return reverse
 
 def getDicoLocation(dicoGTF, dicoIntron):
-    
+
     return x
 
 def importIntron(filename):
@@ -194,12 +194,14 @@ def importIntron(filename):
         lines = content.split('\n')
         for l in lines:
             words = l.split('\t')
-            dico[words[0]] = [words[2],words[3]]
+            if len(words) > 1:
+                dico[words[0]] = [words[2],words[3]]
     return dico
 
 def build_arg_parser():
     parser = argparse.ArgumentParser(description = 'generateRandom')
-    parser.add_argument ('-p', '--path', default = '/home/anais/Documents/Data/')
+    GITDIR = os.getcwd()+'/'
+    parser.add_argument ('-p', '--path', default = GITDIR)
     parser.add_argument ('-sp', '--specie', default = 'yersinia_pestis_biovar_microtus_str_91001')
     return parser
 
@@ -212,8 +214,8 @@ if __name__ == '__main__':
     fastaFile = path+sp+'/Fasta/'
     fastaJunction = path+sp+'/'+ini+'_transcript_unspliced.txt'
     outputDir = path+sp+'/'
-    dicoGTF = pGTF.importLocationFronGTF(path+sp+'/'+sp+'gtf')
-    dicoIntron = importIntron(path + sp +'/'+ ini + 'intron.txt')
-    dicoInfo = getDicoLocation(dicoGTF, dicoIntron)
-    createFasta(dicoInfo, fastaFile, chr, outputDir)
-    fromFasta(fastaJunction, outputDir, chr, dicoInfo)
+    dicoGTF = pGTF.importLocationFronGTF(path+sp+'/'+sp+'.gtf')
+    dicoIntron = importIntron(path + sp +'/'+ ini + '_intron.txt')
+    # dicoInfo = getDicoLocation(dicoGTF, dicoIntron)
+    # createFasta(dicoInfo, fastaFile, chr, outputDir)
+    # fromFasta(fastaJunction, outputDir, chr, dicoInfo)
