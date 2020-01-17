@@ -54,9 +54,9 @@ def mapPremRNA(coordExon, coordpG4, strand):
 			location = 'Exon'
 		elif (coordpG4[0] < coordExon[0] and strand == '1') or \
 			(coordpG4[0] > coordExon[0] and strand == '-1'):
-			location = 'Junction_acceptor'
+			location = 'Acceptor'
 		else:
-			location = 'Junction_donor'
+			location = 'Donor'
 	else:
 		location = None
 	return location
@@ -71,7 +71,7 @@ def mapMatureRNA(coordUTR, coordpG4, utr):
 		elif utr == '3UTR':
 			location = 'StopCodon'
 		elif utr == '5UTR':
-			location = 'Junction_donor'
+			location = 'StartCodon'
 	else:
 		location = None
 	return location
@@ -142,11 +142,26 @@ def mapOnTr(dfpG4gene, dicoTr, dicoGene, dicoUTR):
 							location = list(set([ loc for loc in location if loc != None]))
 						dfTmp = pd.DataFrame.from_dict({'Transcript' : tr,
 								'Location' : location, 'Sequence' : row.seqG4,
-								'Start' : coordpG4[0], 'End' : coordpG4[1],
+								'Start' : coordpG4[0], 'End' : coordpG4[1], 'Strand' : row.Strand,
 								'cGcC' : row.cGcC, 'G4H' : row.G4H, 'G4NN' : row.G4NN,
 								'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']})
 						dfpG4MatureTr = dfpG4MatureTr.append(dfTmp)
 	return dfpG4Tr, dfpG4MatureTr
+
+def computepG4CoordsJunction(pG4, tr):
+	pG4 = pG4.reset_index(drop=True)
+	intronStart = int(pG4.id.iloc[0].split(':')[0])
+	intronEnd = int(pG4.id.iloc[0].split(':')[1])
+	start = intronStart - (100 - pG4.Start.iloc[0])
+	end = (pG4.End.iloc[0] - 100) + intronEnd
+	if tr == 'CBF88613':
+		print(intronStart)
+		print(intronEnd)
+		print(pG4.Start.iloc[0])
+		print(pG4.End.iloc[0])
+		print(start)
+		print(end)
+	return start, end
 
 def mapOnJunction(dfpG4Junction, dicoTr, dfIntron):
 	"""Maps all pG4 that are in junctions on transcript.
@@ -173,9 +188,10 @@ def mapOnJunction(dfpG4Junction, dicoTr, dfIntron):
 		transcripts = list(set(dfIntron[dfIntron.Id == i].Transcript))
 		for tr in transcripts:
 			pG4 = dfpG4Junction[ dfpG4Junction.id == i]
+			start, end = computepG4CoordsJunction(pG4, tr)
 			dfTmp = pd.DataFrame.from_dict({'Transcript' : tr,
 					'Location' : ['Junction'], 'Sequence' : pG4.seqG4,
-					'Start' : pG4.Start, 'End' : pG4.End,
+					'Start' : [start], 'End' : [end], 'Strand' : pG4.Strand,
 					'cGcC' : pG4.cGcC, 'G4H' : pG4.G4H, 'G4NN' : pG4.G4NN,
 					'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']})
 			dfpG4Tr = dfpG4Tr.append(dfTmp)
@@ -204,7 +220,7 @@ def main(dicoTr, dicoGene, dicoUTR, dfpG4, dfIntron):
 	dfpG4gene =  dfpG4[ dfpG4.Feature == 'Gene' ]
 	dfpG4Junction =  dfpG4[ dfpG4.Feature == 'Junction' ]
 	dfpG4Tr, dfpG4MatureTr = mapOnTr(dfpG4gene, dicoTr, dicoGene, dicoUTR)
-	dfpG4Tr = dfpG4Tr.append(mapOnJunction(dfpG4Junction, dicoTr, dfIntron))
+	dfpG4MatureTr = dfpG4MatureTr.append(mapOnJunction(dfpG4Junction, dicoTr, dfIntron))
 	return dfpG4Tr, dfpG4MatureTr
 
 if __name__ == '__main__':

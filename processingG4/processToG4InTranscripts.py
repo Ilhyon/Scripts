@@ -83,12 +83,14 @@ def main(dicoParam, path, dicoGene, dicoTr, dicoUTR, dfIntron, option):
 		output1 = path + '/pG4.txt'
 		output2 = path + '/pG4Mature.txt'
 		dfpG4 = mergeWindow(path, dicoParam, option)
-		print ('\t'+str(dfpG4.shape))
+		print ('\t - Number of pG4 in genes : ' + str(len(dfpG4.index)))
+		# print(len(dfpG4[dfpG4.Feature == 'Gene']))
 		pG4Anno, pG4MatureAnno = G4Annotation.main(dicoTr, dicoGene, dicoUTR, dfpG4, dfIntron)
-		print ('\t'+str(pG4Anno.shape))
 		pG4Anno = pG4Anno.drop_duplicates(subset=None, keep='first', inplace=False)
 		pG4Anno.to_csv(path_or_buf=output1, header=True, index=None, sep='\t')
 		pG4MatureAnno.to_csv(path_or_buf=output2, header=True, index=None, sep='\t')
+		print ('\t - Number of pG4 in matureRNA : ' + str(len(pG4MatureAnno.index)))
+		print ('\t - Number of pG4 in preRNA : ' + str(len(pG4Anno.index)))
 	elif option == 'Random':
 		dfpG4 = mergeWindow(path, dicoParam, option)
 		print ('\t'+str(dfpG4.shape))

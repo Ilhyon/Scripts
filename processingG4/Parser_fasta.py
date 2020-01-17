@@ -218,7 +218,7 @@ def createFasta(sp, dicoFeature, featureType):
 			nbLine = math.ceil( float( len(sequence) ) / 60 )
 			cpt1 = 0
 			cpt2 = 60
-			if strand == "-1" :
+			if strand == "-1":
 				sequence = reverseSequence(sequence)
 			for i in range(0,int(nbLine)) :
 				output.write( sequence[cpt1:cpt2] + "\n" )
@@ -266,12 +266,20 @@ def getJunctionSequences(dicoChromosome, filename):
 						+':'+ str(dicoTr[tr]['Intron'][intron]['Start']) \
 						+':'+ str(dicoTr[tr]['Intron'][intron]['End']) \
 						+':'+ dicoTr[tr]['Strand']
-						seq = dicoChromosome[chrm]\
-								[tmp['Start']-100:tmp['Start']]
-						seq += dicoChromosome[chrm]\
-								[tmp['End']:tmp['End']+100]
-						if dicoTr[tr]['Intron']['Strand'] == '-1':
-							seq = reverseSequence(seq)
+						if (dicoTr[tr]['Start'] > tmp['Start'] - 100):
+							overlap = tmp['Start'] - dicoTr[tr]['Start']
+							seq = dicoChromosome[chrm]\
+									[ tmp['Start'] - overlap :tmp['Start'] ]
+						else:
+							seq = dicoChromosome[chrm]\
+									[ tmp['Start'] - 100 :tmp['Start'] ]
+						if (dicoTr[tr]['End'] < 100 + tmp['End']):
+							overlap = dicoTr[tr]['End'] - tmp['End']
+							seq += dicoChromosome[chrm]\
+									[ tmp['End']:tmp['End'] + overlap ]
+						else:
+							seq += dicoChromosome[chrm]\
+									[ tmp['End']:tmp['End'] + 100 ]
 						dicoJunction[header] = {'Sequence' : seq}
 	return dicoJunction
 

@@ -8,41 +8,45 @@ from Bio import SeqIO
 from pprint import pprint
 import rF
 
-def reverseSequence(Sequence) :
-    """ Reverse complement a DNA sequence.
+def writeFasta(outDir, dicoFasta, tree):
+    """From a dictionary {id : seq}, write a fasta file.
 
-    :param Sequence: DNA sequence that will be reversed.
-    :type Sequence: string
-
-    :returns: Sequence, the initial DNA sequence but reverse complemented.
-    :rtype: string
+    :param outDir: name of the directory where the output file need to be writen.
+    :type outDir: string
+    :param dicoFasta: {id : seq}
+    :type dicoFasta: dictionary
+    :param chr: name of the chromosome.
+    :type chr: string
     """
-    reverse = ""
-    nucleotides = {'A' : 'T',
-                    'T' : 'A',
-                    'C' : 'G',
-                    'G' : 'C'}
-    for n in Sequence:
-        if n in nucleotides:
-            tmp = nucleotides[n]
-        else :
-            tmp = n # in some sequences there is many N or other letter
-    reverse += tmp
-    Sequence = reverse[::-1]
-    return Sequence
+    output = open(outDir +'FastaTree_' + tree + '.fas', "w")
+    for id in dicoFasta:
+        output.write('>' + id + "\n")
+        nbLine = math.ceil( float( len(dicoFasta[id]) ) / 60 )
+        cpt1 = 0
+        cpt2 = 60
+        for i in range(0,int(nbLine)) :
+            seq = str(dicoFasta[id])
+            output.write(str(seq[cpt1:cpt2]) + "\n")
+            # to have a new line after 60 characters
+            cpt1 += 60
+            cpt2 += 60
+    output.close()
 
-def getFasta(path, dicoGeneTree, dicoGeneList):
-    dicoFastaTree = {}
+def getFasta(path, dicoGeneTree, dicoGeneList, outDir):
     for tree in dicoGeneTree:
-        dicoFastaTree[tree] = {}
+        dicoFastaTmp = {}
         for gene in dicoGeneTree[tree]:
             spId = dicoGeneList[gene].split('-')[0]
             sp = dicoGeneList[gene].split('-')[1]
             filename = path + 'Genomes/' + sp + '/' + spId + '_gene_unspliced.txt'
             geneUnspliced = SeqIO.to_dict(SeqIO.parse(filename, 'fasta'))
-            print(record_dict[gene])
-            dicoFastaTree[tree][gene] = record_dict[gene]
-
+            parsedGeneUnspliced = {}
+            infoGene = {}
+            for seqId in geneUnspliced:
+                parsedGeneUnspliced[ seqId.split(' ')[0] ] = geneUnspliced[seqId]
+                infoGene[ seqId.split(' ')[0] ] = seqId
+            dicoFastaTmp[ parsedGeneUnspliced[gene].description ] = parsedGeneUnspliced[gene].seq
+        writeFasta(outDir, dicoFasta, tree)
 
 def importGeneList(geniListDir):
     dicoGeneListbySp = {}
@@ -82,7 +86,7 @@ def main(path):
     outputDir = path + 'Tree/Fasta/'
     dicoGeneTree = importGeneTree(treeGeneListDir)
     dicoGeneList = importGeneList(geniListDir)
-    dicoFasta = getFasta(path, dicoGeneTree, dicoGeneList)
+    getFasta(path, dicoGeneTree, dicoGeneList, outputDir)
 
 def build_arg_parser():
     GITDIR = os.getcwd()+'/'
