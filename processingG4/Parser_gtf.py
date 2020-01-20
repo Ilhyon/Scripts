@@ -238,6 +238,23 @@ def extractDicoGeneTr(filename):
 					dicoGene[geneId].append(idTr)
 	return(dicoGene)
 
+def getDicoTrGene(filename):
+	dicoGene = {}
+	with open(filename) as f: # file opening
+		content = f.read()
+		lines = content.split('\n')
+		for l in lines: # browse all lines
+			if not l.startswith('#') and l:
+				words = l.split('\t')
+				attributes = words[8].split(';')
+				feature = words[2]
+				if feature == 'transcript':
+					geneId = attributes[0].split('"')[1]
+					idTr = retrieveIdTrFronAttributes(attributes)
+					biotype = retrieveBiotypeFronAttributes(attributes, feature)
+					dicoGene[idTr] = {'Gene' : geneId, 'Biotype' : biotype}
+	return(dicoGene)
+
 def addTranscript(attributes):
 	"""Apply function to retrieve the transcript id of a feature.
 
@@ -547,7 +564,7 @@ def importLocationFronGTF(filename):
 					attributes = words[8].split(';')
 					gene = attributes[0].split('"')[1]
 					feature = words[2]
-					chrm = words[0]
+					chr = words[0]
 					startFeature = int(words[3])
 					endFeature = int(words[4])
 					strand = words[6]
@@ -555,18 +572,19 @@ def importLocationFronGTF(filename):
 					biotype = retrieveBiotypeFronAttributes(attributes, 'transcript')
 					if feature in listLoc:
 						idTr = retrieveIdTrFronAttributes(attributes)
-						idLoc = chrm +':'+ str(startFeature) +'-'+ \
+						idLoc = chr +':'+ str(startFeature) +'-'+ \
 							str(endFeature) +':'+ strand
-						if gene not in dico:
-							dico[gene] = { feature : {idLoc : []} }
-						if feature not in dico[gene]:
-							dico[gene][feature] = {idLoc : []}
-						if idLoc not in dico[gene][feature] :
-							dico[gene][feature][idLoc] = []
-						dico[gene][feature][idLoc].append( [idTr, biotype] )
+						if chr not in dico:
+							dico[chr] = {gene : { feature : {idLoc : []} } }
+						if gene not in dico[chr]:
+							dico[chr][gene] = { feature : {idLoc : []} }
+						if feature not in dico[chr][gene]:
+							dico[chr][gene][feature] = {idLoc : []}
+						if idLoc not in dico[chr][gene][feature] :
+							dico[chr][gene][feature][idLoc] = []
+						dico[chr][gene][feature][idLoc].append( idTr+'-'+biotype )
 	else:
 		print("This file don't exist : " + filename)
-	pprint(dico)
 	return dico
 
 def computesCoordRank1(strand, start, end):

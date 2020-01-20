@@ -146,6 +146,7 @@ def mapOnTr(dfpG4gene, dicoTr, dicoGene, dicoUTR):
 								'cGcC' : row.cGcC, 'G4H' : row.G4H, 'G4NN' : row.G4NN,
 								'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']})
 						dfpG4MatureTr = dfpG4MatureTr.append(dfTmp)
+	print(dfpG4Tr)
 	return dfpG4Tr, dfpG4MatureTr
 
 def computepG4CoordsJunction(pG4, tr):
@@ -154,13 +155,6 @@ def computepG4CoordsJunction(pG4, tr):
 	intronEnd = int(pG4.id.iloc[0].split(':')[1])
 	start = intronStart - (100 - pG4.Start.iloc[0])
 	end = (pG4.End.iloc[0] - 100) + intronEnd
-	if tr == 'CBF88613':
-		print(intronStart)
-		print(intronEnd)
-		print(pG4.Start.iloc[0])
-		print(pG4.End.iloc[0])
-		print(start)
-		print(end)
 	return start, end
 
 def mapOnJunction(dfpG4Junction, dicoTr, dfIntron):

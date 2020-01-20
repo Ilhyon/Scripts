@@ -42,61 +42,22 @@ from pprint import pprint
 import Parser_gtf as pGTF
 import recurrentFunction as rF
 
-def createFasta(dico, fastaFile, chr, outputDir):
-    """Create fasta file from the index of location.
-
-    Each sequence corresponds to one location. The id is like :
-    Gene:location:chr:start-end:Tr1-bt|Tr2-bt
-    Location of only one nucleotides are not added to the fasta file.
-    The sequence is retrieved from a fasta file containing the entire
-    chromosome. This file have been dowloaded from the ensembl FTP.
-
-    :param dico: aims to contain all location of a chromosome.
-	:type dico: dictionary
-    :param fastaFile: directory containing fasta of all chromosomes.
-	:type fastaFile: string
-    :param chr: name of the chromosome.
-	:type chr: string
-    :param outputDir: name of the output directory.
-	:type outputDir: string
-    """
-    fastaRandom = {}
-    chrSeq = importFastaChromosome(fastaFile, chr)
-    for gene in dico:
-        for location in dico[gene]:
-            start = int(location.split(':')[2].split('-')[0])
-            end = int(location.split(':')[2].split('-')[1])
-            if end != start:
-                strand = location.split(':')[3]
-                if strand == '1':
-                    seq = chrSeq[start-1:end-1]
-                else:
-                    seq = chrSeq[end-1:start-1]
-                    seq = reverseSequence(seq)
-                randomSeq = shuffleSeq(seq)
-                listTr = [ tr+'-'+dico[gene][location][tr] for tr in dico[gene][location] ]
-                id = '>'+gene+':'+location+':'+'|'.join(listTr)
-                fastaRandom[id] = randomSeq
-    writeFasta(outputDir, fastaRandom, chr, 'location')
-
-def fromFasta(filename, outDir, chr, dico):
+def fromFasta(filename, outDir, ini, dico, dicoIntronGene):
     fastaOri = SeqIO.parse(open(filename), 'fasta')
     fastaShuf = {}
     for fasta in fastaOri:
         name, seq = fasta.id, str(fasta.seq)
         seq = shuffleSeq(seq)
-        gene = name.split(':')[1]
-        coords = name.split(':')[3] +'-'+ name.split(':')[4]
-        for loc in dico[gene]:
-            if coords in loc:
-                location = loc
-        chr = location.split(':')[1]
-        coords = location.split(':')[2]
-        strand = location.split(':')[3]
-        listTr = [ tr+'-'+dico[gene][location][tr] for tr in dico[gene][location] ]
-        name = '>'+gene+':junction:'+chr+':'+coords+':'+strand+':'+'|'.join(listTr)
+        chr = name.split(':')[2]
+        idLoc = chr+':'+name.split(':')[3] +'-'+name.split(':')[4]+ \
+            ':'+name.split(':')[5]
+        gene = dicoIntronGene[idLoc]
+        for loc in dico[chr][gene]['intron']:
+            if idLoc in loc:
+                listTr = dico[chr][gene]['intron'][idLoc]
+        name = '>'+gene+':junction:'+idLoc+':'+'|'.join(listTr)
         fastaShuf[name] = seq
-    writeFasta(outputDir, fastaShuf, chr, 'junction')
+    writeFasta(outputDir, fastaShuf, ini, 'junction')
 
 def shuffleSeq(seq):
     """Shuffle a sequence.
@@ -117,7 +78,7 @@ def shuffleSeq(seq):
     seq = ''.join(seq)
     return seq
 
-def importFastaChromosome(directory, chr):
+def importFastaChromosome(filename, chr):
     """Import the fasta file containing an entire chromosome sequence.
 
     :param directory: directory name containing all chromosome fasta.
@@ -128,8 +89,6 @@ def importFastaChromosome(directory, chr):
     :returns: sequence, entire chromosome sequence.
     :rtype: string
     """
-    tmpChr = chr.split('r')[1]
-    filename = directory + 'Homo_sapiens.GRCh38.dna.chromosome.' + tmpChr + '.fa'
     with open(filename) as f: # file opening
         content = f.read()
         l = content.split('\n')
@@ -138,7 +97,7 @@ def importFastaChromosome(directory, chr):
             sequence = "".join(l[1:])
     return sequence
 
-def writeFasta(outDir, dicoFasta, chr, type):
+def writeFasta(outDir, dicoFasta, ini, type):
     """From a dictionary {id : seq}, write a fasta file.
 
     :param outDir: name of the directory where the output file need to be writen.
@@ -148,7 +107,7 @@ def writeFasta(outDir, dicoFasta, chr, type):
     :param chr: name of the chromosome.
     :type chr: string
     """
-    output = open(outDir +'Shuffle_'+chr+'_'+type+'.fas', "w")
+    output = open(outDir + 'Shuffle_' + ini + '_' + type + '.fas', "w")
     for id in dicoFasta:
         output.write(id + "\n")
         nbLine = math.ceil( float( len(dicoFasta[id]) ) / 60 )
@@ -183,9 +142,49 @@ def reverseSequence(Sequence):
         reverse += tmp
     return reverse
 
-def getDicoLocation(dicoGTF, dicoIntron):
+def createFasta(dicoGTF, dicoIntron, pathFasta, ini, outputDir):
+    """Create fasta file from the index of location.
 
-    return x
+    Each sequence corresponds to one location. The id is like :
+    Gene:location:chr:start-end:Tr1-bt|Tr2-bt
+    Location of only one nucleotides are not added to the fasta file.
+    The sequence is retrieved from a fasta file containing the entire
+    chromosome. This file have been dowloaded from the ensembl FTP.
+
+    :param dico: aims to contain all location of a chromosome.
+	:type dico: dictionary
+    :param fastaFile: directory containing fasta of all chromosomes.
+	:type fastaFile: string
+    :param chr: name of the chromosome.
+	:type chr: string
+    :param outputDir: name of the output directory.
+	:type outputDir: string
+    """
+    fastaRandom = {}
+    fastaFiles = [f for f in os.listdir(pathFasta) if \
+        os.path.isfile( os.path.join(pathFasta, f) )]
+    for chr in dicoGTF:
+        for file in fastaFiles:
+            if 'chromosome.' + chr + '.fa' in file :
+                fastaFile = pathFasta + file
+        chrSeq = importFastaChromosome(fastaFile, chr)
+        for gene in dicoGTF[chr]:
+            for locName in dicoGTF[chr][gene]:
+                for location in dicoGTF[chr][gene][locName]:
+                    start = int(location.split(':')[1].split('-')[0])
+                    end = int(location.split(':')[1].split('-')[1])
+                    if end != start:
+                        strand = location.split(':')[2]
+                        if strand == '1':
+                            seq = chrSeq[start-1:end-1]
+                        else:
+                            seq = chrSeq[end-1:start-1]
+                            seq = reverseSequence(seq)
+                        randomSeq = shuffleSeq(seq)
+                        listTr = dicoGTF[chr][gene][locName][location]
+                        id = '>'+gene+':'+locName+':'+location+':'+'|'.join(listTr)
+                        fastaRandom[id] = randomSeq
+    writeFasta(outputDir, fastaRandom, ini, 'location')
 
 def importIntron(filename):
     dico = {}
@@ -195,8 +194,29 @@ def importIntron(filename):
         for l in lines:
             words = l.split('\t')
             if len(words) > 1:
-                dico[words[0]] = [words[2],words[3]]
+                idIntron = words[1]+':'+words[2]+'-'+words[3]+':'+words[4]
+                if words[0] not in dico:
+                    dico[ words[0] ] = [ ]
+                dico[ words[0] ].append(idIntron)
     return dico
+
+def addIntronToGTF(dicoGTF, dicoIntron, dicoTrGene):
+    dicoIntronGene = {}
+    for tr in dicoIntron:
+        for intron in dicoIntron[tr]:
+            gene = dicoTrGene[tr]['Gene']
+            chr = intron.split(':')[0]
+            strand = intron.split(':')[2]
+            start = intron.split(':')[1].split('-')[0]
+            end = intron.split(':')[1].split('-')[1]
+            idLoc = chr+':'+start+'-'+end+':'+strand
+            if 'intron' not in dicoGTF[chr][gene]:
+                dicoGTF[chr][gene]['intron'] = { idLoc : []}
+            if idLoc not in dicoGTF[chr][gene]['intron']:
+                dicoGTF[chr][gene]['intron'][idLoc] = []
+            dicoGTF[chr][gene]['intron'][idLoc].append(tr+'-'+dicoTrGene[tr]['Biotype'])
+            dicoIntronGene.update({idLoc : gene})
+    return dicoGTF, dicoIntronGene
 
 def build_arg_parser():
     parser = argparse.ArgumentParser(description = 'generateRandom')
@@ -215,7 +235,8 @@ if __name__ == '__main__':
     fastaJunction = path+sp+'/'+ini+'_transcript_unspliced.txt'
     outputDir = path+sp+'/'
     dicoGTF = pGTF.importLocationFronGTF(path+sp+'/'+sp+'.gtf')
+    dicoTrGene = pGTF.getDicoTrGene(path+sp+'/'+sp+'.gtf')
     dicoIntron = importIntron(path + sp +'/'+ ini + '_intron.txt')
-    # dicoInfo = getDicoLocation(dicoGTF, dicoIntron)
-    # createFasta(dicoInfo, fastaFile, chr, outputDir)
-    # fromFasta(fastaJunction, outputDir, chr, dicoInfo)
+    dicoLocation, dicoIntronGene = addIntronToGTF(dicoGTF, dicoIntron, dicoTrGene)
+    createFasta(dicoGTF, dicoIntron, fastaFile, ini, outputDir)
+    fromFasta(fastaJunction, outputDir, ini, dicoGTF, dicoIntronGene)
