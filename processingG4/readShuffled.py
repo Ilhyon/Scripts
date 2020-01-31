@@ -169,9 +169,25 @@ def getpG4(filename, dicoParam):
 		return dfpG4
 
 def annotationpG4(dfpG4unNN):
+	dfpG4Ann = pd.DataFrame()
 	dfpG4unNN.reset_index(drop=True, inplace=True)
-	dftmp = dfpG4unNN.to_dict('index')
-	pprint(dftmp)
+	dicotmp = dfpG4unNN.to_dict('index')
+	for row in dicotmp:
+		listTrBt = dicotmp[row]['id'].split(':')[5].split('|')
+		location = [dicotmp[row]['id'].split(':')[1]]
+		coords = dicotmp[row]['id'].split(':')[2:5]
+		for TrBt in listTrBt:
+			tr = TrBt.split('-')[0]
+			bt = TrBt.split('-')[1]
+			tmpRow = {'Transcript' : tr,
+					'Location' : location, 'Sequence' : dicotmp[row]['seqG4'],
+					'Start' : coords[1].split('~')[0],
+					'End' : coords[1].split('~')[1],
+					'cGcC' : dicotmp[row]['cGcC'], 'G4H' : dicotmp[row]['G4H'],
+					'G4NN' : dicotmp[row]['G4NN'], 'Biotype' : bt, 'Type' : tr}
+			dfTmp = pd.DataFrame.from_dict(tmpRow)
+			dfpG4Ann = dfpG4Ann.append(dfTmp)
+	return dfpG4Ann
 
 def mergeWindow(path, dicoParam, sp):
 	directory = path + sp + '/ShuffleCSV'
@@ -210,11 +226,11 @@ def removeTr(path, df, loca):
 	return filtereddf
 
 def main(dicoParam, path, sp):
+	ini = rF.setUpperLetter(sp)
 	dfpG4 = mergeWindow(path, dicoParam, sp)
 	print ('\t'+str(dfpG4.shape))
-	# dfpG4 = removeTr(path, dfpG4, df)
-	# print ('\t'+str(dfpG4.shape))
-	# dfpG4.to_csv(path_or_buf=path+option+'_pG4.csv', header=True, index=None, sep='\t')
+	dfpG4.to_csv(path_or_buf = path + sp + '/' + ini + '_shuffled_pG4.csv', \
+		header=True, index=None, sep='\t')
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')
