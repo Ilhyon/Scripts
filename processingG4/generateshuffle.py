@@ -8,10 +8,10 @@ Copyright:
     departement    of computation.
 
 Date:
-    June 2019
+    February 2020
 
 Description:
-    This script aims to generate all random fasta needed. It will generate one
+    This script aims to generate all shufled fasta needed. It will generate one
     fasta file for each segment location but also for junction. The id of each
     fasta is like : biotype:Trid:Start-End:Strand, exept for intron where the
     biotype is at the end. To generate random sequences we retrieve the sequence
@@ -49,7 +49,7 @@ def fromFasta(filename, outDir, ini, dico, dicoIntronGene):
         name, seq = fasta.id, str(fasta.seq)
         seq = shuffleSeq(seq)
         chr = name.split(':')[2]
-        idLoc = chr+':'+name.split(':')[3] +'-'+name.split(':')[4]+ \
+        idLoc = chr+':'+name.split(':')[3] +'~'+name.split(':')[4]+ \
             ':'+name.split(':')[5]
         gene = dicoIntronGene[idLoc]
         for loc in dico[chr][gene]['intron']:
@@ -140,6 +140,7 @@ def reverseSequence(Sequence):
         else :
             tmp = n # in some sequences there is many N or other letter
         reverse += tmp
+    reverse = reverse[::-1]
     return reverse
 
 def createFasta(dicoGTF, dicoIntron, pathFasta, ini, outputDir):
@@ -165,20 +166,28 @@ def createFasta(dicoGTF, dicoIntron, pathFasta, ini, outputDir):
         os.path.isfile( os.path.join(pathFasta, f) )]
     for chr in dicoGTF:
         for file in fastaFiles:
-            if 'chromosome.' + chr + '.fa' in file :
+            if ('chromosome.' + chr + '.fa' in file) or \
+                ('chr' + chr + '.fa' in file) or \
+                ('_group.' + chr + '.fa' in file):
                 fastaFile = pathFasta + file
         chrSeq = importFastaChromosome(fastaFile, chr)
         for gene in dicoGTF[chr]:
             for locName in dicoGTF[chr][gene]:
                 for location in dicoGTF[chr][gene][locName]:
-                    start = int(location.split(':')[1].split('-')[0])
-                    end = int(location.split(':')[1].split('-')[1])
+                    # print(location)
+                    start = int(location.split(':')[1].split('~')[0])
+                    end = int(location.split(':')[1].split('~')[1])
                     if end != start:
                         strand = location.split(':')[2]
-                        if strand == '1':
+                        if start > 0:
                             seq = chrSeq[start-1:end-1]
                         else:
-                            seq = chrSeq[end-1:start-1]
+                            negSeq = chrSeq[- -start:]
+                            # sequence before the origin of replication
+                            posSeq = chrSeq[0:end]
+                            # sequence after the origin of replication
+                            seq = negSeq + posSeq
+                        if strand == '-1':
                             seq = reverseSequence(seq)
                         randomSeq = shuffleSeq(seq)
                         listTr = dicoGTF[chr][gene][locName][location]
@@ -194,7 +203,7 @@ def importIntron(filename):
         for l in lines:
             words = l.split('\t')
             if len(words) > 1:
-                idIntron = words[1]+':'+words[2]+'-'+words[3]+':'+words[4]
+                idIntron = words[1]+':'+words[2]+'~'+words[3]+':'+words[4]
                 if words[0] not in dico:
                     dico[ words[0] ] = [ ]
                 dico[ words[0] ].append(idIntron)
@@ -207,14 +216,14 @@ def addIntronToGTF(dicoGTF, dicoIntron, dicoTrGene):
             gene = dicoTrGene[tr]['Gene']
             chr = intron.split(':')[0]
             strand = intron.split(':')[2]
-            start = intron.split(':')[1].split('-')[0]
-            end = intron.split(':')[1].split('-')[1]
-            idLoc = chr+':'+start+'-'+end+':'+strand
+            start = intron.split(':')[1].split('~')[0]
+            end = intron.split(':')[1].split('~')[1]
+            idLoc = chr+':'+start+'~'+end+':'+strand
             if 'intron' not in dicoGTF[chr][gene]:
                 dicoGTF[chr][gene]['intron'] = { idLoc : []}
             if idLoc not in dicoGTF[chr][gene]['intron']:
                 dicoGTF[chr][gene]['intron'][idLoc] = []
-            dicoGTF[chr][gene]['intron'][idLoc].append(tr+'-'+dicoTrGene[tr]['Biotype'])
+            dicoGTF[chr][gene]['intron'][idLoc].append(tr+'~'+dicoTrGene[tr]['Biotype'])
             dicoIntronGene.update({idLoc : gene})
     return dicoGTF, dicoIntronGene
 

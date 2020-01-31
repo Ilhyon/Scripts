@@ -572,7 +572,10 @@ def importLocationFronGTF(filename):
 					biotype = retrieveBiotypeFronAttributes(attributes, 'transcript')
 					if feature in listLoc:
 						idTr = retrieveIdTrFronAttributes(attributes)
-						idLoc = chr +':'+ str(startFeature) +'-'+ \
+						if feature == 'stop_codon' or feature == 'start_codon':
+							startFeature = startFeature - 50
+							endFeature = endFeature + 50
+						idLoc = chr +':'+ str(startFeature) +'~'+ \
 							str(endFeature) +':'+ strand
 						if chr not in dico:
 							dico[chr] = {gene : { feature : {idLoc : []} } }

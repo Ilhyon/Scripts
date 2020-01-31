@@ -86,7 +86,7 @@ def createDicoSp():
     dico = {'Aaeo' : 1,
             'Mtub' : 2,
             'Tthe' : 3,
-            'Caur' :4,
+            'Caur' : 4,
             'Mpne' : 5,
             'Saur' : 6,
             'Bsub' : 7,

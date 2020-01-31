@@ -22,7 +22,7 @@ import os
 import argparse
 import getMainDensities
 from pprint import pprint
-import recurentFunction as rF
+import recurrentFunction as rF
 
 def overlaps(interval1, interval2):
     """Compute the distance or overlap between two interval.
