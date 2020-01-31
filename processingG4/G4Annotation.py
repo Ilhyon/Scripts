@@ -120,7 +120,7 @@ def mapOnTr(dfpG4gene, dicoTr, dicoGene, dicoUTR):
 					location = list(set([ loc for loc in location if loc != None]))
 				dicoTmp = {'Transcript' : tr,
 						'Location' : location, 'Sequence' : row.seqG4,
-						'Start' : coordpG4[0], 'End' : coordpG4[1],
+						'Start' : coordpG4[0], 'End' : coordpG4[1],  'Strand' : row.Strand,
 						'cGcC' : row.cGcC, 'G4H' : row.G4H, 'G4NN' : row.G4NN,
 						'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']}
 				dfTmp = pd.DataFrame.from_dict(dicoTmp)

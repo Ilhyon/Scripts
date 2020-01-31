@@ -181,38 +181,6 @@ def getDicoNbpG4rShuf(pG4rFile):
 		dicopG4r['nbTrWithpG4'][locID] = len(list(set(dicopG4r['nbTrWithpG4'][locID])))
 	return(dicopG4r)
 
-def changeLocName(location):
-	"""Changes names of locations.
-
-	This function aims to unified names location between the shuffled dataset
-	and the wildtype dataset.
-
-	:param location: wt name location.
-	:type location: string
-
-	:returns: location, updated with the 'good' name.
-	:rtype: string
-	"""
-	if location == 'junction_IntronNC_ExonNC' or location == 'junction_Intron_CDS':
-		location = 'acceptor'
-	elif location == 'junction_ExonNC_IntronNC' or location == 'junction_CDS_Intron':
-		location = 'donor'
-	elif location == 'junction_CDS_CDS' or location == 'junction_ExonNC_ExonNC':
-		location = 'junction'
-	elif location == '3':
-		location = '3UTR'
-	elif location == '5':
-		location = '5UTR'
-	elif location == 'ExonNC':
-		location = 'exon'
-	elif location == 'Intron' or location == 'IntronNC':
-		location = 'intron'
-	elif location == 'junction_5_CDS':
-		location = 'StartCodon'
-	elif location == 'junction_CDS_3':
-		location = 'StopCodon'
-	return location
-
 def getDicoNbpG4rWt(pG4rFile):
 	"""Import from a file the pG4r number and the number of transcript with it.
 
@@ -234,36 +202,29 @@ def getDicoNbpG4rWt(pG4rFile):
 	"""
 	dicopG4r = {'NbG4' : {},
 				'nbTrWithpG4' : {}}
-	exonBtMissing = ['nonsense_mediated_decay', 'protein_coding',
-					'IG_V_gene', 'non_stop_decay']
-	with open(pG4rFile) as f:
-		lines = f.read().splitlines()
-		for l in lines:
-			l = l.rstrip()
-			words = l.split('\t')
-			if words[0] != 'pG4rID' and words[0]:
-				id = words[0]
-				location = words[5]
-				Bt = words[6]
-				tr = id.split('|')[0]
-				location = changeLocName(location)
-				locID = location+'-'+Bt
-				if locID not in dicopG4r['NbG4']:
-					dicopG4r['NbG4'][locID] = 0
-				if locID not in dicopG4r['nbTrWithpG4']:
-					dicopG4r['nbTrWithpG4'][locID] = []
-				dicopG4r['NbG4'][locID] += 1
-				dicopG4r['nbTrWithpG4'][locID].append(tr)
-				if location in ['5UTR', 'CDS', '3UTR', 'StartCodon', 'StopCodon'] and Bt in exonBtMissing:
-					locID = 'exon-'+Bt
+	try :
+		open(pG4rFile)
+	except:
+		dicopG4r = {}
+	else:
+		with open(pG4rFile) as f:
+			lines = f.read().splitlines()
+			for l in lines:
+				l = l.rstrip()
+				words = l.split('\t')
+				if words[0] != 'Transcript' and words[0]:
+					tr = words[0]
+					location = words[1]
+					bt = words[8]
+					locID = location + '-' + bt
 					if locID not in dicopG4r['NbG4']:
 						dicopG4r['NbG4'][locID] = 0
 					if locID not in dicopG4r['nbTrWithpG4']:
 						dicopG4r['nbTrWithpG4'][locID] = []
 					dicopG4r['NbG4'][locID] += 1
 					dicopG4r['nbTrWithpG4'][locID].append(tr)
-	for locID in dicopG4r['nbTrWithpG4']:
-		dicopG4r['nbTrWithpG4'][locID] = len(list(set(dicopG4r['nbTrWithpG4'][locID])))
+		for locID in dicopG4r['nbTrWithpG4']:
+			dicopG4r['nbTrWithpG4'][locID] = len(list(set(dicopG4r['nbTrWithpG4'][locID])))
 	return(dicopG4r)
 
 def addNbpG4r(dico, df, type):
@@ -288,10 +249,11 @@ def addNbpG4r(dico, df, type):
 	df[name] = 0
 	df[name2] = 0
 	for index, row in df.iterrows():
-		if row.LocID in dico['NbG4']:
-			df[name].iloc[index] = dico['NbG4'][row.LocID]
-		if row.LocID in dico['nbTrWithpG4']:
-			df[name2].iloc[index] = dico['nbTrWithpG4'][row.LocID]
+		if dico:
+			if row.LocID in dico['NbG4']:
+				df[name].iloc[index] = dico['NbG4'][row.LocID]
+			if row.LocID in dico['nbTrWithpG4']:
+				df[name2].iloc[index] = dico['nbTrWithpG4'][row.LocID]
 	return df
 
 def addpG4rNumber(pG4rFileShuf, pG4rFileWtpreRNA, pG4rFileWtMatureRNA, df):
@@ -305,7 +267,8 @@ def addpG4rNumber(pG4rFileShuf, pG4rFileWtpreRNA, pG4rFileWtMatureRNA, df):
 	:rtype: dataFrame
 	"""
 	dicoShuf = getDicoNbpG4rShuf(pG4rFileShuf)
-	dicoWt = getDicoNbpG4rWt(pG4rFileWt)
+	dicoWt = getDicoNbpG4rWt(pG4rFileWtpreRNA)
+	dicoWt = dicoWt.update(getDicoNbpG4rWt(pG4rFileWtMatureRNA))
 	df = addNbpG4r(dicoShuf, df, 'Shuf')
 	df = addNbpG4r(dicoWt, df, 'Wt')
 	return df
@@ -407,14 +370,14 @@ def main(path, sp):
 	:type path: string
 	"""
 	ini = ini = rF.setUpperLetter(sp)
-	pG4rFileShuf = path + sp + '/' + ini + '_shuffled_pG4.csv'
+	pG4rFileShuf = path + sp + '/pG4_shuffled.csv'
 	pG4rFileWtpreRNA = path + sp + '/pG4.txt'
 	pG4rFileWtMatureRNA = path + sp + '/pG4Mature.txt'
 	df = getGCFromFile(path+sp+'/', ini)
 	df = addpG4rNumber(pG4rFileShuf, pG4rFileWtpreRNA, pG4rFileWtMatureRNA, df)
-	# df['Class'] = df.Biotype.apply(addTypeTr)
-	# df['Type'] = df.Location.apply(addType)
-	# df = addNbLocation(path, df)
+	df['Class'] = df.Biotype.apply(addTypeTr)
+	df['Type'] = df.Location.apply(addType)
+	df = addNbLocation(path + sp, df)
 	# df = computeDensities(df, 'Shuf')
 	# df = computeDensities(df, 'Wt')
 	# df = df.fillna(0)

@@ -13,7 +13,7 @@ Date:
 Description:
 	This file is more like a library called when statistics are computed (
         getMainDensities and getDataFig). Its aims is to compute the number of
-        location with at least one pG4r in it. A special script is made for
+        location with at least one pG4 in it. A special script is made for
         because we need to compute each time, otherwise we could get the same
         location in different condition and count it 2 times.
 """
@@ -44,15 +44,15 @@ def overlaps(interval1, interval2):
 def overlapLocation(coordspG4, coordsLoc):
     """Gets the overlap between two set of coordinates.
 
-    If there is an overlap (>0) between an pG4r and the location, then the
+    If there is an overlap (>0) between an pG4 and the location, then the
     coords of the location are returned.
 
-    :param intervalSeq: contain the start and the end of a pG4r.
+    :param intervalSeq: contain the start and the end of a pG4.
 	:type intervalSeq: list of int
     :param intervalFeat: contain the start and the end of a gff feature.
 	:type intervalFeat: list of int
 
-    :returns: ':'.join(coordsLoc), location coord if overlap with the pG4r.
+    :returns: ':'.join(coordsLoc), location coord if overlap with the pG4.
     :rtype: list
     """
     #if element are on the same chr and strand
@@ -70,7 +70,7 @@ def overlapLocation(coordspG4, coordsLoc):
 def importLocaMulti(filename):
     """Import into a dictionary the number of uniq location by transcript.
 
-    pG4r are affiliated to a chromosomal location and a transcript. So here we
+    pG4 are affiliated to a chromosomal location and a transcript. So here we
     count the number tot of location according to transcripts. To do that all
     locations are browsed, then transcript
 
@@ -181,25 +181,25 @@ def countLocIdByClass(dicoLocId):
         dicoLoca[locClass] = len(set(dicoLoca[locClass]))
     return dicoLoca
 
-def readShufpG4r(pG4rFile):
-    """Reads a file containing all pG4r Shuf and parse it.
+def readShufpG4(pG4File):
+    """Reads a file containing all pG4 Shuf and parse it.
 
     This function aims to retrieve for each biotype location, the location where
-    a pG4r is.
+    a pG4 is.
 
-    :param filename: name of the file containing all shuf pG4r.
+    :param filename: name of the file containing all shuf pG4.
 	:type filename: string
 
     :returns: dicoLoca, {Location-Biotype : [coordLocation]}
     :rtype: dictionary
     """
     dicoLoca = {}
-    with open(pG4rFile) as f:
+    with open(pG4File) as f:
         lines = f.read().splitlines()
         for l in lines:
             l = l.rstrip()
             w = l.split('\t')[0]
-            if w != 'pG4rID' and w:
+            if w != 'pG4ID' and w:
                 id = w.split(';')[0]
                 if id.split(':')[5]:
                     id = id.split(':')
@@ -217,21 +217,21 @@ def readShufpG4r(pG4rFile):
                         dicoLoca[locBt].append(idLoca)
     return dicoLoca
 
-def readWtpG4r(filename, dicoLoc):
-    """Reads the pG4r Wt file and map them on location to find their coords.
+def readWtpG4(filename, dicoLoc):
+    """Reads the pG4 Wt file and map them on location to find their coords.
 
     In the input file, locations name are given but not their coords. So we need
-    to map them to make them unique. Each line are red, and for each pG4r,
-    we find the overlap between the pG4r and all location of this pG4r in this
-    transcript. For example, there is a pG4r in a transcript 1. This Tr 1 have
-    4CDS, 1 5UTR, 1 3UTR and 3 introns. So if this pG4r is annotated in a CDS,
-    then all CDS will be browsed to find in wich one is the pG4r. Then this CDS
+    to map them to make them unique. Each line are red, and for each pG4,
+    we find the overlap between the pG4 and all location of this pG4 in this
+    transcript. For example, there is a pG4 in a transcript 1. This Tr 1 have
+    4CDS, 1 5UTR, 1 3UTR and 3 introns. So if this pG4 is annotated in a CDS,
+    then all CDS will be browsed to find in wich one is the pG4. Then this CDS
     and its coordinates are saved in a list.
-    In this file, exon coding are not registered. So when a pG4r in a UTR, CDS
+    In this file, exon coding are not registered. So when a pG4 in a UTR, CDS
     or codon is found, the exon is also 'created' to don't loose this
     information.
 
-    :param filename: name of the file with all Wt pG4r annotated.
+    :param filename: name of the file with all Wt pG4 annotated.
 	:type filename: string
     :param dicoLoc: dicoLoc, {idTr : {LocationName : [coords]} }
 	:type dicoLoc: dictionary
@@ -245,11 +245,10 @@ def readWtpG4r(filename, dicoLoc):
         for l in lines:
             l = l.rstrip()
             w = l.split('\t')
-            id = w[0]
-            if id != 'InfoG4ByTranscript':
-	            start = id.split('|')[1].split(':')[1].split('-')[0]
-	            end = id.split('|')[1].split(':')[1].split('-')[1]
-	            chr = id.split('|')[1].split(':')[0]
+            if w[0] != 'Transcript':
+	            start = w[3]
+	            end = w[4]
+	            chr = w[2]
 	            strand = id.split('|')[2]
 	            coordspG4 =  chr +':'+ start +'-'+ end +':'+ strand
 	            loc = w[5]
@@ -326,7 +325,7 @@ def getAllLocNum(path, type):
     :returns: dicoNbTot, {LevelLocation : numberOfLocation}
     :rtype: dictionary
     """
-    fileLoca = path+'Results/All/Locations.txt'
+    fileLoca = path+'/Locations.txt'
     dicoLocID = importLoca(fileLoca)
     if type == 'Class':
         dicoNbTot = countLocIdByClass(dicoLocID)
@@ -337,7 +336,7 @@ def getAllLocNum(path, type):
 def getAllLocNumMulti(path, type):
     """Creates a dictionary with the number of location.
 
-    pG4r are affiliated to a chromosomal location and a transcript. So here we
+    pG4 are affiliated to a chromosomal location and a transcript. So here we
     count the number tot of location according to transcripts. First data are
     imported into a dictionary {Location-Biotype : [Location-Tr]}. Then,
     depending on if we want the result at the class or biotype level, the
@@ -352,7 +351,7 @@ def getAllLocNumMulti(path, type):
     :returns: dicoNbTot, {LevelLocation : numberOfLocation}
     :rtype: dictionary
     """
-    fileLoca = path+'Results/All/Locations.txt'
+    fileLoca = path+'/Locations.txt'
     dicoLocID = importLocaMulti(fileLoca)
     if type == 'Class':
         dicoNbTot = countLocIdByClass(dicoLocID)
@@ -361,9 +360,9 @@ def getAllLocNumMulti(path, type):
     return dicoNbTot
 
 def getpG4WtLocNum(path, type):
-    """Creates a dictionary with the number of location with at least one pG4r.
+    """Creates a dictionary with the number of location with at least one pG4.
 
-    This function aim to find the number of location with at least one pG4r in
+    This function aim to find the number of location with at least one pG4 in
     it.
 
     :param path: main folder path with all needed file in it.
@@ -374,20 +373,20 @@ def getpG4WtLocNum(path, type):
     :returns: dicoNbTot, {LevelLocation : numberOfLocation}
     :rtype: dictionary
     """
-    fileLoca = path+'Results/All/Locations.txt'
-    filepG4rWt = path+'Results/All/HS_All_G4InTranscript.txt'
+    fileLoca = path+'/Locations.txt'
+    filepG4Wt = path+'/pG4_shuffled.csv'
     dicoLocTr = importIndexByTr(fileLoca)
-    dicopG4rWt = readWtpG4r(filepG4rWt, dicoLocTr)
+    dicopG4Wt = readWtpG4(filepG4Wt, dicoLocTr)
     if type == 'Class':
-        dicoNbWt = countLocIdByClass(dicopG4rWt)
+        dicoNbWt = countLocIdByClass(dicopG4Wt)
     else:
-        dicoNbWt = countLocId(dicopG4rWt)
+        dicoNbWt = countLocId(dicopG4Wt)
     return dicoNbWt
 
 def getpG4ShufLocNum(path, type):
-    """Gets the number of location with at least one pG4r in the Shuf dataset.
+    """Gets the number of location with at least one pG4 in the Shuf dataset.
 
-    This function aim to find the number of location with at least one pG4r in
+    This function aim to find the number of location with at least one pG4 in
     it.
 
     :param path: main folder path with all needed file in it.
@@ -398,20 +397,20 @@ def getpG4ShufLocNum(path, type):
     :returns: dicoNbTot, {LevelLocation : numberOfLocation}
     :rtype: dictionary
     """
-    filepG4rShuf = path+'Results/All/pG4r_shuffle.csv'
-    dicopG4rShuf = readShufpG4r(filepG4rShuf)
+    filepG4Shuf = path+'Results/All/pG4_shuffle.csv'
+    dicopG4Shuf = readShufpG4(filepG4Shuf)
     if type == 'Class':
-        dicoNbShuf = countLocIdByClass(dicopG4rShuf)
+        dicoNbShuf = countLocIdByClass(dicopG4Shuf)
     else:
-        dicoNbShuf = countLocId(dicopG4rShuf)
+        dicoNbShuf = countLocId(dicopG4Shuf)
     return dicoNbShuf
 
 def main(path):
     """Main function, only used for tests.
     """
-    fileLoca = mainPath+'Results/All/Locations.txt'
-    filepG4rWt = mainPath+'Results/All/HS_All_G4InTranscript.txt'
-    filepG4rShuf = mainPath+'Results/All/pG4r_shuffle.csv'
+    fileLoca = mainPath+'/Locations.txt'
+    filepG4Wt = mainPath+'/HS_All_G4InTranscript.txt'
+    filepG4Shuf = mainPath+'/pG4_shuffle.csv'
     pprint(getAllLocNumMulti(path, 'bt'))
     # dicoLocID = importLoca(fileLoca)
     # pprint(countLocIdByClass(dicoLocID))
@@ -419,10 +418,10 @@ def main(path):
 
     # dicoLocTr = importIndexByTr(fileLoca)
     # pprint(countLocIdByClass(dicoLocTr))
-    # dicopG4rWt = readWtpG4r(filepG4rWt, dicoLocTr)
-    # pprint(countLocId(dicopG4rWt))
-    # dicopG4rShuf = readShufpG4r(filepG4rShuf)
-    # pprint(countLocId(dicopG4rShuf))
+    # dicopG4Wt = readWtpG4(filepG4Wt, dicoLocTr)
+    # pprint(countLocId(dicopG4Wt))
+    # dicopG4Shuf = readShufpG4(filepG4Shuf)
+    # pprint(countLocId(dicopG4Shuf))
 
 def build_arg_parser():
     parser = argparse.ArgumentParser(description = 'analyseGC')

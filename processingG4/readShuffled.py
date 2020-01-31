@@ -168,7 +168,7 @@ def getpG4(filename, dicoParam):
 		dfpG4 = dfpG4.append(mergeG4(dfWindows, dicoParam))
 		return dfpG4
 
-def annotationpG4(dfpG4unNN):
+def annotationpG4(dfpG4unNN, dicoType):
 	dfpG4Ann = pd.DataFrame()
 	dfpG4unNN.reset_index(drop=True, inplace=True)
 	dicotmp = dfpG4unNN.to_dict('index')
@@ -179,12 +179,16 @@ def annotationpG4(dfpG4unNN):
 		for TrBt in listTrBt:
 			tr = TrBt.split('-')[0]
 			bt = TrBt.split('-')[1]
+			if bt in dicoType:
+				type = dicoType[bt]
+			else:
+				type = 'None'
 			tmpRow = {'Transcript' : tr,
-					'Location' : location, 'Sequence' : dicotmp[row]['seqG4'],
-					'Start' : coords[1].split('~')[0],
-					'End' : coords[1].split('~')[1],
-					'cGcC' : dicotmp[row]['cGcC'], 'G4H' : dicotmp[row]['G4H'],
-					'G4NN' : dicotmp[row]['G4NN'], 'Biotype' : bt, 'Type' : tr}
+				'Location' : location, 'Sequence' : dicotmp[row]['seqG4'],
+				'Start' : coords[1].split('~')[0],
+				'End' : coords[1].split('~')[1], 'Strand' : coords[2],
+				'cGcC' : dicotmp[row]['cGcC'], 'G4H' : dicotmp[row]['G4H'],
+				'G4NN' : dicotmp[row]['G4NN'], 'Biotype' : bt, 'Type' : type}
 			dfTmp = pd.DataFrame.from_dict(tmpRow)
 			dfpG4Ann = dfpG4Ann.append(dfTmp)
 	return dfpG4Ann
@@ -192,6 +196,7 @@ def annotationpG4(dfpG4unNN):
 def mergeWindow(path, dicoParam, sp):
 	directory = path + sp + '/ShuffleCSV'
 	dfpG4 = pd.DataFrame()
+	dicoType = rF.createDicoType()
 	# directory containing data for a specie
 	for path, dirs, files in os.walk(directory):
 		# for each element of the directory to passed
@@ -200,7 +205,7 @@ def mergeWindow(path, dicoParam, sp):
 			if ('location' in filename):
 				# windows in genes
 				unAnnopG4 = getpG4(inputfile, dicoParam)
-				annopG4 = annotationpG4(unAnnopG4)
+				annopG4 = annotationpG4(unAnnopG4, dicoType)
 				dfpG4 = dfpG4.append(annopG4)
 				dfpG4 = dfpG4.reset_index(drop=True)
 	if len(dfpG4) > 0:
@@ -226,11 +231,10 @@ def removeTr(path, df, loca):
 	return filtereddf
 
 def main(dicoParam, path, sp):
-	ini = rF.setUpperLetter(sp)
 	dfpG4 = mergeWindow(path, dicoParam, sp)
 	print ('\t'+str(dfpG4.shape))
-	dfpG4.to_csv(path_or_buf = path + sp + '/' + ini + '_shuffled_pG4.csv', \
-		header=True, index=None, sep='\t')
+	outputFN = path + sp + '/pG4_shuffled.csv'
+	dfpG4.to_csv(path_or_buf = outputFN, header=True, index=None, sep='\t')
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'G4Annotation')

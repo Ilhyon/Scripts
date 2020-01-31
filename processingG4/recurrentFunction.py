@@ -1,6 +1,128 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-:v
 
+def createDicoFamily():
+	"""Creates a dictionnary with all classes and subclasses of transcripts.
+
+	:returns: dicoFam, contains all classes and subclasses.
+	:rtype: dictionary
+	"""
+	dicoFam = {'Coding' : ['IG_C_gene', 'IG_D_gene', 'IG_J_gene',
+							'IG_LV_gene', 'IG_M_gene', 'IG_V_gene',
+							'IG_Z_gene', 'nonsense_mediated_decay',
+							'nontranslating_CDS', 'non_stop_decay',
+							'protein_coding', 'TR_C_gene', 'TR_D_gene',
+							'TR_gene', 'TR_J_gene', 'TR_V_gene'],
+				'Pseudogene' : ['transcribed_unitary_pseudogene',
+								'disrupted_domain', 'IG_C_pseudogene',
+								'IG_J_pseudogene', 'IG_pseudogene',
+								'IG_V_pseudogene', 'processed_pseudogene',
+								'pseudogene',
+								'transcribed_processed_pseudogene',
+								'transcribed_unprocessed_pseudogene',
+								'translated_processed_pseudogene',
+								'translated_unprocessed_pseudogene',
+								'TR_J_pseudogene', 'TR_V_pseudogene',
+								'unitary_pseudogene', 'unprocessed_pseudogene',
+								'polymorphic_pseudogene'],
+				'LongNC' : ['macro_lncRNA', 'bidirectional_promoter_lncRNA',
+							'sense_intronic', '3prime_overlapping_ncRNA',
+							'ambiguous_orf', 'antisense',
+							'lincRNA', 'ncrna_host','non_coding',
+							'processed_transcript', 'retained_intron',
+							'sense_overlapping'],
+				'ShortNC' : ['vaultRNA', 'scaRNA', 'miRNA',
+							'miRNA_pseudogene', 'misc_RNA',
+							'misc_RNA_pseudogene', 'Mt_rRNA',
+							'Mt_tRNA', 'Mt_tRNA_pseudogene',
+							'ncRNA', 'pre_miRNA', 'RNase_MRP_RNA',
+							'RNase_P_RNA', 'rRNA', 'rRNA_pseudogene',
+							'scRNA', 'scRNA_pseudogene', 'snlRNA',
+							'snoRNA', 'snoRNA_pseudogene', 'snRNA',
+							'snRNA_pseudogene', 'SRP_RNA', 'tmRNA',
+							'tRNA', 'tRNA_pseudogene','ribozyme'],
+				'Predictif' : ['TEC']}
+	return dicoFam
+
+def createDicoType():
+	"""Creates a dictionnary with all sublclasses and classes of transcripts.
+
+	:returns: dicoFam, contains all classes and subclasses.
+	:rtype: dictionary
+	"""
+	dicoFam = {'IG_C_gene' : 'Coding',
+			'IG_D_gene' : 'Coding',
+			'IG_J_gene' : 'Coding',
+			'IG_LV_gene' : 'Coding',
+			'IG_M_gene' : 'Coding',
+			'IG_V_gene' : 'Coding',
+			'IG_Z_gene' : 'Coding',
+			'nonsense_mediated_decay' : 'Coding',
+			'nontranslating_CDS' : 'Coding',
+			'non_stop_decay' : 'Coding',
+			'protein_coding' : 'Coding',
+			'TR_C_gene' : 'Coding',
+			'TR_D_gene' : 'Coding',
+			'TR_gene' : 'Coding',
+			'TR_J_gene' : 'Coding',
+			'TR_V_gene' : 'Coding',
+			'transcribed_unitary_pseudogene' : 'Pseudogene',
+			'disrupted_domain' : 'Pseudogene',
+			'IG_C_pseudogene' : 'Pseudogene',
+			'IG_J_pseudogene' : 'Pseudogene',
+			'IG_pseudogene' : 'Pseudogene',
+			'IG_V_pseudogene' : 'Pseudogene',
+			'processed_pseudogene' : 'Pseudogene',
+			'pseudogene' : 'Pseudogene',
+			'transcribed_processed_pseudogene' : 'Pseudogene',
+			'transcribed_unprocessed_pseudogene' : 'Pseudogene',
+			'translated_processed_pseudogene' : 'Pseudogene',
+			'translated_unprocessed_pseudogene' : 'Pseudogene',
+			'TR_J_pseudogene' : 'Pseudogene',
+			'TR_V_pseudogene' : 'Pseudogene',
+			'unitary_pseudogene' : 'Pseudogene',
+			'unprocessed_pseudogene' : 'Pseudogene',
+			'polymorphic_pseudogene' : 'Pseudogene',
+			'macro_lncRNA' : 'LongNC',
+			'bidirectional_promoter_lncRNA' : 'LongNC',
+			'sense_intronic' : 'LongNC',
+			'3prime_overlapping_ncRNA' : 'LongNC',
+			'ambiguous_orf' : 'LongNC',
+			'antisense' : 'LongNC',
+			'lincRNA' : 'LongNC',
+			'ncrna_host''non_coding' : 'LongNC',
+			'processed_transcript' : 'LongNC',
+			'retained_intron' : 'LongNC',
+			'sense_overlapping' : 'LongNC',
+			'vaultRNA' : 'ShortNC',
+			'scaRNA' : 'ShortNC',
+			'miRNA' : 'ShortNC',
+			'miRNA_pseudogene' : 'ShortNC',
+			'misc_RNA' : 'ShortNC',
+			'misc_RNA_pseudogene' : 'ShortNC',
+			'Mt_rRNA' : 'ShortNC',
+			'Mt_tRNA' : 'ShortNC',
+			'Mt_tRNA_pseudogene' : 'ShortNC',
+			'ncRNA' : 'ShortNC',
+			'pre_miRNA' : 'ShortNC',
+			'RNase_MRP_RNA' : 'ShortNC',
+			'RNase_P_RNA' : 'ShortNC',
+			'rRNA' : 'ShortNC',
+			'rRNA_pseudogene' : 'ShortNC',
+			'scRNA' : 'ShortNC',
+			'scRNA_pseudogene' : 'ShortNC',
+			'snlRNA' : 'ShortNC',
+			'snoRNA' : 'ShortNC',
+			'snoRNA_pseudogene' : 'ShortNC',
+			'snRNA' : 'ShortNC',
+			'snRNA_pseudogene' : 'ShortNC',
+			'SRP_RNA' : 'ShortNC',
+			'tmRNA' : 'ShortNC',
+			'tRNA' : 'ShortNC',
+			'tRNA_pseudogene' : 'Pseudogene',
+			'ribozyme' : 'ShortNC'}
+	return dicoFam
+
 def setUpperLetter(words):
     """Get all first letter of a name and set them in upper case.
 
