@@ -41,8 +41,8 @@ def createDicoParam(arg):
 	dicoParam = {"G4H" : float(arg.THRESHOLD_G4H),
 				"cGcC" : float(arg.THRESHOLD_CGCC),
 				"G4NN" : float(arg.THRESHOLD_G4NN),
-				"junctionLength" : int(arg.EXTENSION),
-				"windowLength" : int(arg.EXTENSION),
+				"junctionLength" : int(arg.junctionLength),
+				"windowLength" : int(arg.junctionLength),
 				"step" : int(arg.STEP)}
 	return dicoParam
 
