@@ -168,7 +168,7 @@ def getDicoNbpG4rShuf(pG4rFile):
 			words = l.split('\t')
 			if words[0] != 'Transcript' and words[0]:
 				location = words[1]
-				bt = words[8]
+				bt = words[10]
 				tr = words[0]
 				locID = location + '-' + bt
 				if locID not in dicopG4r['NbG4']:
@@ -215,7 +215,7 @@ def getDicoNbpG4rWt(pG4rFile):
 				if words[0] != 'Transcript' and words[0]:
 					tr = words[0]
 					location = words[1]
-					bt = words[8]
+					bt = words[10]
 					locID = location + '-' + bt
 					if locID not in dicopG4r['NbG4']:
 						dicopG4r['NbG4'][locID] = 0
@@ -378,12 +378,12 @@ def main(path, sp):
 	df['Class'] = df.Biotype.apply(addTypeTr)
 	df['Type'] = df.Location.apply(addType)
 	df = addNbLocation(path + sp, df)
-	# df = computeDensities(df, 'Shuf')
-	# df = computeDensities(df, 'Wt')
-	# df = df.fillna(0)
-	# del df['level_0']
-	# df = df.drop_duplicates(subset=None, keep='first', inplace=False)
-	# df.to_csv(path_or_buf=path+'Results/All/TotDataDensites.csv', header=True, index=None, sep='\t')
+	df = computeDensities(df, 'Shuf')
+	df = computeDensities(df, 'Wt')
+	df = df.fillna(0)
+	del df['level_0']
+	df = df.drop_duplicates(subset=None, keep='first', inplace=False)
+	df.to_csv(path_or_buf=path + sp +'/TotDataDensites.csv', header=True, index=None, sep='\t')
 
 def build_arg_parser():
 	parser = argparse.ArgumentParser(description = 'analyseGC')

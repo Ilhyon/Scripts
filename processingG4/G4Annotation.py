@@ -120,6 +120,7 @@ def mapOnTr(dfpG4gene, dicoTr, dicoGene, dicoUTR):
 					location = list(set([ loc for loc in location if loc != None]))
 				dicoTmp = {'Transcript' : tr,
 						'Location' : location, 'Sequence' : row.seqG4,
+						'Chromosome' : row.Chromosome,
 						'Start' : coordpG4[0], 'End' : coordpG4[1],  'Strand' : row.Strand,
 						'cGcC' : row.cGcC, 'G4H' : row.G4H, 'G4NN' : row.G4NN,
 						'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']}
@@ -142,11 +143,12 @@ def mapOnTr(dfpG4gene, dicoTr, dicoGene, dicoUTR):
 							location = list(set([ loc for loc in location if loc != None]))
 						dfTmp = pd.DataFrame.from_dict({'Transcript' : tr,
 								'Location' : location, 'Sequence' : row.seqG4,
-								'Start' : coordpG4[0], 'End' : coordpG4[1], 'Strand' : row.Strand,
+								'Chromosome' : row.Chromosome,
+								'Start' : coordpG4[0], 'End' : coordpG4[1],
+								'Strand' : row.Strand,
 								'cGcC' : row.cGcC, 'G4H' : row.G4H, 'G4NN' : row.G4NN,
 								'Biotype' : dicoTr[tr]['Biotype'], 'Type' : dicoTr[tr]['Type']})
 						dfpG4MatureTr = dfpG4MatureTr.append(dfTmp)
-	print(dfpG4Tr)
 	return dfpG4Tr, dfpG4MatureTr
 
 def computepG4CoordsJunction(pG4, tr):

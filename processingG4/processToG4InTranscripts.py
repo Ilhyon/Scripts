@@ -109,7 +109,7 @@ def build_arg_parser():
 	parser.add_argument ('-G4H', '--THRESHOLD_G4H', default = 0.9)
 	parser.add_argument ('-CGCC', '--THRESHOLD_CGCC', default = 4.5)
 	parser.add_argument ('-G4NN', '--THRESHOLD_G4NN', default = 0.5)
-	parser.add_argument ('-E', '--EXTENSION', default = 100)
+	parser.add_argument ('-E', '--junctionLength', default = 100)
 	parser.add_argument ('-W', '--WINDOW', default = 60)
 	parser.add_argument ('-S', '--STEP', default = 10)
 	return parser

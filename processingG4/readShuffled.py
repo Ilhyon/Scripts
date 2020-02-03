@@ -186,6 +186,7 @@ def annotationpG4(dfpG4unNN, dicoType):
 			tmpRow = {'Transcript' : tr,
 				'Location' : location, 'Sequence' : dicotmp[row]['seqG4'],
 				'Start' : coords[1].split('~')[0],
+				'Chromosome' : coords[0],
 				'End' : coords[1].split('~')[1], 'Strand' : coords[2],
 				'cGcC' : dicotmp[row]['cGcC'], 'G4H' : dicotmp[row]['G4H'],
 				'G4NN' : dicotmp[row]['G4NN'], 'Biotype' : bt, 'Type' : type}
