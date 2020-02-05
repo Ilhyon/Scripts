@@ -338,8 +338,38 @@ def getUTR(df):
 			dicoTmp['Strand'][index])
 		dicoUTR[index] = utr
 	df = df.replace({'index1' : dicoUTR})
-	print(df)
 	return df
+
+def addIntrons(df):
+	dfIntron = pd.DataFrame()
+	dfExon = pd.DataFrame()
+	dfExon = df[ df.Feature == 'exon']
+	groups = dfExon.groupby('Transcript')
+	for name, group in groups:
+		if len(group) > 1:
+			# if more then 1 exon, then there is an intron
+			group = group.sort_values(by=['Start'])
+			group = group.reset_index(drop=True)
+			starts = group.Start
+			ends = group.End
+			cptIntron = 0
+			# print(group.Coords)
+			while cptIntron < len(starts) - 1:
+				start = ends[cptIntron] + 1
+				end = starts[cptIntron + 1] - 1
+				if start != end and start < end:
+					row = {'Feature' : ['intron'], 'Start' : start,
+					'End' : end, 'Strand' : group.Strand[0],
+					'Attributes' : group.Attributes[0],
+					'Chromosome' : group.Chromosome[0],
+					'Transcript' : group.Transcript[0], 'Gene' : group.Gene[0],
+					'Biotype' : group.Biotype[0], 'Type' : group.Type[0]}
+					dfRow = pd.DataFrame.from_dict(row)
+					dfIntron = dfIntron.append(dfRow)
+				cptIntron += 1
+	dfIntron = dfIntron.reset_index(drop=True)
+	dfIntron['Coords'] = [ [dfIntron.Start[x], dfIntron.End[x]] for x in range(0,len(dfIntron))]
+	return(dfIntron)
 
 def parseDF(df):
 	"""Parses a dataframe to retrieve only usefull data for me.
@@ -374,10 +404,11 @@ def parseDF(df):
 		dfTmp2 = dfTmp2[['Transcript', 'Biotype']]
 		dicoTmp = dfTmp2.set_index('Transcript').to_dict()
 		dfTmp['Biotype'] = dfTmp['Transcript'].map(dicoTmp['Biotype'])
-	if ('five_prime_utr' not in set(df.Feature) and
+	if ('five_prime_utrf' not in set(df.Feature) and
 		'three_prime_utr' not in set(df.Feature)):
 		dfTmp = getUTR(dfTmp)
 	dfTmp['Type'] = dfTmp.Biotype.apply(addTypeTr)
+	dfTmp = dfTmp.append( addIntrons(dfTmp) )
 	return dfTmp
 
 def importGTFdf(filename, sp):
@@ -590,218 +621,6 @@ def importLocationFronGTF(filename):
 		print("This file don't exist : " + filename)
 	return dico
 
-def computesCoordRank1(strand, start, end):
-	"""Computes the coordinates of the first intron of a transcript.
-
-	Depending of the strand, the start of the first intron is computed. It
-	corresponds to the nucleotids next to the first exon end.
-
-	:param strand: strand of a transcript.
-	:type strand: string
-	:param start: chromosomal start of the exon.
-	:type start: integer
-	:param end: chromosomal end of the exon.
-	:type end: integer
-
-	:returns: intronStart, start of the first exon
-	:rtype: integer
-	"""
-	if strand == '1':
-		intronStart = end + 1
-	else:
-		intronStart = start - 1
-	return intronStart
-
-def computesCoordLastRank(strand, start, end):
-	"""Computes the coordinates of the last intron of a transcript.
-
-	Depending of the strand, the end of the last intron is computed. It
-	corresponds to the nucleotids before the last exon start.
-
-	:param strand: strand of a transcript.
-	:type strand: string
-	:param start: chromosomal start of the exon.
-	:type start: integer
-	:param end: chromosomal end of the exon.
-	:type end: integer
-
-	:returns: intronEnd, end of the last exon
-	:rtype: integer
-	"""
-	if strand == '1':
-		intronEnd = start - 1
-	else:
-		intronEnd = end + 1
-	return intronEnd
-
-def computesCoordOther(strand, start, end):
-	"""Computes the coordinates of midle intron of a transcript.
-
-	With the coordinates of a "midle" exon we can compute the end of the
-	previous exon and then the start of the next intron.
-
-	:param strand: strand of a transcript.
-	:type strand: string
-	:param start: chromosomal start of the exon.
-	:type start: integer
-	:param end: chromosomal end of the exon.
-	:type end: integer
-
-	:returns: intronStart and intronEnd, end of the previous intron and start
-		of the next intron.
-	:rtype: integer
-	"""
-	if strand == '1':
-		intronEnd = start - 1
-		intronStart = end + 1
-	else:
-		intronEnd = end + 1
-		intronStart = start - 1
-	return intronStart, intronEnd
-
-def setCoordReverseStrand(dico):
-	"""Change the coords depending on the strand.
-
-	I choosed to get chromosomal coords on my file. It will always be the
-	smaller coords before the superior one. So for a reverse feature
-	the start and the end are inversed.
-
-	:param dicoTr: contains all transcript and its feature.
-	:type dicoTr: dictionary
-
-	:returns: dicoTr, updated with good coordinates.
-	:rtype: dictionary
-	"""
-	for intron in dico:
-		if intron != 'Chromosome' and intron != 'Strand' :
-			if (dico['Strand'] == '-1' and
-				dico[intron]['End'] < dico[intron]['Start']):
-				tmp = dico[intron]['Start']
-				dico[intron]['Start'] = dico[intron]['End']
-				dico[intron]['End'] = tmp
-	return dico
-
-def getIntron(dicoTr):
-	"""Gets all intron of a specie transcriptom.
-
-	We browse all transcripts of a specie and computes all intron coordinates.
-	Coordinates will be stored as chromosomal coordinates. This mean that the
-	start will always be inferior compare to the end.
-
-	:param dicoTr: contains all transcripts from a psecie and all features
-		linked to it : UTR, exon, intron.
-	:type dicoTr: dictionary
-
-	:returns: dicoTr, updated with introns.
-	:rtype: dictionary
-	"""
-	for tr in dicoTr:
-		if tr != 'Assembly':
-			if len(dicoTr[tr]['Exon']) > 2:
-				# if there is more then one exon, we compute
-				# intron coordinates.
-				if 'Intron' not in dicoTr[tr]:
-					dicoTr[tr]['Intron'] = {}
-				for exon in dicoTr[tr]['Exon']:
-					tmp = dicoTr[tr]['Exon'][exon]
-					if tmp['Rank'] == 1:
-						if tmp['Rank'] not in dicoTr[tr]['Intron']:
-							dicoTr[tr]['Intron'][tmp['Rank']] = {}
-						dicoTr[tr]['Intron'][1].update( \
-							{'Start' : computesCoordRank1(tmp['Strand'],
-							tmp['Start'], tmp['End'])})
-					elif tmp['Rank'] == len(dicoTr[tr]['Exon']):
-						if tmp['Rank']-1 not in dicoTr[tr]['Intron']:
-							dicoTr[tr]['Intron'][tmp['Rank']-1] = {}
-						dicoTr[tr]['Intron'][tmp['Rank']-1].update( \
-							{'End' : computesCoordLastRank(tmp['Strand'],
-							tmp['Start'], tmp['End'])})
-					else:
-						if tmp['Rank']-1 not in dicoTr[tr]['Intron']:
-							dicoTr[tr]['Intron'][ tmp['Rank']-1 ] = {}
-						if tmp['Rank'] not in dicoTr[tr]['Intron']:
-							dicoTr[tr]['Intron'][tmp['Rank']] = {}
-						intronStart, intronEnd = \
-							computesCoordOther(tmp['Strand'], \
-							tmp['Start'], tmp['End'])
-						dicoTr[tr]['Intron'][ tmp['Rank'] ].update(\
-							{'Start' : intronStart})
-						dicoTr[tr]['Intron'][ tmp['Rank']-1 ].update(\
-							{'End' : intronEnd})
-					dicoTr[tr]['Intron']['Chromosome'] = tmp['Chromosome']
-					dicoTr[tr]['Intron']['Strand'] = tmp['Strand']
-				dicoTr[tr]['Intron'].update(\
-					setCoordReverseStrand(dicoTr[tr]['Intron']))
-			elif len(dicoTr[tr]['Exon']) > 1:
-				if 'Intron' not in dicoTr[tr]:
-					dicoTr[tr]['Intron'] = {}
-				for exon in dicoTr[tr]['Exon']:
-					tmp = dicoTr[tr]['Exon'][exon]
-					if 1 not in dicoTr[tr]['Intron']:
-						dicoTr[tr]['Intron'][1] = {}
-					if tmp['Rank'] == 1:
-						dicoTr[tr]['Intron'][1].update( \
-							{'Start' : computesCoordRank1(tmp['Strand'],
-							tmp['Start'], tmp['End'])})
-					else:
-						dicoTr[tr]['Intron'][1].update( \
-							{'End' : computesCoordLastRank(tmp['Strand'],
-							tmp['Start'], tmp['End'])})
-					dicoTr[tr]['Intron']['Chromosome'] = \
-						tmp['Chromosome']
-					dicoTr[tr]['Intron']['Strand'] = tmp['Strand']
-				dicoTr[tr]['Intron'].update(\
-					setCoordReverseStrand(dicoTr[tr]['Intron']))
-	return dicoTr
-
-def countIntron(dicoTr, sp):
-	"""Counts the length of intron and write them in a file.
-
-	Some transcript have intron of 1 nucleotides. We computes the length of
-	introns to see for each species what's the range of the intron length.
-
-	:param dicoTr: contains all transcript of a specie and all features in it
-		(exon, utr, intron and coords).
-	:type dicoTr: dictionnary
-	:param sp: name of the specie.
-	:type sp: string
-	"""
-	lenIntron = []
-	ini = rF.setUpperLetter(sp)
-	for tr in dicoTr:
-		if 'Intron' in dicoTr[tr]:
-			for intron in dicoTr[tr]['Intron']:
-				if intron != 'Chromosome' and intron != 'Strand':
-					lenIntron.append(dicoTr[tr]['Intron'][intron]['End'] - \
-						dicoTr[tr]['Intron'][intron]['Start'])
-	if lenIntron:
-		output = open('/home/anais/Documents/Data/Genomes/' + sp + '/' + ini + \
-			'_intron_length.txt','w')
-		output.write(sp + '\n')
-		output.write('\n'.join(str(x) for x in lenIntron))
-
-def writeIntron(sp, dico):
-	"""Writes a file with all intron coords.
-
-	:param sp: name of the specie.
-	:type sp: string
-	:param dico: contains all transcript and its features (utr, exon, intron).
-	:type dico: dictionary
-	"""
-	ini = rF.setUpperLetter(sp)
-	output = open('/home/anais/Documents/Data/Genomes/' + sp + '/' + ini + \
-		'_intron.txt','w')
-	for tr in dico:
-		if 'Intron' in dicoTr[tr]:
-			for intron in dicoTr[tr]['Intron']:
-				if intron != 'Chromosome' and intron != 'Strand':
-					line = tr + '\t' + dico[tr]['Chromosome'] + '\t' + \
-						str(dico[tr]['Intron'][intron]['Start']) + '\t' + \
-						str(dico[tr]['Intron'][intron]['End']) + '\t' + \
-						dico[tr]['Strand'] + '\n'
-					output.write(line)
-	output.close()
-
 def computeLength(filename):
 	dicoGene = importGTFGene(filename)
 	geneLength = 0
@@ -835,20 +654,20 @@ if __name__ == '__main__':
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + \
 		"/" + sp + ".gtf"
 	df = importGTFdf(filename, sp)
-	print(len(list(set(df.Gene))))
-	print(len(list(set(df.Transcript))))
-	dfTmp = pd.DataFrame()
-	dfTmp = dfTmp.append(df[ df.Type == 'Coding'])
-	print(len(list(set(dfTmp.Transcript))))
-	dfTmp = pd.DataFrame()
-	dfTmp = dfTmp.append(df[ df.Type == 'Non coding'])
-	print(len(list(set(dfTmp.Transcript))))
-	dfTmp = pd.DataFrame()
-	dfTmp = dfTmp.append(df[ df.Feature == 'five_prime_utr'])
-	print(len(list(set(dfTmp.Transcript))))
-	dfTmp = pd.DataFrame()
-	dfTmp = dfTmp.append(df[ df.Feature == 'three_prime_utr'])
-	print(len(list(set(dfTmp.Transcript))))
+	# print(len(list(set(df.Gene))))
+	# print(len(list(set(df.Transcript))))
+	# dfTmp = pd.DataFrame()
+	# dfTmp = dfTmp.append(df[ df.Type == 'Coding'])
+	# print(len(list(set(dfTmp.Transcript))))
+	# dfTmp = pd.DataFrame()
+	# dfTmp = dfTmp.append(df[ df.Type == 'Non coding'])
+	# print(len(list(set(dfTmp.Transcript))))
+	# dfTmp = pd.DataFrame()
+	# dfTmp = dfTmp.append(df[ df.Feature == 'five_prime_utr'])
+	# print(len(list(set(dfTmp.Transcript))))
+	# dfTmp = pd.DataFrame()
+	# dfTmp = dfTmp.append(df[ df.Feature == 'three_prime_utr'])
+	# print(len(list(set(dfTmp.Transcript))))
 	# gene, tr = computeLength(filename)
 	# print('Gene length : ' + str(gene))
 	# print('Transcript length : ' + str(tr))

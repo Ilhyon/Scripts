@@ -397,4 +397,4 @@ if __name__ == '__main__':
 	arg = parser.parse_args()
 	path = arg.path
 	sp = arg.specie
-	main(path, sp )
+	main(path, sp)
