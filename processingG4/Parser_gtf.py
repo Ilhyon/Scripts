@@ -23,6 +23,7 @@ Data availability:
 
 import re
 import os
+import time
 import argparse
 import numpy as np
 import pandas as pd
@@ -340,11 +341,84 @@ def getUTR(df):
 	df = df.replace({'index1' : dicoUTR})
 	return df
 
-def addIntrons(df, dicoTr):
+def addAcctepor(df,  dicoTr, start, end):
+	if (end - 40 < dicoTr[ df.Transcript[0] ]['Start']):
+		startN = dicoTr[ df.Transcript[0] ]['Start']
+	else:
+		startN = end -40
+	if (end + 40 > dicoTr[ df.Transcript[0] ]['End']):
+		endN = dicoTr[ df.Transcript[0] ]['End']
+	else:
+		endN = end + 40
+	if df.Strand[0] == '+':
+		row = {'Feature' : ['acceptor'], 'Start' : startN,
+		'End' : end, 'Strand' : df.Strand[0],
+		'Attributes' : df.Attributes[0], 'Chromosome' : df.Chromosome[0],
+		'Transcript' : df.Transcript[0], 'Gene' : df.Gene[0],
+		'Biotype' : df.Biotype[0], 'Type' : df.Type[0]}
+	else:
+		row = {'Feature' : ['donor'], 'Start' : startN,
+		'End' : endN, 'Strand' : df.Strand[0],
+		'Attributes' : df.Attributes[0], 'Chromosome' : df.Chromosome[0],
+		'Transcript' : df.Transcript[0], 'Gene' : df.Gene[0],
+		'Biotype' : df.Biotype[0], 'Type' : df.Type[0]}
+	return row
+
+def addDonor(df,  dicoTr, start, end):
+	if (start - 40 < dicoTr[ df.Transcript[0] ]['Start']):
+		startN = dicoTr[ df.Transcript[0] ]['Start']
+	else:
+		startN = start - 40
+	if (start + 40 > dicoTr[ df.Transcript[0] ]['End']):
+		endN = dicoTr[ df.Transcript[0] ]['End']
+	else:
+		endN = start + 40
+	if df.Strand[0] == '+':
+		row = {'Feature' : ['donor'], 'Start' : startN,
+		'End' : endN, 'Strand' : df.Strand[0],
+		'Attributes' : df.Attributes[0], 'Chromosome' : df.Chromosome[0],
+		'Transcript' : df.Transcript[0], 'Gene' : df.Gene[0],
+		'Biotype' : df.Biotype[0], 'Type' : df.Type[0]}
+	else:
+		row = {'Feature' : ['acceptor'], 'Start' : startN,
+		'End' : endN, 'Strand' : df.Strand[0],
+		'Attributes' : df.Attributes[0], 'Chromosome' : df.Chromosome[0],
+		'Transcript' : df.Transcript[0], 'Gene' : df.Gene[0],
+		'Biotype' : df.Biotype[0], 'Type' : df.Type[0]}
+	return row
+
+def addJunction(df, dicoTr, start, end):
+	if (start - 40 < dicoTr[ df.Transcript[0] ]['Start']):
+		startN = dicoTr[ df.Transcript[0] ]['Start']
+	else:
+		startN = start
+	if (end + 40 > dicoTr[ df.Transcript[0] ]['End']):
+		endN = dicoTr[ df.Transcript[0] ]['End']
+	else:
+		endN = end
+	row = {'Feature' : ['junction'], 'Start' : str(startN)+'|'+str(start),
+	'End' : str(end)+'|'+str(endN), 'Strand' : df.Strand[0],
+	'Attributes' : df.Attributes[0], 'Chromosome' : df.Chromosome[0],
+	'Transcript' : df.Transcript[0], 'Gene' : df.Gene[0],
+	'Biotype' : df.Biotype[0], 'Type' : df.Type[0]}
+	return row
+
+def addIntron(df, start, end):
+	row = {'Feature' : ['intron'], 'Start' : start,
+	'End' : end, 'Strand' : df.Strand[0],
+	'Attributes' : df.Attributes[0], 'Chromosome' : df.Chromosome[0],
+	'Transcript' : df.Transcript[0], 'Gene' : df.Gene[0],
+	'Biotype' : df.Biotype[0], 'Type' : df.Type[0]}
+	return row
+
+def getPointLocation(df, dicoTr):
 	dfIntron = pd.DataFrame()
 	dfExon = pd.DataFrame()
-	dfExon = df[ df.Feature == 'exon']
+	startDF = time.time()
+	dfExon = dfExon.append(df[ df.Feature == 'exon'])
 	groups = dfExon.groupby('Transcript')
+	endDF = time.time()
+	print('ParseDF to exon groupby : ', str(endDF - startDF))
 	for name, group in groups:
 		if len(group) > 1:
 			# if more then 1 exon, then there is an intron
@@ -353,65 +427,20 @@ def addIntrons(df, dicoTr):
 			starts = group.Start
 			ends = group.End
 			cptIntron = 0
-			# print(group.Coords)
 			while cptIntron < len(starts) - 1:
 				start = ends[cptIntron] + 1
 				end = starts[cptIntron + 1] - 1
 				if start != end and start < end:
-					row = {'Feature' : ['intron'], 'Start' : start,
-					'End' : end, 'Strand' : group.Strand[0],
-					'Attributes' : group.Attributes[0],
-					'Chromosome' : group.Chromosome[0],
-					'Transcript' : group.Transcript[0], 'Gene' : group.Gene[0],
-					'Biotype' : group.Biotype[0], 'Type' : group.Type[0]}
+					row = addIntron(group, start, end)
 					dfRow = pd.DataFrame.from_dict(row)
 					dfIntron = dfIntron.append(dfRow)
-					if (start - 40 < dicoTr[ group.Transcript[0] ]['Start']):
-						startN = dicoTr[ group.Transcript[0] ]['Start']
-					else:
-						startN -= 40
-					if (end + 40 > dicoTr[ group.Transcript[0] ]['End']):
-						endN = dicoTr[ group.Transcript[0] ]['End']
-					else:
-						endN += 40
-					row = {'Feature' : ['junction'], 'Start' : startN,
-					'End' : endN, 'Strand' : group.Strand[0],
-					'Attributes' : group.Attributes[0],
-					'Chromosome' : group.Chromosome[0],
-					'Transcript' : group.Transcript[0], 'Gene' : group.Gene[0],
-					'Biotype' : group.Biotype[0], 'Type' : group.Type[0]}
+					row = addJunction(group,  dicoTr, start, end)
 					dfRow = pd.DataFrame.from_dict(row)
 					dfIntron = dfIntron.append(dfRow)
-					if (start - 40 < dicoTr[ group.Transcript[0] ]['Start']):
-						startN = dicoTr[ group.Transcript[0] ]['Start']
-					else:
-						startN -= 40
-					if (start + 40 > dicoTr[ group.Transcript[0] ]['End']):
-						endN = dicoTr[ group.Transcript[0] ]['End']
-					else:
-						endN += 40
-					row = {'Feature' : ['donor'], 'Start' : startN,
-					'End' : endN, 'Strand' : group.Strand[0],
-					'Attributes' : group.Attributes[0],
-					'Chromosome' : group.Chromosome[0],
-					'Transcript' : group.Transcript[0], 'Gene' : group.Gene[0],
-					'Biotype' : group.Biotype[0], 'Type' : group.Type[0]}
+					row = addDonor(group,  dicoTr, start, end)
 					dfRow = pd.DataFrame.from_dict(row)
 					dfIntron = dfIntron.append(dfRow)
-					if (end - 40 < dicoTr[ group.Transcript[0] ]['Start']):
-						startN = dicoTr[ group.Transcript[0] ]['Start']
-					else:
-						startN -= 40
-					if (end + 40 > dicoTr[ group.Transcript[0] ]['End']):
-						endN = dicoTr[ group.Transcript[0] ]['End']
-					else:
-						endN += 40
-					row = {'Feature' : ['acceptor'], 'Start' : startN,
-					'End' : end, 'Strand' : group.Strand[0],
-					'Attributes' : group.Attributes[0],
-					'Chromosome' : group.Chromosome[0],
-					'Transcript' : group.Transcript[0], 'Gene' : group.Gene[0],
-					'Biotype' : group.Biotype[0], 'Type' : group.Type[0]}
+					row = addAcctepor(group,  dicoTr, start, end)
 					dfRow = pd.DataFrame.from_dict(row)
 					dfIntron = dfIntron.append(dfRow)
 				cptIntron += 1
@@ -419,35 +448,21 @@ def addIntrons(df, dicoTr):
 	dfIntron['Coords'] = [ [dfIntron.Start[x], dfIntron.End[x]] for x in range(0,len(dfIntron))]
 	return(dfIntron)
 
-def correctCoords(df, dfTmp):
-	dfTmpTr = pd.DataFrame()
-	dfTmpLoc = pd.DataFrame()
-	locations = ['junction', 'acceptor', 'donor', 'start_codon', 'stop_codon']
-	for loc in locations:
-		dfTmpLoc = dfTmpLoc.append(dfTmp[ dfTmp.Feature == loc ])
-	dfTmpTr = dfTmpTr.append(df[ df.Feature.str.contains('transcript') ].dropna())
-	dfTmpTr['Transcript'] = dfTmpTr.Attributes.apply(addTranscript)
-	dicoTr = dfTmpTr.set_index('Transcript').to_dict('index')
-	for index, row in dfTmpCodon.iterrows():
-		if (row.Start - 40 < dicoTr[row.Transcript]['Start']):
-			dfTmp['Start'].iloc[index] = dicoTr[row.Transcript]['Start']
-		if (row.End + 40 > dicoTr[row.Transcript]['End']):
-			dfTmp['End'].iloc[index] = dicoTr[row.Transcript]['End']
-	return dfTmp
-
 def addCodon(df, dicoTr):
 	dfTmpCodon = pd.DataFrame()
 	dfTmpCodon = dfTmpCodon.append(df[ df.Feature.str.contains('start_codon') ].dropna())
 	dfTmpCodon = dfTmpCodon.append(df[ df.Feature.str.contains('stop_codon') ].dropna())
 	dfTmpCodon['Transcript'] = dfTmpCodon.Attributes.apply(addTranscript)
-	dfTmpCodon['Start'] = dfTmpCodon['Start'] - 40
-	dfTmpCodon['End'] = dfTmpCodon['End'] + 40
 	dfTmpCodon = dfTmpCodon.reset_index(drop=True)
 	for index, row in dfTmpCodon.iterrows():
 		if (row.Start - 40 < dicoTr[row.Transcript]['Start']):
 			dfTmpCodon['Start'].iloc[index] = dicoTr[row.Transcript]['Start']
+		else:
+			dfTmpCodon['Start'].iloc[index] = row.Start - 40
 		if (row.End + 40 > dicoTr[row.Transcript]['End']):
 			dfTmpCodon['End'].iloc[index] = dicoTr[row.Transcript]['End']
+		else:
+			dfTmpCodon['End'].iloc[index] = row.End + 40
 	return dfTmpCodon
 
 def parseDF(df):
@@ -463,17 +478,25 @@ def parseDF(df):
 	:returns: dfTmp, parsed df.
 	:rtype: dataFrame
 	"""
+	start = time.time()
 	dfTmpTr = pd.DataFrame()
 	dfTmpTr = dfTmpTr.append(df[ df.Feature.str.contains('transcript') ].dropna())
 	dfTmpTr['Transcript'] = dfTmpTr.Attributes.apply(addTranscript)
 	dicoTr = dfTmpTr.set_index('Transcript').to_dict('index')
+	del dfTmpTr
 	dfTmp = pd.DataFrame()
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('exon') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('CDS') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('five_prime_utr') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('three_prime_utr') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('UTR') ].dropna())
+	end = time.time()
+	print('Get all segmental location : ', str(end - start))
+	start = time.time()
 	dfTmpCodon = addCodon(df, dicoTr)
+	end = time.time()
+	print('Get Codons : ', str(end - start))
+	start = time.time()
 	dfTmp = dfTmp.append(dfTmpCodon.dropna())
 	dfTmp = dfTmp.reset_index(drop=True)
 	dfTmp['Coords'] = [ [dfTmp.Start[x], dfTmp.End[x]] for x in range(0,len(dfTmp))]
@@ -493,8 +516,12 @@ def parseDF(df):
 		'three_prime_utr' not in set(df.Feature)):
 		dfTmp = getUTR(dfTmp)
 	dfTmp['Type'] = dfTmp.Biotype.apply(addTypeTr)
-	dfTmp = dfTmp.append( addIntrons(dfTmp, dicoTr) )
-	# dfTmp = correctCoords(df, dfTmp)
+	end = time.time()
+	print('Parse attributes : ', str(end - start))
+	start = time.time()
+	dfTmp = dfTmp.append( getPointLocation(dfTmp, dicoTr) )
+	end = time.time()
+	print('Get Point locations : ', str(end - start))
 	return dfTmp
 
 def importGTFdf(filename, sp):
@@ -511,7 +538,10 @@ def importGTFdf(filename, sp):
 	:rtype: dataFrame
 	"""
 	try:
+		start = time.time()
 		df = pd.read_csv(filename, sep='\t', index_col=0, skiprows=5)
+		end = time.time()
+		print('Read gtf to df : ', str(end - start))
 	except:
 		print("This file couldn't be converted in data frame : " + filename)
 	else:

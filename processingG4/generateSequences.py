@@ -3,6 +3,7 @@
 
 import re
 import os
+import time
 import math
 import random
 import argparse
@@ -11,6 +12,7 @@ from Bio import SeqIO
 from pprint import pprint
 import Parser_gtf as pGTF
 import recurrentFunction as rF
+from pympler.asizeof import asizeof
 
 def writeFasta(fasta, outputDir, opt):
     """From a dictionary {id : seq}, write a fasta file.
@@ -124,6 +126,61 @@ def getDicoLocTrBt(dfChr):
         dicoLocTrBt[locId].append(w[4] + '-' + w[5])
     return dicoLocTrBt
 
+def getSitesLocation(chrSeq, dicoLoc, loc):
+    seqUpstream = chrSeq[ dicoLoc[loc]['Start'] - 40 : \
+        dicoLoc[loc]['Start'] ]
+    seqDownstream = chrSeq[ dicoLoc[loc]['End'] : \
+        dicoLoc[loc]['End'] + 40]
+    seq = seqUpstream + seqDownstream
+    return seq
+
+def getJunctionSeq(chrSeq, dicoLoc, loc):
+    start =  dicoLoc[loc]['Start'].split('|')
+    end = dicoLoc[loc]['End'].split('|')
+    if  start[0] == start[1] and end[0] == end[1]:
+        seqUpstream = chrSeq[ start[0] - 40 : \
+            dicoLoc[loc]['Start'] ]
+        seqDownstream = chrSeq[ end[0] : \
+            dicoLoc[loc]['End'] + 40]
+    elif start[0] != start[1] and end[0] == end[1]:
+        seqUpstream = chrSeq[ start[0] : start[1] ]
+        seqDownstream = chrSeq[ end[0] : \
+            dicoLoc[loc]['End'] + 40]
+    elif start[0] == start[1] and end[0] != end[1]:
+        seqUpstream = chrSeq[ start[0] - 40 : \
+            dicoLoc[loc]['Start'] ]
+        seqDownstream = chrSeq[ end[0] : end[1] ]
+    else:
+        seqUpstream = chrSeq[ start[0] : start[1] ]
+        seqDownstream = chrSeq[ end[0] : end[1] ]
+    seq = seqUpstream + seqDownstream
+    return seq
+
+def getOriginSeq(chrSeq, dicoLoc, loc):
+    negSeq = chrSeq[- -dicoLoc[loc]['Start'] - 1 :]
+    # sequence before the origin of replication
+    posSeq = chrSeq[ 0 : dicoLoc[loc]['End'] ]
+    # sequence after the origin of replication
+    seq = negSeq + posSeq
+    return seq
+
+def getLocationSeq(w, chrSeq, dicoLoc, loc):
+    if w[3] == 'junction':
+        seq = getJunctionSeq(chrSeq, dicoLoc, loc)
+    else:
+        seq = chrSeq[ dicoLoc[loc]['Start'] - 1 : \
+            dicoLoc[loc]['End'] ]
+    return seq
+
+def createUniqID(dfChr) :
+    colUniqID = dfChr['Gene'].astype(str) + '~' + \
+        dfChr['Start'].astype(str) + '~' + \
+        dfChr['End'].astype(str) + '~' + \
+        dfChr['Strand'].astype(str) + '~' + \
+        dfChr['Feature'].astype(str)
+    return colUniqID
+
+
 def createFasta(dfGTF, pathFasta, outputDir, opt):
     dicoFasta = { 'WT' : {}, 'Shuffled' : {} }
     fastaFiles = [f for f in os.listdir(pathFasta) if \
@@ -138,17 +195,10 @@ def createFasta(dfGTF, pathFasta, outputDir, opt):
                 fastaFile = pathFasta + file
         chrSeq = importFastaChromosome(fastaFile, chr)
         dfChr = dfChr.append(dfGTF[ dfGTF.Chromosome == chr])
-        dfChr['UniqID'] =  dfChr['Gene'].astype(str) + '~' + \
-            dfChr['Start'].astype(str) + '~' + \
-            dfChr['End'].astype(str) + '~' + \
-            dfChr['Strand'].astype(str) + '~' + \
-            dfChr['Feature'].astype(str)
+        dfChr['UniqID'] =  createUniqID(dfChr)
         dicoLocTrBt = getDicoLocTrBt(dfChr)
-        del dfChr['Transcript']
-        del dfChr['Biotype']
-        del dfChr['index1']
-        del dfChr['Coords']
-        del dfChr['Gene']
+        del dfChr['Transcript'], dfChr['Biotype'], dfChr['index1'], \
+            dfChr['Coords'], dfChr['Gene']
         dfChr = dfChr.reset_index(drop=True)
         dfChr = dfChr.drop_duplicates(subset=None, keep='first', inplace=False)
         dfChr = dfChr.reset_index(drop=True)
@@ -157,27 +207,20 @@ def createFasta(dfGTF, pathFasta, outputDir, opt):
             w = loc.split('~')
             locId = chr  + ':' + w[1] + '~' + w[2] + ':' + w[3]
             if dicoLoc[loc]['End'] != dicoLoc[loc]['Start']:
-                dicoLoc[loc]['Start'] = int(dicoLoc[loc]['Start'])
-                dicoLoc[loc]['End'] = int(dicoLoc[loc]['End'])
-                if dicoLoc[loc]['Start'] > 0:
-                    seq = chrSeq[ dicoLoc[loc]['Start'] - 1 : \
-                        dicoLoc[loc]['End'] - 1 ]
+                if w[4] != 'junction':
+                    dicoLoc[loc]['Start'] = int(dicoLoc[loc]['Start'])
+                    dicoLoc[loc]['End'] = int(dicoLoc[loc]['End'])
                 else:
-                    negSeq = chrSeq[- -dicoLoc[loc]['Start'] - 1 :]
-                    # sequence before the origin of replication
-                    posSeq = chrSeq[ 0 : dicoLoc[loc]['End'] ]
-                    # sequence after the origin of replication
-                    seq = negSeq + posSeq
-                if w[3] == 'junction':
-                    seqUpstream = chrSeq[ dicoLoc[loc]['Start'] - 40 : \
-                        dicoLoc[loc]['Start'] ]
-                    seqDownstream = chrSeq[ dicoLoc[loc]['End'] : \
-                        dicoLoc[loc]['End'] + 40]
-                    seq = seqUpstream + seqDownstream
-                if dicoLoc[loc]['Strand'] == '-1':
+                    dicoLoc[loc]['Start'] = int(dicoLoc[loc]['Start'].split('|')[0])
+                    dicoLoc[loc]['End'] = int(dicoLoc[loc]['End'].split('|')[0])
+                if dicoLoc[loc]['Start'] > 0:
+                    seq = getLocationSeq(w, chrSeq, dicoLoc, loc)
+                else:
+                    seq = getOriginSeq(chrSeq, dicoLoc, loc)
+                if dicoLoc[loc]['Strand'] == '-':
                     seq = reverseSequence(seq)
                 randomSeq = shuffleSeq(seq)
-                listTr = dicoLocTrBt[locId]
+                listTr = list( set( dicoLocTrBt[locId] ) )
                 id = '>' + w[0] +':'+ w[4] +':'+ locId +':'+ '|'.join(listTr)
                 dicoFasta['WT'][id] = seq
                 dicoFasta['Shuffled'][id] = seq
@@ -199,5 +242,12 @@ if __name__ == '__main__':
     opt = arg.option
     fastaFile = path + sp + '/Fasta/'
     outputDir= path + sp + '/'
+    startImportGTF = time.time()
     dfGTF = pGTF.importGTFdf(path + sp + '/' + sp + '.gtf', sp)
+    endImportGTF = time.time()
+    print('Importation GTF time : ', str(endImportGTF - startImportGTF))
+    # print(asizeof(dfGTF)) #to know the octe lenght of the object
+    startCreateFasta = time.time()
     createFasta(dfGTF, fastaFile, outputDir, opt)
+    endCreateFasta = time.time()
+    print('Create fasta time : ', str(endCreateFasta - startCreateFasta))
