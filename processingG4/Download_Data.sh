@@ -9,40 +9,32 @@ for i in $(ls);do mkdir --parents ~/Documents/Data/Genomes/$i/Fasta;done
 # there are some that are from ensembl archive because of the assembly and of the patch assembly
 # need to delete file we don't want after
 #ensembl
-for i in pongo_abelii monodelphis_domestica anolis_carolinensis ornithorhynchus_anatinus danio_rerio gasterosteus_aculeatus;do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensembl.org/pub/release-95/fasta/$i/dna/*dna.chromosome*.fa.gz;done
+for i in pongo_abelii monodelphis_domestica homo_sapiens mus_musculus pan_troglodytes gallus_gallus anolis_carolinensis ornithorhynchus_anatinus danio_rerio gasterosteus_aculeatus;do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensembl.org/pub/release-97/fasta/$i/dna/*dna.chromosome*.fa.gz;done
 wget -P ~/Documents/Data/Genomes/gasterosteus_aculeatus/Fasta ftp://ftp.ensembl.org/pub/release-95/fasta/gasterosteus_aculeatus/dna/*dna.group*.fa.gz;
-wget -P ~/Documents/Data/Genomes/homo_sapiens/Fasta ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/*dna.chromosome*.fa.gz
-wget -P ~/Documents/Data/Genomes/mus_musculus/Fasta ftp://ftp.ensembl.org/pub/release-75/fasta/mus_musculus/dna/*dna.chromosome*.fa.gz
-wget -P ~/Documents/Data/Genomes/gallus_gallus/Fasta  ftp://ftp.ensembl.org/pub/release-75/fasta/gallus_gallus/dna/*dna.chromosome*.fa.gz
-wget -P ~/Documents/Data/Genomes/pan_troglodytes/Fasta ftp://ftp.ensembl.org/pub/release-75/fasta/pan_troglodytes/dna/*dna.chromosome*.fa.gz
 #metazoa
-for i in caenorhabditis_elegans drosophila_melanogaster apis_mellifera; do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgenomes.org/pub/release-42/metazoa/fasta/$i/dna/*dna.chromosome*.fa.gz;done
+for i in caenorhabditis_elegans drosophila_melanogaster apis_mellifera; do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgenomes.org/pub/release-46/metazoa/fasta/$i/dna/*dna.chromosome*.fa.gz;done
 #plants
-for i in oryza_sativa chlamydomonas_reinhardtii chondrus_crispus physcomitrella_patens solanum_lycopersicum vitis_vinifera arabidopsis_thaliana; do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgenomes.org/pub/release-42/plants/fasta/$i/dna/*dna.chromosome*.fa.gz;done
+for i in oryza_sativa chlamydomonas_reinhardtii chondrus_crispus physcomitrella_patens solanum_lycopersicum vitis_vinifera arabidopsis_thaliana; do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgenomes.org/pub/release-46/plants/fasta/$i/dna/*dna.chromosome*.fa.gz;done
 #fungi
-for i in aspergillus_nidulans neurospora_crassa saccharomyces_cerevisiae schizosaccharomyces_pombe; do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgenomes.org/pub/release-42/fungi/fasta/$i/dna/*dna.chromosome*.fa.gz;done
+for i in aspergillus_nidulans neurospora_crassa saccharomyces_cerevisiae schizosaccharomyces_pombe; do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgenomes.org/pub/release-46/fungi/fasta/$i/dna/*dna.chromosome*.fa.gz;done
 #protist
-for i in dictyostelium_discoideum emiliania_huxleyi leishmania_major;do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgenomes.org/pub/release-42/protists/fasta/$i/dna/*dna.chromosome*.fa.gz; done
+for i in dictyostelium_discoideum emiliania_huxleyi leishmania_major;do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgenomes.org/pub/release-46/protists/fasta/$i/dna/*dna.chromosome*.fa.gz; done
 #bacteria
-for i in $(ls);do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgenomes.org/pub/release-42/bacteria//fasta/bacteria_0_collection/$i/dna/*dna.chromosome*.fa.gz;done
+for i in $(ls);do wget -P ~/Documents/Data/Genomes/$i/Fasta ftp://ftp.ensemblgenomes.org/pub/release-46/bacteria//fasta/bacteria_0_collection/$i/dna/*dna.chromosome*.fa.gz;done
 
 # retrive gtf file
 #ensembl
-for i in pongo_abelii monodelphis_domestica anolis_carolinensis ornithorhynchus_anatinus danio_rerio gasterosteus_aculeatus; do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensembl.org/pub/release-95/gtf/$i/*.chr.gtf.gz;done
-wget -P ~/Documents/Data/Genomes/homo_sapiens/ ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/*.gtf.gz
-wget -P ~/Documents/Data/Genomes/mus_musculus/ ftp://ftp.ensembl.org/pub/release-72/gtf/mus_musculus/*.gtf.gz
-wget -P ~/Documents/Data/Genomes/gallus_gallus/ ftp://ftp.ensembl.org/pub/release-75/gtf/gallus_gallus/*.gtf.gz
-wget -P ~/Documents/Data/Genomes/pan_troglodytes/ ftp://ftp.ensembl.org/pub/release-75/gtf/pan_troglodytes/*.gtf.gz
+for i in homo_sapiens pongo_abelii mus_musculus gallus_gallus pan_troglodytes monodelphis_domestica anolis_carolinensis ornithorhynchus_anatinus danio_rerio gasterosteus_aculeatus; do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensembl.org/pub/release-97/gtf/$i/*.chr.gtf.gz;done
 #metazoa
-for i in caenorhabditis_elegans drosophila_melanogaster apis_mellifera; do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensemblgenomes.org/pub/release-42/metazoa/gtf/$i/*gtf.gz;done
+for i in caenorhabditis_elegans drosophila_melanogaster apis_mellifera; do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensemblgenomes.org/pub/release-46/metazoa/gtf/$i/*gtf.gz;done
 #plants
-for i in oryza_sativa chlamydomonas_reinhardtii chondrus_crispus physcomitrella_patens solanum_lycopersicum vitis_vinifera arabidopsis_thaliana; do wget -P ~/Documents/Data/Genomes/$i ftp://ftp.ensemblgenomes.org/pub/release-42/plants/gtf/$i/*gtf.gz;done
+for i in oryza_sativa chlamydomonas_reinhardtii chondrus_crispus physcomitrella_patens solanum_lycopersicum vitis_vinifera arabidopsis_thaliana; do wget -P ~/Documents/Data/Genomes/$i ftp://ftp.ensemblgenomes.org/pub/release-46/plants/gtf/$i/*gtf.gz;done
 #fungi
-for i in aspergillus_nidulans neurospora_crassa saccharomyces_cerevisiae schizosaccharomyces_pombe; do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensemblgenomes.org/pub/release-42/fungi/gtf/$i/*.gtf.gz;done
+for i in aspergillus_nidulans neurospora_crassa saccharomyces_cerevisiae schizosaccharomyces_pombe; do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensemblgenomes.org/pub/release-46/fungi/gtf/$i/*.gtf.gz;done
 #protist
-for i in dictyostelium_discoideum emiliania_huxleyi leishmania_major;do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensemblgenomes.org/pub/release-42/protists/gtf/$i/*.gtf.gz; done
+for i in dictyostelium_discoideum emiliania_huxleyi leishmania_major;do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensemblgenomes.org/pub/release-46/protists/gtf/$i/*.gtf.gz; done
 #bacteria
-for i in $(ls);do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensemblgenomes.org/pub/release-42/bacteria//gtf/bacteria_0_collection/$i/*.gtf.gz;done
+for i in $(ls);do wget -P ~/Documents/Data/Genomes/$i/ ftp://ftp.ensemblgenomes.org/pub/release-46/bacteria//gtf/bacteria_0_collection/$i/*.gtf.gz;done
 
 # miss extract
 # miss rename
