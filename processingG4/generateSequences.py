@@ -3,16 +3,12 @@
 
 import re
 import os
-import time
 import math
 import random
 import argparse
 import pandas as pd
 from Bio import SeqIO
 from pprint import pprint
-import Parser_gtf as pGTF
-import recurrentFunction as rF
-from pympler.asizeof import asizeof
 
 def writeFasta(fasta, outputDir, opt):
     """From a dictionary {id : seq}, write a fasta file.
@@ -135,20 +131,19 @@ def getSitesLocation(chrSeq, dicoLoc, loc):
     return seq
 
 def getJunctionSeq(chrSeq, dicoLoc, loc):
+    # pprint(dicoLoc[loc])
     start =  dicoLoc[loc]['Start'].split('|')
     end = dicoLoc[loc]['End'].split('|')
+    start = list(map(int, start))
+    end = list(map(int, end))
     if  start[0] == start[1] and end[0] == end[1]:
-        seqUpstream = chrSeq[ start[0] - 40 : \
-            dicoLoc[loc]['Start'] ]
-        seqDownstream = chrSeq[ end[0] : \
-            dicoLoc[loc]['End'] + 40]
+        seqUpstream = chrSeq[ start[0] - 40 : start[0] ]
+        seqDownstream = chrSeq[ end[0] : end[0] + 40]
     elif start[0] != start[1] and end[0] == end[1]:
         seqUpstream = chrSeq[ start[0] : start[1] ]
-        seqDownstream = chrSeq[ end[0] : \
-            dicoLoc[loc]['End'] + 40]
+        seqDownstream = chrSeq[ end[0] : end[0] + 40]
     elif start[0] == start[1] and end[0] != end[1]:
-        seqUpstream = chrSeq[ start[0] - 40 : \
-            dicoLoc[loc]['Start'] ]
+        seqUpstream = chrSeq[ start[0] - 40 : start[0] ]
         seqDownstream = chrSeq[ end[0] : end[1] ]
     else:
         seqUpstream = chrSeq[ start[0] : start[1] ]
@@ -165,7 +160,7 @@ def getOriginSeq(chrSeq, dicoLoc, loc):
     return seq
 
 def getLocationSeq(w, chrSeq, dicoLoc, loc):
-    if w[3] == 'junction':
+    if w[4] == 'junction':
         seq = getJunctionSeq(chrSeq, dicoLoc, loc)
     else:
         seq = chrSeq[ dicoLoc[loc]['Start'] - 1 : \
@@ -210,10 +205,10 @@ def createFasta(dfGTF, pathFasta, outputDir, opt):
                 if w[4] != 'junction':
                     dicoLoc[loc]['Start'] = int(dicoLoc[loc]['Start'])
                     dicoLoc[loc]['End'] = int(dicoLoc[loc]['End'])
+                    start = int(dicoLoc[loc]['Start'])
                 else:
-                    dicoLoc[loc]['Start'] = int(dicoLoc[loc]['Start'].split('|')[0])
-                    dicoLoc[loc]['End'] = int(dicoLoc[loc]['End'].split('|')[0])
-                if dicoLoc[loc]['Start'] > 0:
+                    start = int(dicoLoc[loc]['Start'].split('|')[0])
+                if start > 0:
                     seq = getLocationSeq(w, chrSeq, dicoLoc, loc)
                 else:
                     seq = getOriginSeq(chrSeq, dicoLoc, loc)
@@ -242,12 +237,10 @@ if __name__ == '__main__':
     opt = arg.option
     fastaFile = path + sp + '/Fasta/'
     outputDir= path + sp + '/'
-    startImportGTF = time.time()
-    dfGTF = pGTF.importGTFdf(path + sp + '/' + sp + '.gtf', sp)
-    endImportGTF = time.time()
-    print('Importation GTF time : ', str(endImportGTF - startImportGTF))
-    # print(asizeof(dfGTF)) #to know the octe lenght of the object
-    startCreateFasta = time.time()
-    createFasta(dfGTF, fastaFile, outputDir, opt)
-    endCreateFasta = time.time()
-    print('Create fasta time : ', str(endCreateFasta - startCreateFasta))
+    gtfParsed = path + sp + '/' + sp + '.csv'
+    try:
+        df = pd.read_csv(gtfParsed, sep='\t')
+    except:
+        print("This file couldn't be converted in data frame : " + gtfParsed)
+    else:
+        createFasta(df, fastaFile, outputDir, opt)

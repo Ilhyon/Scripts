@@ -23,27 +23,10 @@ Data availability:
 
 import re
 import os
-import time
 import argparse
 import numpy as np
 import pandas as pd
 from pprint import pprint
-from collections import Counter
-import recurrentFunction as rF
-
-def build_arg_parser():
-	parser = argparse.ArgumentParser(description = 'Parser_gtf')
-	parser.add_argument ('-sp', '--specie', default = 'mus_musculus')
-	return parser
-
-def changeStrandFormat(strand):
-	"""Changes the format of the strand from +/- to 1/-1.
-	"""
-	if strand == '+':
-		strand = '1'
-	elif strand == '-':
-		strand = '-1'
-	return strand
 
 def retrieveBiotypeFronAttributes(attributes, feature):
 	"""Gets the biotype from attributes.
@@ -79,182 +62,6 @@ def retrieveIdTrFronAttributes(attributes):
 		if re.search('transcript_id', attribute):
 			idTr = attribute.split('"')[1]
 	return idTr
-
-def retrieveInfoExonFronAttributes(attributes):
-	"""Gets rank and exon number from attributes.
-
-	:param attributes: last colons of gtf file, contains a lot of informations
-		but is different depending on the feature.
-	:type attributes: list
-
-	:returns: rank, idExon of an exon.
-	:rtype: strings
-	"""
-	rank = 0
-	idExon = 0
-	for attribute in attributes:
-		if re.search('exon_number', attribute):
-			rank = int(attribute.split('"')[1])
-		elif re.search('exon_id', attribute):
-			idExon = attribute.split('"')[1]
-	return rank, idExon
-
-def retrieveUTRFromDico(dico):
-	"""Gets UTR coords if they exist.
-
-	:param dico: contains all transcripts and their features.
-	:type dico: dictionary
-
-	:returns: start5UTR, end5UTR, start3UTR, end3UTR.
-	:rtypes: strings
-	"""
-	start5UTR = ''
-	end5UTR = ''
-	start3UTR = ''
-	end3UTR = ''
-	if '5UTR' in dico :
-		start5UTR, end5UTR = retrieveCoordUTRFromDico(dico['5UTR'])
-	if '3UTR' in dico :
-		start3UTR, end3UTR = retrieveCoordUTRFromDico(dico['3UTR'])
-	return start5UTR, end5UTR, start3UTR, end3UTR
-
-def retrieveCoordUTRFromDico(dico):
-	start = dico["Start"]
-	end = dico["End"]
-	return start, end
-
-def createKeyTranscript(dico, idGene, idTr, feature):
-	if idTr not in dico :
-		dico[idTr] = {"Gene" : idGene,
-						feature : {}}
-	if feature not in dico[idTr] :
-		dico[idTr].update({feature : {}})
-	return dico
-
-def importTranscriptFromGTF(filename):
-	dicoTr = {}
-	with open(filename) as f: # file opening
-		content = f.read()
-		lines = content.split('\n')
-		for l in lines: # browse all lines
-			if not l.startswith('#') and l:
-				words=l.split('\t')
-				attributes = words[8].split(';')
-				idGene = attributes[0].split('"')[1]
-				feature = words[2]
-				chrm = words[0]
-				startFeature = words[3]
-				endFeature = words[4]
-				strand = words[6]
-				strand = changeStrandFormat(strand)
-				biotype = retrieveBiotypeFronAttributes(attributes, feature)
-				if feature == "exon" :
-					idTr = retrieveIdTrFronAttributes(attributes)
-					rank, idExon = retrieveInfoExonFronAttributes(attributes)
-					dicoTr.update(createKeyTranscript(dicoTr, idGene, idTr, "Exon"))
-					dicoTr[idTr]["Exon"].update({idExon : {"Chromosome" : chrm,
-															"Start" : int(startFeature),
-															"End" :int(endFeature),
-															"Biotype" : biotype,
-															"Strand" : strand,
-															"Rank" : rank}})
-				elif feature == "transcript":
-					idTr = retrieveIdTrFronAttributes(attributes)
-					if idTr not in dicoTr:
-						dicoTr.update({idTr : {}})
-					dicoTr[idTr].update({"Gene" : idGene,
-										"Chromosome" : chrm,
-										"Start" : int(startFeature),
-										"End" : int(endFeature),
-										"Biotype" : biotype,
-										"Strand" : strand,
-										"Type" : addTypeTr(biotype)})
-	return dicoTr
-
-def importGTFGene(filename):
-	"""Imports genes features from the gtf file.
-
-	:param filename: name of the gtf file.
-	:type filename: string
-
-	:returns: dicoGene, contains all informations abotu genes.
-	:rtype: dictionary
-	"""
-	dicoGene = {}
-	with open(filename) as f: # file opening
-		content = f.read()
-		lines = content.split('\n')
-		for l in lines: # browse all lines
-			if not l.startswith('#') and l:
-				words = l.split('\t')
-				geneId = words[8].split(';')[0].split('"')[1]
-				attributes = words[8].split(';')
-				feature = words[2]
-				if feature == "gene" :
-					chrm = words[0]
-					startFeature = int(words[3])
-					endFeature = int(words[4])
-					strand = words[6]
-					biotype = retrieveBiotypeFronAttributes(attributes, feature)
-					if strand == '+':
-						strand = '1'
-					elif strand == '-':
-						strand = '-1'
-					if geneId not in dicoGene:
-						dicoGene[geneId] = {}
-					dicoGene[geneId].update({'Chromosome' : chrm,
-											'Start' : startFeature,
-											'End' : endFeature,
-											'Strand' : strand,
-											'Biotype' : biotype,
-											'Assembly' : assembly})
-				if feature == 'transcript':
-					geneId = attributes[0].split('"')[1]
-					idTr = retrieveIdTrFronAttributes(attributes)
-					if geneId not in dicoGene:
-						dicoGene[geneId] = {'Transcript' : []}
-					elif 'Transcript' not in dicoGene[geneId]:
-						dicoGene[geneId].update({'Transcript' : []})
-					dicoGene[geneId]['Transcript'].append(idTr)
-			elif re.search('genome-version', l):
-				assembly = l.split(' ')[1]
-	return dicoGene
-
-def extractDicoGeneTr(filename):
-	dicoGene = {}
-	with open(filename) as f: # file opening
-		content = f.read()
-		lines = content.split('\n')
-		for l in lines: # browse all lines
-			if not l.startswith('#') and l:
-				words = l.split('\t')
-				geneId = words[8].split(';')[0].split('"')[1]
-				attributes = words[8].split(';')
-				feature = words[2]
-				if feature == 'transcript':
-					geneId = attributes[0].split('"')[1]
-					idTr = retrieveIdTrFronAttributes(attributes)
-					if geneId not in dicoGene:
-						dicoGene[geneId] = []
-					dicoGene[geneId].append(idTr)
-	return(dicoGene)
-
-def getDicoTrGene(filename):
-	dicoGene = {}
-	with open(filename) as f: # file opening
-		content = f.read()
-		lines = content.split('\n')
-		for l in lines: # browse all lines
-			if not l.startswith('#') and l:
-				words = l.split('\t')
-				attributes = words[8].split(';')
-				feature = words[2]
-				if feature == 'transcript':
-					geneId = attributes[0].split('"')[1]
-					idTr = retrieveIdTrFronAttributes(attributes)
-					biotype = retrieveBiotypeFronAttributes(attributes, feature)
-					dicoGene[idTr] = {'Gene' : geneId, 'Biotype' : biotype}
-	return(dicoGene)
 
 def addTranscript(attributes):
 	"""Apply function to retrieve the transcript id of a feature.
@@ -414,11 +221,8 @@ def addIntron(df, start, end):
 def getPointLocation(df, dicoTr):
 	dfIntron = pd.DataFrame()
 	dfExon = pd.DataFrame()
-	startDF = time.time()
 	dfExon = dfExon.append(df[ df.Feature == 'exon'])
 	groups = dfExon.groupby('Transcript')
-	endDF = time.time()
-	print('ParseDF to exon groupby : ', str(endDF - startDF))
 	for name, group in groups:
 		if len(group) > 1:
 			# if more then 1 exon, then there is an intron
@@ -478,7 +282,6 @@ def parseDF(df):
 	:returns: dfTmp, parsed df.
 	:rtype: dataFrame
 	"""
-	start = time.time()
 	dfTmpTr = pd.DataFrame()
 	dfTmpTr = dfTmpTr.append(df[ df.Feature.str.contains('transcript') ].dropna())
 	dfTmpTr['Transcript'] = dfTmpTr.Attributes.apply(addTranscript)
@@ -490,13 +293,7 @@ def parseDF(df):
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('five_prime_utr') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('three_prime_utr') ].dropna())
 	dfTmp = dfTmp.append(df[ df.Feature.str.contains('UTR') ].dropna())
-	end = time.time()
-	print('Get all segmental location : ', str(end - start))
-	start = time.time()
 	dfTmpCodon = addCodon(df, dicoTr)
-	end = time.time()
-	print('Get Codons : ', str(end - start))
-	start = time.time()
 	dfTmp = dfTmp.append(dfTmpCodon.dropna())
 	dfTmp = dfTmp.reset_index(drop=True)
 	dfTmp['Coords'] = [ [dfTmp.Start[x], dfTmp.End[x]] for x in range(0,len(dfTmp))]
@@ -516,12 +313,7 @@ def parseDF(df):
 		'three_prime_utr' not in set(df.Feature)):
 		dfTmp = getUTR(dfTmp)
 	dfTmp['Type'] = dfTmp.Biotype.apply(addTypeTr)
-	end = time.time()
-	print('Parse attributes : ', str(end - start))
-	start = time.time()
 	dfTmp = dfTmp.append( getPointLocation(dfTmp, dicoTr) )
-	end = time.time()
-	print('Get Point locations : ', str(end - start))
 	return dfTmp
 
 def importGTFdf(filename, sp):
@@ -538,10 +330,7 @@ def importGTFdf(filename, sp):
 	:rtype: dataFrame
 	"""
 	try:
-		start = time.time()
 		df = pd.read_csv(filename, sep='\t', index_col=0, skiprows=5)
-		end = time.time()
-		print('Read gtf to df : ', str(end - start))
 	except:
 		print("This file couldn't be converted in data frame : " + filename)
 	else:
@@ -557,11 +346,18 @@ def importGTFdf(filename, sp):
 		del df['Attributes']
 		return df
 
+def build_arg_parser():
+	parser = argparse.ArgumentParser(description = 'Parser_gtf')
+	parser.add_argument ('-sp', '--specie', default = 'yersinia_pestis_biovar_microtus_str_91001')
+	return parser
+
 if __name__ == '__main__':
 	parser = build_arg_parser()
 	arg = parser.parse_args()
 	sp = arg.specie	# specie to parse
-	print(sp)
 	filename = "/home/anais/Documents/Data/Genomes/" + sp + \
 		"/" + sp + ".gtf"
+	output = "/home/anais/Documents/Data/Genomes/" + sp + \
+		"/" + sp + ".csv"
 	df = importGTFdf(filename, sp)
+	df.to_csv(path_or_buf=output, header=True, index=None, sep='\t')
