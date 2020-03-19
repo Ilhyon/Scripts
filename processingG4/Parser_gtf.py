@@ -8,17 +8,14 @@ Copyright:
 	departement	of computation.
 
 Date:
-	May 2019
+	February 2020
 
 Description:
-	This script is principaly a library containing many methods to import a gtf
-	file. It can be imported as a dictionary or as a dataFrame. While imported
-	as dictionary, intron are computed and added to the dictionnary. An ouput
-	containing introns information can be created.
-
-Data availability:
-	* gtf file via Ensembl ftp.
-
+	This script imports a gtf file, and computes all locations used in this
+	study (intron, codon start and stop, junction). Once those locations are
+	computed, the dataFrame is exported as a csv to get a faster access for
+	further scripts.
+	
 """
 
 import re

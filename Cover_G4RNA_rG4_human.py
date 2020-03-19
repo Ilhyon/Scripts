@@ -7,10 +7,10 @@ from pprint import pprint
 
 # This script allow to compute the number of pG4 that are present
 # in the data base G4RNA. To do that we import the G4 from G4RNA. Only
-# the folding G4 and the WT are imported. Then the pG4 are browsed. A 
+# the folding G4 and the WT are imported. Then the pG4 are browsed. A
 # filter is done using the chromosome. Only the G4 (from G4RNA) that
 # are in the same chromosome than the pG4 will be checked. Then the
-# coverage is compute if their is an overlap between the position of 
+# coverage is compute if their is an overlap between the position of
 # the pG4 and the G4, but also if the sequence match.
 # The script will print the number of G4 that are imported, and then
 # the number of pG4 that correspond to a G4.
@@ -34,7 +34,7 @@ def readLinerG4seq(line):
 			"Location" : words[12]}
 	dicoL["Strand"] = getStrand(dicoL["Strand"])
 	return dicoL
-	
+
 def readLineG4RNA(line):
 	words = line.split('\t')
 	if words[2].split("r")[0] :
@@ -85,7 +85,7 @@ def importG4RNA():
 	"""
 		Read a file that contain all G4 from G4RNA screener (file from 31/01/2019)
 		The db maybe update later so the results could change.
-		Return a dictionary of G4 folded and WT : 
+		Return a dictionary of G4 folded and WT :
 		{chr : {start-end : {"Start","End", "Sequence"}}
 	"""
 	directory = "/home/anais/Documents/Data/G4RNA/G4rna_G4.txt"
@@ -113,7 +113,9 @@ def importG4RNA():
 													"Start" : l["Start"],
 													"End" : l["End"],
 													"Length" : l["Length"],
-													"Strand" : l["Strand"]}})
+													"Strand" : l["Strand"],
+													"geneID" : l['geneID'],
+													"g4Type" : l['g4Type']}})
 	dicoG4RNA = removeDoubleG4(dicoG4RNA, list_G4_to_Delete)
 	return dicoG4RNA
 
@@ -194,14 +196,20 @@ def build_arg_parser():
 
 def main(directorypG4, dataType) :
 	dicoG4RNA = importG4RNA()
-	countG4Target(dicoG4RNA, "G4RNA")
-	dicopG4 = importpG4(directorypG4)
-	countG4Target(dicopG4, dataType)
-	dicorG4 = importrG4()
-	countG4Target(dicorG4, "rG4")
-	coverage(dicoG4RNA, "G4RNA", dicopG4, dataType)
-	coverage(dicoG4RNA, "G4RNA", dicorG4, "rG4")
-	coverage(dicorG4, "rG4", dicopG4, dataType)
+	print('Gene\tIdentifier\tChromosome\tStart\tEnd\tLength\tStrand\tSequence\tG4')
+	for chr in dicoG4RNA:
+		for G4 in dicoG4RNA[chr]:
+			print(dicoG4RNA[chr][G4]['geneID']+'\t'+dicoG4RNA[chr][G4]['g4Type']+'\t'+chr+'\t'+
+				dicoG4RNA[chr][G4]['Start']+'\t'+dicoG4RNA[chr][G4]['End']+'\t'+dicoG4RNA[chr][G4]['Length']+'\t'+
+				dicoG4RNA[chr][G4]['Strand']+'\t'+dicoG4RNA[chr][G4]['Sequence']+'\t1')
+	# countG4Target(dicoG4RNA, "G4RNA")
+	# dicopG4 = importpG4(directorypG4)
+	# countG4Target(dicopG4, dataType)
+	# dicorG4 = importrG4()
+	# countG4Target(dicorG4, "rG4")
+	# coverage(dicoG4RNA, "G4RNA", dicopG4, dataType)
+	# coverage(dicoG4RNA, "G4RNA", dicorG4, "rG4")
+	# coverage(dicorG4, "rG4", dicopG4, dataType)
 
 if __name__ == '__main__':
 	parser = build_arg_parser()
@@ -209,5 +217,3 @@ if __name__ == '__main__':
 	path = arg.path
 	directoryAll = path
 	main(directoryAll, "all score")
-	
-	
