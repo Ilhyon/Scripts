@@ -60,9 +60,8 @@ def getLocationpG4(w, pG4, window):
             location = "pG4overlap5RI"
         else:
             location = "pG4overlap3RI"
-    elif o <= 0 and o > - window:
-        if (pG4coords[0] < RIcoords[0] - window and w['strand'] == '+') or \
-			(pG4coords[0] > RIcoords[0] + window and w['strand'] == '-'):
+    elif o <= 0 and -o < window:
+        if (pG4coords[1] > RIcoords[0] - window and pG4coords[1] < RIcoords[0]):
             location = "pG4nearRI5"
         else:
             location = "pG4nearRI3"
@@ -104,7 +103,7 @@ def readLineRI(w):
     'significant': w[29]}
     return line
 
-def readRI(filename, pG4, window):
+def readRI(filename, pG4, window, v, signi):
     RIpG4 = {}
     graph = {'Up' : [],
         'Down' : [],
@@ -121,9 +120,7 @@ def readRI(filename, pG4, window):
             if l and not l.startswith('newID2'):
                 w = l.split('\t')
                 w = readLineRI(w)
-                # if w['GeneID'] in pG4:
-                # if w['GeneID'] in pG4 and w['significant'] == '0':
-                if w['GeneID'] in pG4 and w['significant'] == '1':
+                if w['GeneID'] in pG4 and w['significant'] == signi:
                     lengthTr = w['riExonEnd'] - w['riExonStart_0base']
                     Lengths = { 'Up' : w['upstreamEE'] - w['upstreamES'],
                         'Down' : w['downstreamEE'] - w['downstreamES'],
@@ -148,17 +145,20 @@ def readRI(filename, pG4, window):
                                 start = pG4[ w['GeneID'] ][G4]['Start'] - w['upstreamEE']
                                 end = pG4[ w['GeneID'] ][G4]['End'] - w['upstreamEE']
                                 for x in range(start, end):
-                                    graph['RI'][x] += 1
+                                    if x < len(graph['RI']):
+                                        graph['RI'][x] += 1
                             elif loc == 'pG4nearRI3':
                                 start = pG4[ w['GeneID'] ][G4]['Start'] - w['downstreamES']
                                 end = pG4[ w['GeneID'] ][G4]['End'] - w['downstreamES']
                                 for x in range(start, end):
-                                    graph['Down'][x] += 1
+                                    if x < len(graph['Down']):
+                                        graph['Down'][x] += 1
                             elif loc == 'pG4nearRI5':
-                                start = pG4[ w['GeneID'] ][G4]['Start'] - w['upstreamEE']
-                                end = pG4[ w['GeneID'] ][G4]['End'] - w['upstreamEE']
+                                start = w['upstreamEE'] - pG4[ w['GeneID'] ][G4]['Start']
+                                end = w['upstreamEE'] - pG4[ w['GeneID'] ][G4]['End']
                                 for x in range(start, end):
-                                    graph['Up'][x] += 1
+                                    if x < len(graph['Up']):
+                                        graph['Up'][x] += 1
     for u in NbNt:
         # for each location
         cpt = 1
@@ -177,9 +177,9 @@ def readRI(filename, pG4, window):
                 # sequences that had this position
                 graph[u][i] = graph[u][i] / sorted(NbNt[u])[0]
                 if i in NbNt[u]:
-                    # we delete the minimal end 
+                    # we delete the minimal end
                     del sorted(NbNt[u])[0]
-        output = open('List' + u + '.tkt', "w")
+        output = open('List_' +u+ '_' +signi+  '_' +v+ '.tkt', "w")
         results = [ str(i) for i in graph[u] ]
         output.write("\n".join(results))
         output.close()
@@ -216,12 +216,21 @@ def getpG4NearRI(path, window):
         'zikvRI' : path + '200319_ZIKV_RI.csv',
         'yvfRI' : path + '200319_YFV_RI.csv'}
     pG4 = importpG4(pG4All)
-    RIpG4 = readRI(path + '200319_KUNV_RI.csv', pG4, window)
-    for u in RIpG4:
-        if RIpG4[u]['Location'] not in statD:
-            statD[ RIpG4[u]['Location'] ] = 0
-        statD[ RIpG4[u]['Location'] ] += 1
-    # pprint(statD)
+    for v in viruses:
+        # 1 = significant, 0 = non_significant
+        RIpG4 = readRI(viruses[v], pG4, window, v, '1')
+        print(v)
+        for u in RIpG4:
+            if RIpG4[u]['Location'] not in statD:
+                statD[ RIpG4[u]['Location'] ] = 0
+            statD[ RIpG4[u]['Location'] ] += 1
+        pprint(statD)
+        RIpG4 = readRI(viruses[v], pG4, window, v, '0')
+        for u in RIpG4:
+            if RIpG4[u]['Location'] not in statD:
+                statD[ RIpG4[u]['Location'] ] = 0
+            statD[ RIpG4[u]['Location'] ] += 1
+        pprint(statD)
 
 
 
