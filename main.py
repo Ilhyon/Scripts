@@ -4,12 +4,6 @@
 # Libraries and files
 import matplotlib.pyplot as plt
 
-# Global variables
-DOWN_TKT = "ListDown.tkt"
-RI_TKT = "ListRI.tkt"
-UP_TKT = "ListUp.tkt"
-
-
 def read_file(file_name):
     temp_lst = []
     with open(file_name) as f: # file opening
@@ -20,15 +14,17 @@ def read_file(file_name):
     return temp_lst
 
 
-def draw_plot_graph(l1x_values, l1y_values, title):
+def draw_plot_graph(x_values0, y_values0, x_values1, y_values1, v, loc):
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 1, 1)
-    plt.plot(x_values, y_values, label='Significant', color="red")
+    plt.plot(x_values0, y_values0, label='Non-Significant', color="black")
+    plt.plot(x_values1, y_values1, label='Significant', color="red")
     plt.grid()
-    plt.title(title)
-    plt.xlabel("RI")
-    plt.ylabel("Number of G4")
-    plt.savefig("plot_RI.png")
+    plt.title('Plot of the number of pG4 per site / tot site for the virus '+\
+        v+'and the location '+loc)
+    plt.xlabel('Position in ' + loc)
+    plt.ylabel("Percent of site with a G4")
+    plt.savefig(v+'_'+loc+".svg", format="svg")
     plt.close()
 
 
@@ -44,14 +40,29 @@ def draw_hist_graph(values, title, bins):
 
 
 if __name__ == '__main__':
-    #down_exon = read_file(DOWN_TKT)
-    ri_exon = read_file(RI_TKT)
-    #up_exon = read_file(UP_TKT)
+    files = {'kunvRI' : {'Up' : ['List_Up_0_kunvRI.txt', 'List_Up_1_kunvRI.txt'],
+                        'Down' : ['List_Down_0_kunvRI.txt', 'List_Down_1_kunvRI.txt'],
+                        'RI' : ['List_RI_0_kunvRI.txt', 'List_RI_1_kunvRI.txt']},
+            'sinvRI' : {'Up' : ['List_Up_0_sinvRI.txt', 'List_Up_1_sinvRI.txt'],
+                        'Down' : ['List_Down_0_sinvRI.txt', 'List_Down_1_sinvRI.txt'],
+                        'RI' : ['List_RI_0_sinvRI.txt', 'List_RI_1_sinvRI.txt']},
+            'yvfRI' : {'Up' : ['List_Up_0_yvfRI.txt', 'List_Up_1_yvfRI.txt'],
+                        'Down' : ['List_Down_0_yvfRI.txt', 'List_Down_1_yvfRI.txt'],
+                        'RI' : ['List_RI_0_yvfRI.txt', 'List_RI_1_yvfRI.txt']},
+            'zikvRI' : {'Up' : ['List_Up_0_zikvRI.txt', 'List_Up_1_zikvRI.txt'],
+                        'Down' : ['List_Down_0_zikvRI.txt', 'List_Down_1_zikvRI.txt'],
+                        'RI' : ['List_RI_0_zikvRI.txt', 'List_RI_1_zikvRI.txt']}}
+    for v in files:
+        for loc in files[v]:
+            VLoc0 = read_file(files[v][loc][0])
+            VLoc1 = read_file(files[v][loc][1])
 
-    x_values = list(range(len(ri_exon)))
-    y_values = ri_exon
+            x_values0 = list(range(len(VLoc0)))
+            y_values0 = VLoc0
+            x_values1 = list(range(len(VLoc1)))
+            y_values1 = VLoc1
 
-    draw_plot_graph(x_values, y_values, title="RI")
+            draw_plot_graph(x_values0, y_values0, x_values1, y_values1, v, loc)
 
     # values = []
     # for i in range(len(x_values)):

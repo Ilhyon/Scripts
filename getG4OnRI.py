@@ -8,6 +8,19 @@ import numpy as np
 import pandas as pd
 from pprint import pprint
 
+def writeFile(d, filename):
+    output = open(filename, "w")
+    output.write('ID\tGeneID\tgeneSymbol\tchr\tstrand\triExonStart_0base'+\
+        '\triExonEnd\tupstreamES\tupstreamEE\tdownstreamES\tdownstreamEE\t'+\
+        'PValue\tFDR\tsignificant\tpG4Start\tpG4End\tLocation\tcGcC\tG4H\tG4NN\tpG4Sequence')
+    for l in d:
+        output.write(d[l]['ID'] +'\t'+ d[l]['GeneID'] +'\t'+ d[l]['geneSymbol'] +'\t'+ \
+        d[l]['chr'] +'\t'+ d[l]['strand'] +'\t'+ str(d[l]['riExonStart_0base']) +'\t'+ str(d[l]['riExonEnd']) +'\t'+ \
+        str(d[l]['upstreamES']) +'\t'+ str(d[l]['upstreamEE']) +'\t'+ str(d[l]['downstreamES']) +'\t'+ str(d[l]['downstreamEE']) +'\t'+ \
+        d[l]['PValue'] +'\t'+ d[l]['FDR'] +'\t'+ d[l]['significant'] +'\t'+ str(d[l]['Start']) +'\t'+ \
+        str(d[l]['End']) +'\t'+ d[l]['Location'] +'\t'+ d[l]['cGcC'] +'\t'+ d[l]['G4H'] +'\t'+ d[l]['G4nn'] +'\t'+ d[l]['Seq'])
+    output.close()
+
 def getListTrIntron(filename):
     df = pd.read_csv(filename, sep='\t')
     df = df[ df.significant == 1]
@@ -179,10 +192,11 @@ def readRI(filename, pG4, window, v, signi):
                 if i in NbNt[u]:
                     # we delete the minimal end
                     del sorted(NbNt[u])[0]
-        output = open('List_' +u+ '_' +signi+  '_' +v+ '.tkt', "w")
+        output = open('List_' +u+ '_' +signi+  '_' +v+ '.txt', "w")
         results = [ str(i) for i in graph[u] ]
         output.write("\n".join(results))
         output.close()
+    print('Length Tot = ', str(LengthTot))
     return RIpG4
 
 def importpG4(filename):
@@ -225,12 +239,14 @@ def getpG4NearRI(path, window):
                 statD[ RIpG4[u]['Location'] ] = 0
             statD[ RIpG4[u]['Location'] ] += 1
         pprint(statD)
+        writeFile(RIpG4, v+'_1_RI_pG4.csv')
         RIpG4 = readRI(viruses[v], pG4, window, v, '0')
         for u in RIpG4:
             if RIpG4[u]['Location'] not in statD:
                 statD[ RIpG4[u]['Location'] ] = 0
             statD[ RIpG4[u]['Location'] ] += 1
         pprint(statD)
+        writeFile(RIpG4, v+'_0_RI_pG4.csv')
 
 
 
