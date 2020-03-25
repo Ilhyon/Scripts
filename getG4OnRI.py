@@ -12,13 +12,15 @@ def writeFile(d, filename):
     output = open(filename, "w")
     output.write('ID\tGeneID\tgeneSymbol\tchr\tstrand\triExonStart_0base'+\
         '\triExonEnd\tupstreamES\tupstreamEE\tdownstreamES\tdownstreamEE\t'+\
-        'PValue\tFDR\tsignificant\tpG4Start\tpG4End\tLocation\tcGcC\tG4H\tG4NN\tpG4Sequence')
+        'PValue\tFDR\tsignificant\tpG4Start\tpG4End\tLocation\tcGcC\tG4H\tG4NN\tpG4Sequence\n')
     for l in d:
         output.write(d[l]['ID'] +'\t'+ d[l]['GeneID'] +'\t'+ d[l]['geneSymbol'] +'\t'+ \
         d[l]['chr'] +'\t'+ d[l]['strand'] +'\t'+ str(d[l]['riExonStart_0base']) +'\t'+ str(d[l]['riExonEnd']) +'\t'+ \
         str(d[l]['upstreamES']) +'\t'+ str(d[l]['upstreamEE']) +'\t'+ str(d[l]['downstreamES']) +'\t'+ str(d[l]['downstreamEE']) +'\t'+ \
         d[l]['PValue'] +'\t'+ d[l]['FDR'] +'\t'+ d[l]['significant'] +'\t'+ str(d[l]['Start']) +'\t'+ \
-        str(d[l]['End']) +'\t'+ d[l]['Location'] +'\t'+ d[l]['cGcC'] +'\t'+ d[l]['G4H'] +'\t'+ d[l]['G4nn'] +'\t'+ d[l]['Seq'])
+        str(d[l]['End']) +'\t'+ d[l]['Location'] +'\t'+ d[l]['cGcC'] +'\t'+ \
+        d[l]['G4H'] +'\t'+ d[l]['G4nn'] +'\t'+ d[l]['Seq'])
+        output.write('\n')
     output.close()
 
 def getListTrIntron(filename):
@@ -74,10 +76,14 @@ def getLocationpG4(w, pG4, window):
         else:
             location = "pG4overlap3RI"
     elif o <= 0 and -o < window:
-        if (pG4coords[1] > RIcoords[0] - window and pG4coords[1] < RIcoords[0]):
+        if (pG4coords[1] > RIcoords[0] - window and pG4coords[1] < RIcoords[0] and w['strand'] == '+') or\
+            (pG4coords[0] < RIcoords[1] + window and pG4coords[0] > RIcoords[1] and w['strand'] == '-'):
             location = "pG4nearRI5"
-        else:
+        elif (pG4coords[1] > RIcoords[0] - window and pG4coords[1] < RIcoords[0] and w['strand'] == '-') or\
+            (pG4coords[0] < RIcoords[1] + window and pG4coords[0] > RIcoords[1] and w['strand'] == '+'):
             location = "pG4nearRI3"
+        else:
+            location = ''
     else:
         location = ''
     return location
@@ -118,14 +124,11 @@ def readLineRI(w):
 
 def readRI(filename, pG4, window, v, signi):
     RIpG4 = {}
-    graph = {'Up' : [],
-        'Down' : [],
-        'RI' : []}
-    NbNt = {'Up' : {},
-        'Down' : {},
-        'RI' : {}}
+    ListSeqpG4 = []
+    ListSeqTr = []
     cpt = 0
-    LengthTot = 0
+    nbTr = 0
+    RILength = 0
     with open(filename) as f: # file opening
         content = f.read()
         lines = content.split('\n')
@@ -134,18 +137,15 @@ def readRI(filename, pG4, window, v, signi):
                 w = l.split('\t')
                 w = readLineRI(w)
                 if w['GeneID'] in pG4 and w['significant'] == signi:
-                    lengthTr = w['riExonEnd'] - w['riExonStart_0base']
-                    Lengths = { 'Up' : w['upstreamEE'] - w['upstreamES'],
-                        'Down' : w['downstreamEE'] - w['downstreamES'],
-                        'RI' : w['downstreamES'] - w['upstreamEE']}
-                    LengthTot += lengthTr
-                    for location in  graph:
-                        if Lengths[location] not in NbNt[location]:
-                            NbNt[location][Lengths[location]] = 0
-                        NbNt[location][Lengths[location]] += 1
-                        if len(graph[location]) < Lengths[location]:
-                            lst = [0] * Lengths[location]
-                            graph[location].extend(lst)
+                    nbTr += 1
+                    RILength += w['downstreamES'] - w['upstreamEE']
+                    if len(ListSeqTr) < w['downstreamES'] - w['upstreamEE']:
+                        lst = [0] * (w['downstreamES'] - w['upstreamEE'])
+                        ListSeqpG4.extend(lst)
+                        ListSeqTr.extend(lst)
+                    ListSeqTr = np.array(ListSeqTr)
+                    ListSeqTr = ListSeqTr + 1
+                    ListSeqTr = ListSeqTr.tolist()
                     for G4 in pG4[ w['GeneID'] ]:
                         loc = getLocationpG4(w, pG4[ w['GeneID'] ][G4], window)
                         if loc:
@@ -158,45 +158,18 @@ def readRI(filename, pG4, window, v, signi):
                                 start = pG4[ w['GeneID'] ][G4]['Start'] - w['upstreamEE']
                                 end = pG4[ w['GeneID'] ][G4]['End'] - w['upstreamEE']
                                 for x in range(start, end):
-                                    if x < len(graph['RI']):
-                                        graph['RI'][x] += 1
-                            elif loc == 'pG4nearRI3':
-                                start = pG4[ w['GeneID'] ][G4]['Start'] - w['downstreamES']
-                                end = pG4[ w['GeneID'] ][G4]['End'] - w['downstreamES']
-                                for x in range(start, end):
-                                    if x < len(graph['Down']):
-                                        graph['Down'][x] += 1
-                            elif loc == 'pG4nearRI5':
-                                start = w['upstreamEE'] - pG4[ w['GeneID'] ][G4]['Start']
-                                end = w['upstreamEE'] - pG4[ w['GeneID'] ][G4]['End']
-                                for x in range(start, end):
-                                    if x < len(graph['Up']):
-                                        graph['Up'][x] += 1
-    for u in NbNt:
-        # for each location
-        cpt = 1
-        for i in sorted(NbNt[u]):
-            #for eahc position
-            # here we add for each end position, the number of sequence
-            # longer than this one because they also had this position in their sequence
-            NbNt[u][i] += len(NbNt[u]) - cpt
-            cpt += 1
-    for u in graph:
-        # for each location
-        for i in range(0, len(graph[u])+1):
-            #for eahc position
-            if i != len( graph[u]):
-                # if we didn't reach the end, we normalized by the number of
-                # sequences that had this position
-                graph[u][i] = graph[u][i] / sorted(NbNt[u])[0]
-                if i in NbNt[u]:
-                    # we delete the minimal end
-                    del sorted(NbNt[u])[0]
-        output = open('List_' +u+ '_' +signi+  '_' +v+ '.txt', "w")
-        results = [ str(i) for i in graph[u] ]
-        output.write("\n".join(results))
-        output.close()
-    print('Length Tot = ', str(LengthTot))
+                                    if x < len(ListSeqpG4):
+                                        ListSeqpG4[x] += 1
+    ListSeqTr = np.array(ListSeqTr)
+    ListSeqpG4 = np.array(ListSeqpG4)
+    tmp = ListSeqpG4 / ListSeqTr
+    tmp = tmp.tolist()
+    output = open('List_RI_' +signi+  '_' +v+ '.txt', "w")
+    results = [ str(i) for i in tmp ]
+    output.write("\n".join(results))
+    output.close()
+    print('Length Ri = ', str(RILength))
+    print('Nb transcript = ', str(nbTr))
     return RIpG4
 
 def importpG4(filename):
@@ -223,7 +196,6 @@ def importpG4(filename):
     return pG4
 
 def getpG4NearRI(path, window):
-    statD = {}
     pG4All = path + 'HS_pG4.csv'
     viruses = {'kunvRI' : path + '200319_KUNV_RI.csv',
         'sinvRI' : path + '200319_SINV_RI.csv',
@@ -231,6 +203,7 @@ def getpG4NearRI(path, window):
         'yvfRI' : path + '200319_YFV_RI.csv'}
     pG4 = importpG4(pG4All)
     for v in viruses:
+        statD = {}
         # 1 = significant, 0 = non_significant
         RIpG4 = readRI(viruses[v], pG4, window, v, '1')
         print(v)
@@ -241,6 +214,7 @@ def getpG4NearRI(path, window):
         pprint(statD)
         writeFile(RIpG4, v+'_1_RI_pG4.csv')
         RIpG4 = readRI(viruses[v], pG4, window, v, '0')
+        statD = {}
         for u in RIpG4:
             if RIpG4[u]['Location'] not in statD:
                 statD[ RIpG4[u]['Location'] ] = 0
