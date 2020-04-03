@@ -14,17 +14,17 @@ def read_file(file_name):
     return temp_lst
 
 
-def draw_plot_graph(x_values0, y_values0, x_values1, y_values1, v, loc):
+def draw_plot_graph(x_values0, y_values0, x_values1, y_values1, v):
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 1, 1)
     plt.plot(x_values0, y_values0, label='Non-Significant', color="black")
     plt.plot(x_values1, y_values1, label='Significant', color="red")
     plt.grid()
     plt.title('Plot of the number of pG4 per site / tot site for the virus '+\
-        v+'and the location '+loc)
-    plt.xlabel('Position in ' + loc)
+        v+'and the location RI')
+    plt.xlabel('Position in RI')
     plt.ylabel("Percent of site with a G4")
-    plt.savefig(v+'_'+loc+".svg", format="svg")
+    plt.savefig(v+"_RI.png")
     plt.close()
 
 
@@ -40,29 +40,20 @@ def draw_hist_graph(values, title, bins):
 
 
 if __name__ == '__main__':
-    files = {'kunvRI' : {'Up' : ['List_Up_0_kunvRI.txt', 'List_Up_1_kunvRI.txt'],
-                        'Down' : ['List_Down_0_kunvRI.txt', 'List_Down_1_kunvRI.txt'],
-                        'RI' : ['List_RI_0_kunvRI.txt', 'List_RI_1_kunvRI.txt']},
-            'sinvRI' : {'Up' : ['List_Up_0_sinvRI.txt', 'List_Up_1_sinvRI.txt'],
-                        'Down' : ['List_Down_0_sinvRI.txt', 'List_Down_1_sinvRI.txt'],
-                        'RI' : ['List_RI_0_sinvRI.txt', 'List_RI_1_sinvRI.txt']},
-            'yvfRI' : {'Up' : ['List_Up_0_yvfRI.txt', 'List_Up_1_yvfRI.txt'],
-                        'Down' : ['List_Down_0_yvfRI.txt', 'List_Down_1_yvfRI.txt'],
-                        'RI' : ['List_RI_0_yvfRI.txt', 'List_RI_1_yvfRI.txt']},
-            'zikvRI' : {'Up' : ['List_Up_0_zikvRI.txt', 'List_Up_1_zikvRI.txt'],
-                        'Down' : ['List_Down_0_zikvRI.txt', 'List_Down_1_zikvRI.txt'],
-                        'RI' : ['List_RI_0_zikvRI.txt', 'List_RI_1_zikvRI.txt']}}
+    files = {'kunvRI' : ['List_RI_0_kunvRI.txt', 'List_RI_1_kunvRI.txt'],
+            'sinvRI' : ['List_RI_0_sinvRI.txt', 'List_RI_1_sinvRI.txt'],
+            'yvfRI' : ['List_RI_0_yvfRI.txt', 'List_RI_1_yvfRI.txt'],
+            'zikvRI' : ['List_RI_0_zikvRI.txt', 'List_RI_1_zikvRI.txt']}
     for v in files:
-        for loc in files[v]:
-            VLoc0 = read_file(files[v][loc][0])
-            VLoc1 = read_file(files[v][loc][1])
+        VLoc0 = read_file(files[v][0])
+        VLoc1 = read_file(files[v][1])
 
-            x_values0 = list(range(len(VLoc0)))
-            y_values0 = VLoc0
-            x_values1 = list(range(len(VLoc1)))
-            y_values1 = VLoc1
+        x_values0 = list(range(len(VLoc0)))
+        y_values0 = VLoc0
+        x_values1 = list(range(len(VLoc1)))
+        y_values1 = VLoc1
 
-            draw_plot_graph(x_values0, y_values0, x_values1, y_values1, v, loc)
+        draw_plot_graph(x_values0, y_values0, x_values1, y_values1, v)
 
     # values = []
     # for i in range(len(x_values)):
