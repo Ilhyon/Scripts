@@ -35,26 +35,46 @@ def getLocationpG4(w, pG4, windowUp, windowDown):
     else:
         return 0
 
-def readLineRI(w):
-    line = {
-    'newID' : w[0],
-    'ID': w[2],
-    'GeneID': w[3],
-    'geneSymbol': w[4],
-    'chr': w[5],
-    'strand': w[6],
-    'SplicingStart': int(w[7]),
-    'SplicingEnd': int(w[8]),
-    'upstreamES': int(w[9]),
-    'upstreamEE': int(w[10]),
-    'downstreamES': int(w[11]),
-    'downstreamEE': int(w[12]),
-    'PValue': w[20],
-    'FDR': w[21],
-    'significant': w[29]}
+def readLineRI(w, s):
+    if s == 'MXE':
+        line = {
+        'newID' : w[0],
+        'ID': w[2],
+        'GeneID': w[3],
+        'geneSymbol': w[4],
+        'chr': w[5],
+        'strand': w[6],
+        'SplicingStart': int(w[7]),
+        'SplicingEnd': int(w[8]),
+        'SplicingStart2': int(w[9]),
+        'SplicingEnd2': int(w[10]),
+        'upstreamES': int(w[11]),
+        'upstreamEE': int(w[12]),
+        'downstreamES': int(w[13]),
+        'downstreamEE': int(w[14]),
+        'PValue': w[20],
+        'FDR': w[21],
+        'significant': w[31]}
+    else:
+        line = {
+        'newID' : w[0],
+        'ID': w[2],
+        'GeneID': w[3],
+        'geneSymbol': w[4],
+        'chr': w[5],
+        'strand': w[6],
+        'SplicingStart': int(w[7]),
+        'SplicingEnd': int(w[8]),
+        'upstreamES': int(w[9]),
+        'upstreamEE': int(w[10]),
+        'downstreamES': int(w[11]),
+        'downstreamEE': int(w[12]),
+        'PValue': w[20],
+        'FDR': w[21],
+        'significant': w[29]}
     return line
 
-def read(filename, pG4, windowUp, windowDown, v, signi):
+def read(filename, pG4, windowUp, windowDown, v, s, signi):
     pG4List = []
     geneList = []
     Densities = []
@@ -70,9 +90,9 @@ def read(filename, pG4, windowUp, windowDown, v, signi):
                     if w['GeneID'] in pG4:
                         cptG4 = 0
                         for G4 in pG4[ w['GeneID'] ]:
-                            loc = getLocationpG4(w['SplicingStart'], pG4[ w['GeneID'] ][G4], windowUp, windowDown)
+                            loc = getLocationpG4(w['SplicingEnd'], pG4[ w['GeneID'] ][G4], windowUp, windowDown)
                             if s == 'MXE' and loc == 0:
-                                loc = getLocationpG4(w['SplicingStart2'], pG4[ w['GeneID'] ][G4], windowUp, windowDown)
+                                loc = getLocationpG4(w['SplicingEnd2'], pG4[ w['GeneID'] ][G4], windowUp, windowDown)
                             if loc != 0 :
                                 if w['geneSymbol'] in ['MAPK12', 'WDR90', 'SLC25A18', 'ULK3', 'IRF7']:
                                     print(v)
@@ -89,6 +109,9 @@ def read(filename, pG4, windowUp, windowDown, v, signi):
                                     pG4[ w['GeneID'] ][G4]['Seq'])
                                 eventList.append(w['newID'])
                         Densities.append(float(cptG4) / float( w['downstreamES'] +100 - w['upstreamEE'] -100) *1000)
+    pG4List =  list(set(pG4List))
+    geneList =  list(set(geneList))
+    eventList =  list(set(eventList))
     return pG4List, geneList, eventList, Densities
 
 def importpG4(filename):
@@ -151,64 +174,23 @@ def getpG4NearRI(path, windowUp, windowDown):
                 'yvfRI' : [ [], [] ]}
     for s in files:
         print(s)
-        for v in files:
+        for v in files[s]:
             statD = {}
             # 1 = significant, 0 = non_significant
-            pG4List, geneList, eventList, densities = read(files[v], pG4, windowUp, windowDown, v, '1')
+            pG4List, geneList, eventList, densities = read(files[s][v], pG4, windowDown, windowUp,v, s, '1')
             print('\t'+v)
             # print(densities)
             densities = np.array(densities)
-            # print('\t\tIl y a ', str(len(eventList)), ' event acec au moins 1 pG4')
-            # print('\t\tIl y a ', str(len(geneList)), ' gene avec au moins 1 pG4')
-            # print('\t\tIl y a ', str(len(pG4List)), ' pG4')
             allGene[v][0].extend(geneList)
             allpG4[v][0].extend(pG4List)
             allEvent[v][0].extend(eventList)
             output = open(path+s+'/'+v+'_'+s+'1_upstream.csv', "w")
-            # output.write( '\n'.join(geneList) )
-            # output.close()
-            # output = open(path+s+'/'+v+'_'+s+'1_upstreamPG4.csv', "w")
-            # output.write( '\n'.join(pG4List) )
-            # output.close()
-            # print('\t\tMean = ', str(densities.mean()))
-            # print('\t\tÉcart type = ', str(densities.std()))
-            pG4List, geneList, eventList, densities = read(files[v], pG4, windowUp, windowDown, v, '0')
+            pG4List, geneList, eventList, densities = read(files[s][v], pG4, windowUp, windowDown, v, s, '0')
             densities = np.array(densities)
             allGene[v][1].extend(geneList)
             allpG4[v][1].extend(pG4List)
             allEvent[v][1].extend(eventList)
-            # print('\t\tIl y a ', str(len(eventList)), ' event acec au moins 1 pG4')
-            # print('\t\tIl y a ', str(len(geneList)), ' gene avec au moins 1 pG4')
-            # print('\t\tIl y a ', str(len(pG4List)), ' pG4')
-            # output = open(path+s+'/'+v+'_'+s+'0_upstream.csv', "w")
-            # output.write( '\n'.join(geneList) )
-            # output.close()
-            # output = open(path+s+'/'+v+'_'+s+'0_upstreamPG4.csv', "w")
-            # output.write( '\n'.join(pG4List) )
-            # output.close()
-            # print('\t\tMean = ', str(densities.mean()))
-            # print('\t\tÉcart type = ', str(densities.std()))
-    # print('--------------All--------------------')
-    # for v in allGene:
-    #     print('\t',v)
-        # print('\t\tIl y a ', str(len(set(allEvent[v][0]))), ' event acec au moins 1 pG4')
-        # print('\t\tIl y a ', str(len(set(allGene[v][0]))), ' gene avec au moins 1 pG4')
-        # print('\t\tIl y a ', str(len(set(allpG4[v][0]))), ' pG4')
-        # output = open(path+v+'_All1_upstream.csv', "w")
-        # output.write( '\n'.join(list(set(allGene[v][0]))) )
-        # output.close()
-        # output = open(path+s+'/'+v+'_'+s+'1_upstreamPG4.csv', "w")
-        # output.write( '\n'.join(pG4List) )
-        # output.close()
-        # print('\t\tIl y a ', str(len(set(allEvent[v][1]))), ' event acec au moins 1 pG4')
-        # print('\t\tIl y a ', str(len(set(allGene[v][1]))), ' gene avec au moins 1 pG4')
-        # print('\t\tIl y a ', str(len(set(allpG4[v][1]))), ' pG4')
-        # output = open(path+v+'_All0_upstream.csv', "w")
-        # output.write( '\n'.join(list(set(allGene[v][1]))) )
-        # output.close()
-        # output = open(path+s+'/'+v+'_'+s+'0_upstreamPG4.csv', "w")
-        # output.write( '\n'.join(pG4List) )
-        # output.close()
+
 
 
 def build_arg_parser():
@@ -225,4 +207,4 @@ if __name__ == '__main__':
     path = arg.path
     windowUp = arg.windowUp
     windowDown  = arg.windowDown
-    getpG4NearRI(path, windowUp, windowDown)
+    getpG4NearRI(path, windowDown, windowUp)
