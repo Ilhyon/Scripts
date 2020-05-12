@@ -26,26 +26,26 @@ def overlaps(interval1, interval2):
 
 def getLocationpG4(w, pG4, window):
     pG4coords = [ pG4['Start'], pG4['End'] ]
-    RIcoords = [ w['upstreamEE'] - window , w['downstreamES'] + window ]
+    RIcoords = [ w['SplicingStart'] - window , w['SplicingEnd'] + window ]
     o = overlaps(pG4coords, RIcoords)
     if o > 0:
-        if w['upstreamEE'] - window < w['upstreamES'] and w['upstreamEE'] + window > w['downstreamEE']:
+        if w['SplicingStart'] - window < w['upstreamES'] and w['SplicingStart'] + window > w['downstreamEE']:
             RIcoords = [ w['upstreamES'] , w['downstreamEE'] ]
-        elif w['upstreamEE'] - window < w['upstreamES'] and w['upstreamEE'] + window < w['downstreamEE']:
-            RIcoords = [ w['upstreamES'] , w['upstreamEE'] + window ]
-        elif w['upstreamEE'] - window > w['upstreamES'] and w['upstreamEE'] + window > w['downstreamEE']:
-            RIcoords = [ w['upstreamEE'] - window , w['downstreamEE'] ]
+        elif w['SplicingStart'] - window < w['upstreamES'] and w['SplicingStart'] + window < w['downstreamEE']:
+            RIcoords = [ w['upstreamES'] , w['SplicingStart'] + window ]
+        elif w['SplicingStart'] - window > w['upstreamES'] and w['SplicingStart'] + window > w['downstreamEE']:
+            RIcoords = [ w['SplicingStart'] - window , w['downstreamEE'] ]
         else:
-            RIcoords = [ w['upstreamEE'] - window , w['upstreamEE'] + window ]
+            RIcoords = [ w['SplicingStart'] - window , w['SplicingStart'] + window ]
         oUp = overlaps(pG4coords, RIcoords)
-        if w['downstreamES'] - window < w['upstreamES'] and w['downstreamES'] + window > w['downstreamEE']:
+        if w['SplicingEnd'] - window < w['upstreamES'] and w['SplicingEnd'] + window > w['downstreamEE']:
             RIcoords = [ w['upstreamES'] , w['downstreamEE'] ]
-        elif w['downstreamES'] - window < w['upstreamES'] and w['downstreamES'] + window < w['downstreamEE']:
-            RIcoords = [ w['upstreamES'] , w['downstreamES'] + window ]
-        elif w['downstreamES'] - window > w['upstreamES'] and w['downstreamES'] + window > w['downstreamEE']:
-            RIcoords = [ w['downstreamES'] - window , w['downstreamEE'] ]
+        elif w['SplicingEnd'] - window < w['upstreamES'] and w['SplicingEnd'] + window < w['downstreamEE']:
+            RIcoords = [ w['upstreamES'] , w['SplicingEnd'] + window ]
+        elif w['SplicingEnd'] - window > w['upstreamES'] and w['SplicingEnd'] + window > w['downstreamEE']:
+            RIcoords = [ w['SplicingEnd'] - window , w['downstreamEE'] ]
         else:
-            RIcoords = [ w['downstreamES'] - window , w['downstreamES'] + window ]
+            RIcoords = [ w['SplicingEnd'] - window , w['SplicingEnd'] + window ]
         oDown = overlaps(pG4coords, RIcoords)
         if oUp > 0 and oDown <= 0:
             if w['strand'] == '+':
@@ -72,9 +72,9 @@ def readLineRI(w):
     'geneSymbol': w[4],
     'chr': w[5],
     'strand': w[6],
-    'SplicingStart': int(w[7]),
+    'SplicingStart': int(w[10]),
     'SplicingEnd': int(w[8]),
-    'upstreamES': int(w[9]),
+    'upstreamES': int(w[7]),
     'upstreamEE': int(w[10]),
     'downstreamES': int(w[11]),
     'downstreamEE': int(w[12]),
@@ -141,17 +141,17 @@ def importpG4(filename):
 
 def getpG4NearRI(path, window):
     pG4All = path + 'HS_pG4.csv'
-    files = {'kunv' : path + 'RI/KUNV_RI.csv',
-            'sinv' : path + 'RI/SINV_RI.csv',
-            'zikv' : path + 'RI/ZIKV_RI.csv',
-            'yvf' : path + 'RI/YFV_RI.csv'}
+    files = {'kunv' : path + 'A5SS/KUNV_A5SS.csv',
+            'sinv' : path + 'A5SS/SINV_A5SS.csv',
+            'zikv' : path + 'A5SS/ZIKV_A5SS.csv',
+            'yvf' : path + 'A5SS/YFV_A5SS.csv'}
     pG4 = importpG4(pG4All)
     for v in files:
         print(v)
         # 1 = significant, 0 = non_significant
         dicoRes, output = read(files[v], pG4, window, v, '0')
         # read(files[v], pG4, window, v, '0')
-        outputF = open(path+v+'_0New.csv', "w")
+        outputF = open(path+v+'_A5SS0New.csv', "w")
         outputF.write( 'Location\tGeneSymbol\tStrand\tStartEvent\tEndEvent\tStartpG4\tEndpG4\n' )
         outputF.write( '\n'.join(output) )
         outputF.close()
@@ -162,7 +162,7 @@ def getpG4NearRI(path, window):
             print('\t\tIl y a ', str(len(set(dicoRes[loc]['pG4']))), ' pG4')
         dicoRes, output = read(files[v], pG4, window, v, '1')
         # read(files[v], pG4, window, v, '0')
-        outputF = open(path+v+'_1New.csv', "w")
+        outputF = open(path+v+'_A5SS1New.csv', "w")
         outputF.write( 'Location\tGeneSymbol\tStrand\tStartEvent\tEndEvent\tStartpG4\tEndpG4\n' )
         outputF.write( '\n'.join(output) )
         outputF.close()

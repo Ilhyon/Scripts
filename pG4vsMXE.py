@@ -26,39 +26,47 @@ def overlaps(interval1, interval2):
 
 def getLocationpG4(w, pG4, window):
     pG4coords = [ pG4['Start'], pG4['End'] ]
-    RIcoords = [ w['upstreamEE'] - window , w['downstreamES'] + window ]
+    RIcoords = [ w['Exon1S'] - window , w['Exon2E'] + window ]
     o = overlaps(pG4coords, RIcoords)
     if o > 0:
-        if w['upstreamEE'] - window < w['upstreamES'] and w['upstreamEE'] + window > w['downstreamEE']:
+        if w['Exon1S'] - window < w['upstreamES'] and w['Exon1S'] + window > w['downstreamEE']:
             RIcoords = [ w['upstreamES'] , w['downstreamEE'] ]
-        elif w['upstreamEE'] - window < w['upstreamES'] and w['upstreamEE'] + window < w['downstreamEE']:
-            RIcoords = [ w['upstreamES'] , w['upstreamEE'] + window ]
-        elif w['upstreamEE'] - window > w['upstreamES'] and w['upstreamEE'] + window > w['downstreamEE']:
-            RIcoords = [ w['upstreamEE'] - window , w['downstreamEE'] ]
+        elif w['Exon1S'] - window < w['upstreamES'] and w['Exon1S'] + window < w['downstreamEE']:
+            RIcoords = [ w['upstreamES'] , w['Exon1S'] + window ]
+        elif w['Exon1S'] - window > w['upstreamES'] and w['Exon1S'] + window > w['downstreamEE']:
+            RIcoords = [ w['Exon1S'] - window , w['downstreamEE'] ]
         else:
-            RIcoords = [ w['upstreamEE'] - window , w['upstreamEE'] + window ]
-        oUp = overlaps(pG4coords, RIcoords)
-        if w['downstreamES'] - window < w['upstreamES'] and w['downstreamES'] + window > w['downstreamEE']:
+            RIcoords = [ w['Exon1S'] - window , w['Exon1S'] + window ]
+        oUp1 = overlaps(pG4coords, RIcoords)
+        if w['Exon1E'] - window < w['upstreamES'] and w['Exon1E'] + window > w['downstreamEE']:
             RIcoords = [ w['upstreamES'] , w['downstreamEE'] ]
-        elif w['downstreamES'] - window < w['upstreamES'] and w['downstreamES'] + window < w['downstreamEE']:
-            RIcoords = [ w['upstreamES'] , w['downstreamES'] + window ]
-        elif w['downstreamES'] - window > w['upstreamES'] and w['downstreamES'] + window > w['downstreamEE']:
-            RIcoords = [ w['downstreamES'] - window , w['downstreamEE'] ]
+        elif w['Exon1E'] - window < w['upstreamES'] and w['Exon1E'] + window < w['downstreamEE']:
+            RIcoords = [ w['upstreamES'] , w['Exon1E'] + window ]
+        elif w['Exon1E'] - window > w['upstreamES'] and w['Exon1E'] + window > w['downstreamEE']:
+            RIcoords = [ w['Exon1E'] - window , w['downstreamEE'] ]
         else:
-            RIcoords = [ w['downstreamES'] - window , w['downstreamES'] + window ]
-        oDown = overlaps(pG4coords, RIcoords)
-        if oUp > 0 and oDown <= 0:
-            if w['strand'] == '+':
-                return 'Up'
-            else:
-                return 'Down'
-        elif oUp <= 0 and oDown > 0:
-            if w['strand'] == '+':
-                return 'Down'
-            else:
-                return 'Up'
-        elif oUp > 0 and oDown > 0:
-            return 'Both'
+            RIcoords = [ w['Exon1E'] - window , w['Exon1E'] + window ]
+        oDown1 = overlaps(pG4coords, RIcoords)
+        if w['Exon2S'] - window < w['upstreamES'] and w['Exon2S'] + window > w['downstreamEE']:
+            RIcoords = [ w['upstreamES'] , w['downstreamEE'] ]
+        elif w['Exon2S'] - window < w['upstreamES'] and w['Exon2S'] + window < w['downstreamEE']:
+            RIcoords = [ w['upstreamES'] , w['Exon2S'] + window ]
+        elif w['Exon2S'] - window > w['upstreamES'] and w['Exon2S'] + window > w['downstreamEE']:
+            RIcoords = [ w['Exon2S'] - window , w['downstreamEE'] ]
+        else:
+            RIcoords = [ w['Exon2S'] - window , w['Exon2S'] + window ]
+        oUp2 = overlaps(pG4coords, RIcoords)
+        if w['Exon2E'] - window < w['upstreamES'] and w['Exon2E'] + window > w['downstreamEE']:
+            RIcoords = [ w['upstreamES'] , w['downstreamEE'] ]
+        elif w['Exon2E'] - window < w['upstreamES'] and w['Exon2E'] + window < w['downstreamEE']:
+            RIcoords = [ w['upstreamES'] , w['Exon2E'] + window ]
+        elif w['Exon2E'] - window > w['upstreamES'] and w['Exon2E'] + window > w['downstreamEE']:
+            RIcoords = [ w['Exon2E'] - window , w['downstreamEE'] ]
+        else:
+            RIcoords = [ w['Exon2E'] - window , w['Exon2E'] + window ]
+        oDown2 = overlaps(pG4coords, RIcoords)
+        if oUp1 > 0 or oDown1 > 0 or oUp2 > 0 or oDown2 > 0:
+            return 'hit'
         else:
             return 0
     else:
@@ -72,21 +80,21 @@ def readLineRI(w):
     'geneSymbol': w[4],
     'chr': w[5],
     'strand': w[6],
-    'SplicingStart': int(w[7]),
-    'SplicingEnd': int(w[8]),
-    'upstreamES': int(w[9]),
-    'upstreamEE': int(w[10]),
-    'downstreamES': int(w[11]),
-    'downstreamEE': int(w[12]),
+    'Exon1S': int(w[7]),
+    'Exon1E': int(w[8]),
+    'Exon2S': int(w[9]),
+    'Exon2E': int(w[10]),
+    'upstreamES': int(w[11]),
+    'upstreamEE': int(w[12]),
+    'downstreamES': int(w[13]),
+    'downstreamEE': int(w[14]),
     'PValue': w[20],
     'FDR': w[21],
-    'significant': w[29]}
+    'significant': w[31]}
     return line
 
 def read(filename, pG4, window, v, signi):
-    dicoRes = {'Up' : {'event' : [], 'pG4' : [], 'gene' : []},
-        'Down' : {'event' : [], 'pG4' : [], 'gene' : []},
-        'Both' : {'event' : [], 'pG4' : [], 'gene' : []}}
+    dicoRes = {'event' : [], 'pG4' : [], 'gene' : []}
     output = []
     with open(filename) as f: # file opening
         content = f.read()
@@ -106,11 +114,11 @@ def read(filename, pG4, window, v, signi):
                                 # print(w)
                                 # print(pG4[ w['GeneID'] ][G4])
                                 # print('----------')
-                                dicoRes[loc]['event'].append(w['newID'])
-                                dicoRes[loc]['gene'].append(w['geneSymbol'])
-                                dicoRes[loc]['pG4'].append(str(pG4[ w['GeneID'] ][G4]['Start'])+'|'+\
+                                dicoRes['event'].append(w['newID'])
+                                dicoRes['gene'].append(w['geneSymbol'])
+                                dicoRes['pG4'].append(str(pG4[ w['GeneID'] ][G4]['Start'])+'|'+\
                                     str(pG4[ w['GeneID'] ][G4]['End']))
-                                output.append(loc+'\t'+w['geneSymbol']+'\t'+w['strand']+'\t'+\
+                                output.append(w['geneSymbol']+'\t'+w['strand']+'\t'+\
                                     str(w['upstreamEE'])+'\t'+str(w['downstreamES'])+'\t'+\
                                     str(pG4[ w['GeneID'] ][G4]['Start'])+'\t'+str(pG4[ w['GeneID'] ][G4]['End']))
 
@@ -141,36 +149,32 @@ def importpG4(filename):
 
 def getpG4NearRI(path, window):
     pG4All = path + 'HS_pG4.csv'
-    files = {'kunv' : path + 'RI/KUNV_RI.csv',
-            'sinv' : path + 'RI/SINV_RI.csv',
-            'zikv' : path + 'RI/ZIKV_RI.csv',
-            'yvf' : path + 'RI/YFV_RI.csv'}
+    files = {'kunvRI' : path + 'MXE/KUNV_MXE.csv',
+            'sinvRI' : path + 'MXE/SINV_MXE.csv',
+            'zikvRI' : path + 'MXE/ZIKV_MXE.csv',
+            'yvfRI' : path + 'MXE/YFV_MXE.csv'}
     pG4 = importpG4(pG4All)
     for v in files:
         print(v)
         # 1 = significant, 0 = non_significant
         dicoRes, output = read(files[v], pG4, window, v, '0')
         # read(files[v], pG4, window, v, '0')
-        outputF = open(path+v+'_0New.csv', "w")
-        outputF.write( 'Location\tGeneSymbol\tStrand\tStartEvent\tEndEvent\tStartpG4\tEndpG4\n' )
+        outputF = open(path+v+'_MXE0New.csv', "w")
+        outputF.write( 'GeneSymbol\tStrand\tStartEvent\tEndEvent\tStartpG4\tEndpG4\n' )
         outputF.write( '\n'.join(output) )
         outputF.close()
-        for loc in dicoRes:
-            print('\t',loc)
-            print('\t\tIl y a ', str(len(set(dicoRes[loc]['event']))), ' event avec au moins 1 pG4')
-            print('\t\tIl y a ', str(len(set(dicoRes[loc]['gene']))), ' gene avec au moins 1 pG4')
-            print('\t\tIl y a ', str(len(set(dicoRes[loc]['pG4']))), ' pG4')
+        print('\t\tIl y a ', str(len(set(dicoRes['event']))), ' event avec au moins 1 pG4')
+        print('\t\tIl y a ', str(len(set(dicoRes['gene']))), ' gene avec au moins 1 pG4')
+        print('\t\tIl y a ', str(len(set(dicoRes['pG4']))), ' pG4')
         dicoRes, output = read(files[v], pG4, window, v, '1')
         # read(files[v], pG4, window, v, '0')
-        outputF = open(path+v+'_1New.csv', "w")
-        outputF.write( 'Location\tGeneSymbol\tStrand\tStartEvent\tEndEvent\tStartpG4\tEndpG4\n' )
+        outputF = open(path+v+'_MXE1New.csv', "w")
+        outputF.write( 'GeneSymbol\tStrand\tStartEvent\tEndEvent\tStartpG4\tEndpG4\n' )
         outputF.write( '\n'.join(output) )
         outputF.close()
-        for loc in dicoRes:
-            print('\t',loc)
-            print('\t\tIl y a ', str(len(set(dicoRes[loc]['event']))), ' event avec au moins 1 pG4')
-            print('\t\tIl y a ', str(len(set(dicoRes[loc]['gene']))), ' gene avec au moins 1 pG4')
-            print('\t\tIl y a ', str(len(set(dicoRes[loc]['pG4']))), ' pG4')
+        print('\t\tIl y a ', str(len(set(dicoRes['event']))), ' event avec au moins 1 pG4')
+        print('\t\tIl y a ', str(len(set(dicoRes['gene']))), ' gene avec au moins 1 pG4')
+        print('\t\tIl y a ', str(len(set(dicoRes['pG4']))), ' pG4')
 
 
 
