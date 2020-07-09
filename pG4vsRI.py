@@ -83,7 +83,7 @@ def readLineRI(w):
     'significant': w[29]}
     return line
 
-def read(filename, pG4, window, v, signi):
+def readSE(filename, pG4, window, v, signi):
     dicoRes = {'Up' : {'event' : [], 'pG4' : [], 'gene' : []},
         'Down' : {'event' : [], 'pG4' : [], 'gene' : []},
         'Both' : {'event' : [], 'pG4' : [], 'gene' : []}}
@@ -104,15 +104,19 @@ def read(filename, pG4, window, v, signi):
                                 # print(v)
                                 # print(w['geneSymbol'])
                                 # print(w)
-                                # print(pG4[ w['GeneID'] ][G4])
+                                # pprint(pG4[ w['GeneID'] ][G4])
                                 # print('----------')
                                 dicoRes[loc]['event'].append(w['newID'])
                                 dicoRes[loc]['gene'].append(w['geneSymbol'])
                                 dicoRes[loc]['pG4'].append(str(pG4[ w['GeneID'] ][G4]['Start'])+'|'+\
                                     str(pG4[ w['GeneID'] ][G4]['End']))
-                                output.append(loc+'\t'+w['geneSymbol']+'\t'+w['strand']+'\t'+\
+                                output.append(loc+'\t'+pG4[ w['GeneID'] ][G4]['loc']+'\t'+w['geneSymbol']+'\t'+w['strand']+'\t'+w['chr']+'\t'+\
                                     str(w['upstreamEE'])+'\t'+str(w['downstreamES'])+'\t'+\
-                                    str(pG4[ w['GeneID'] ][G4]['Start'])+'\t'+str(pG4[ w['GeneID'] ][G4]['End']))
+                                    str(pG4[ w['GeneID'] ][G4]['Start'])+'\t'+str(pG4[ w['GeneID'] ][G4]['End'])+'\t'+\
+                                    pG4[ w['GeneID'] ][G4]['Seq']+'\t'+\
+                                    str(w['upstreamES'])+'\t'+str(w['upstreamEE'])+'\t'+\
+                                    str(w['downstreamES'])+'\t'+str(w['downstreamEE'])+'\t'+\
+                                    ' '.join(pG4[ w['GeneID'] ][G4]['Tr']))
 
     return dicoRes, output
 
@@ -128,15 +132,19 @@ def importpG4(filename):
                     pG4[ w[9] ] = {}
                 start = w[1].split(':')[1].split('-')[0]
                 end = w[1].split(':')[1].split('-')[1]
-                pG4[ w[9] ][ w[9]+'|'+w[1] ] = {'Start' : int(start),
-                    'End' : int(end),
-                    'Chr' : w[1].split(':')[0],
-                    'Strand' : w[2],
-                    'cGcC' : w[3],
-                    'G4H' : w[4],
-                    'G4nn' : w[6],
-                    'Seq' : w[5],
-                    'Bt' : w[8]}
+                if w[9]+'|'+w[1] not in pG4[ w[9] ]:
+                    pG4[ w[9] ][ w[9]+'|'+w[1] ] = {'Start' : int(start),
+                        'End' : int(end),
+                        'Chr' : w[1].split(':')[0],
+                        'Strand' : w[2],
+                        'cGcC' : w[3],
+                        'G4H' : w[4],
+                        'G4nn' : w[6],
+                        'Seq' : w[5],
+                        'Bt' : w[8],
+                        'loc' : w[7],
+                        'Tr' : [],}
+                pG4[ w[9] ][ w[9]+'|'+w[1] ]['Tr'].append(w[0])
     return pG4
 
 def getpG4NearRI(path, window):
@@ -149,21 +157,23 @@ def getpG4NearRI(path, window):
     for v in files:
         print(v)
         # 1 = significant, 0 = non_significant
-        dicoRes, output = read(files[v], pG4, window, v, '0')
+        dicoRes, output = readSE(files[v], pG4, window, v, '0')
         # read(files[v], pG4, window, v, '0')
-        outputF = open(path+v+'_0New.csv', "w")
-        outputF.write( 'Location\tGeneSymbol\tStrand\tStartEvent\tEndEvent\tStartpG4\tEndpG4\n' )
+        outputF = open(path+v+'_RI_NonSigni.csv', "w")
+        outputF.write( 'Location\tpG4Location\tGeneSymbol\tStrand\tchr\tStartEvent\tEndEvent\tStartpG4\tEndpG4\tpG4Sequence\tE1S\tE1E\tE2S\tE2E\tTranscripts\n' )
         outputF.write( '\n'.join(output) )
         outputF.close()
+        print('-------------NON SIGNI-----------')
         for loc in dicoRes:
             print('\t',loc)
             print('\t\tIl y a ', str(len(set(dicoRes[loc]['event']))), ' event avec au moins 1 pG4')
             print('\t\tIl y a ', str(len(set(dicoRes[loc]['gene']))), ' gene avec au moins 1 pG4')
             print('\t\tIl y a ', str(len(set(dicoRes[loc]['pG4']))), ' pG4')
-        dicoRes, output = read(files[v], pG4, window, v, '1')
+        dicoRes, output = readSE(files[v], pG4, window, v, '1')
         # read(files[v], pG4, window, v, '0')
-        outputF = open(path+v+'_1New.csv', "w")
-        outputF.write( 'Location\tGeneSymbol\tStrand\tStartEvent\tEndEvent\tStartpG4\tEndpG4\n' )
+        print('-------------SIGNI-----------')
+        outputF = open(path+v+'_RI_Signi.csv', "w")
+        outputF.write( 'Location\tpG4Location\tGeneSymbol\tStrand\tchr\tStartEvent\tEndEvent\tStartpG4\tEndpG4\tpG4Sequence\tE1S\tE1E\tE2S\tE2E\tTranscripts\n' )
         outputF.write( '\n'.join(output) )
         outputF.close()
         for loc in dicoRes:
